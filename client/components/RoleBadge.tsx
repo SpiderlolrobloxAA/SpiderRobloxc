@@ -1,4 +1,4 @@
-import { Crown, ShieldCheck, LifeBuoy, Star, User } from "lucide-react";
+import { Crown, ShieldCheck, LifeBuoy, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type Role = "founder" | "moderator" | "helper" | "verified" | "user";
@@ -8,30 +8,30 @@ const roleMap: Record<Role, { label: string; Icon: any; className: string }> = {
     label: "Fondateur",
     Icon: Crown,
     className:
-      "bg-gradient-to-r from-amber-400 to-yellow-500 text-black ring-1 ring-amber-300",
+      "bg-amber-500/20 text-white ring-1 ring-amber-400/40",
   },
   moderator: {
     label: "Modérateur",
     Icon: ShieldCheck,
     className:
-      "bg-gradient-to-r from-sky-400 to-blue-600 text-white ring-1 ring-blue-400/60",
+      "bg-sky-500/20 text-white ring-1 ring-sky-400/40",
   },
   helper: {
     label: "Helper",
     Icon: LifeBuoy,
     className:
-      "bg-gradient-to-r from-emerald-400 to-emerald-600 text-black ring-1 ring-emerald-300",
+      "bg-emerald-500/20 text-white ring-1 ring-emerald-400/40",
   },
   verified: {
     label: "Vendeur certifié",
-    Icon: Star,
+    Icon: ShieldCheck,
     className:
-      "bg-gradient-to-r from-primary to-secondary text-white ring-1 ring-primary/50",
+      "bg-violet-500/20 text-white ring-1 ring-violet-400/40",
   },
   user: {
     label: "Utilisateur",
     Icon: User,
-    className: "bg-muted text-foreground/80 ring-1 ring-border",
+    className: "bg-muted text-foreground/90 ring-1 ring-border",
   },
 };
 
@@ -45,7 +45,7 @@ export function RoleBadge({ role, className }: { role: Role; className?: string 
         className,
       )}
     >
-      <cfg.Icon className="h-3.5 w-3.5" />
+      <cfg.Icon className="h-3.5 w-3.5 text-white" />
       {cfg.label}
     </span>
   );

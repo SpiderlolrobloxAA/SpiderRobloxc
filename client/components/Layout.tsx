@@ -23,18 +23,19 @@ function Header() {
           <span className="font-display text-xl tracking-tight">RotMarket</span>
         </Link>
         <nav className="hidden md:flex items-center gap-1">
-          {nav.map(({ to, label }) => (
+          {nav.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
-                `px-3 py-2 rounded-md text-sm transition-colors ${
+                `px-3 py-2 rounded-md text-sm transition-colors inline-flex items-center gap-2 ${
                   isActive
                     ? "bg-muted text-foreground"
                     : "text-foreground/80 hover:text-foreground hover:bg-muted"
                 }`
               }
             >
+              <Icon className="h-4 w-4" />
               {label}
             </NavLink>
           ))}
@@ -66,12 +67,21 @@ function Footer() {
           </p>
         </div>
         <div>
-          <h4 className="font-semibold mb-3">Liens</h4>
+          <h4 className="font-semibold mb-3">À propos</h4>
           <ul className="space-y-2 text-sm text-foreground/80">
+            <li><Link className="hover:text-foreground" to="/">Notre mission</Link></li>
+            <li><Link className="hover:text-foreground" to="/profile">Compte & profil</Link></li>
+            <li><Link className="hover:text-foreground" to="/transactions">Transactions</Link></li>
             <li><Link className="hover:text-foreground" to="/marketplace">Marketplace</Link></li>
-            <li><Link className="hover:text-foreground" to="/shop">Acheter des RotCoins</Link></li>
-            <li><Link className="hover:text-foreground" to="/quests">Quêtes sociales</Link></li>
-            <li><Link className="hover:text-foreground" to="/tickets">Tickets support</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold mb-3">Support</h4>
+          <ul className="space-y-2 text-sm text-foreground/80">
+            <li><Link className="hover:text-foreground" to="/tickets">Centre d'aide</Link></li>
+            <li><Link className="hover:text-foreground" to="/tickets">Ouvrir un ticket</Link></li>
+            <li><Link className="hover:text-foreground" to="/">Politique de remboursement</Link></li>
+            <li><Link className="hover:text-foreground" to="/">Conditions & légales</Link></li>
           </ul>
         </div>
         <div>

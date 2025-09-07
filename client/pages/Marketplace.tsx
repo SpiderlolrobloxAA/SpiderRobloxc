@@ -21,22 +21,24 @@ export default function Marketplace() {
 
   return (
     <div className="container py-10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-display text-2xl font-bold">Marketplace</h1>
-        <div className="flex flex-1 items-center gap-3 sm:justify-end">
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher..."
-            className="max-w-xs"
-          />
-          <Select value={sort} onValueChange={setSort}>
-            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Trier par" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recent">Récents</SelectItem>
-              <SelectItem value="price">Prix</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="sticky top-16 z-20 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 -mx-4 px-4 py-3 rounded-xl border border-border/60">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="font-display text-2xl font-bold">Marketplace</h1>
+          <div className="flex flex-1 items-center gap-3 sm:justify-end">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search products, sellers…"
+              className="w-full max-w-xl h-11 rounded-xl"
+            />
+            <Select value={sort} onValueChange={setSort}>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Trier par" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Récents</SelectItem>
+                <SelectItem value="price">Prix</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 

@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import TopSellersCarousel from "@/components/TopSellersCarousel";
 import { ProductCard, type Product } from "@/components/ProductCard";
-import { ArrowRight, ShoppingBag, Trophy } from "lucide-react";
+import { ArrowRight, ShoppingBag, Trophy, ShieldCheck, Zap, Lock, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
 
 export default function Index() {
   const products: Product[] = [
@@ -31,8 +32,11 @@ export default function Index() {
               transition={{ duration: 0.5 }}
               className="font-display text-4xl md:text-5xl font-extrabold tracking-tight"
             >
-              Marketplace pro & immersif pour Steal a Brainrot
+              Marketplace #1 for Steal a Brainrot
             </motion.h1>
+            <div className="mt-5 max-w-xl">
+              <Input placeholder="Search products, sellers…" className="h-12 rounded-xl bg-muted/60" />
+            </div>
             <p className="mt-4 text-foreground/80 max-w-prose">
               Achetez et vendez des Brain Rots, gagnez des <strong>RotCoins</strong> et profitez d'une expérience inspirée de G2G/Eldorado.
               Paiements PayPal, vendeurs certifiés, redistribution automatique.
@@ -41,19 +45,13 @@ export default function Index() {
               <Button asChild className="bg-gradient-to-r from-primary to-secondary">
                 <Link to="/marketplace" className="inline-flex items-center gap-2">
                   <ShoppingBag className="h-4 w-4" />
-                  Parcourir le Marketplace
+                  Browse Marketplace
                 </Link>
               </Button>
               <Button asChild variant="secondary">
-                <Link to="/shop" className="inline-flex items-center gap-2">
-                  <CoinsIcon />
-                  Acheter des RotCoins
-                </Link>
-              </Button>
-              <Button asChild variant="ghost">
                 <Link to="/sell" className="inline-flex items-center gap-2">
                   <Trophy className="h-4 w-4" />
-                  Commencer à vendre
+                  Start Selling
                 </Link>
               </Button>
             </div>
@@ -104,6 +102,16 @@ export default function Index() {
           ))}
         </div>
       </section>
+
+      <section className="container py-14">
+        <h2 className="font-display text-2xl font-bold">Pourquoi RotMarket ?</h2>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <WhyItem icon={ShieldCheck} title="Safe Payments" desc="Protection acheteur & vendeur via PayPal" />
+          <WhyItem icon={Zap} title="Instant Delivery" desc="Remises rapides avec notifications live" />
+          <WhyItem icon={Lock} title="Secure" desc="Vendeurs certifiés & vérifiés manuellement" />
+          <WhyItem icon={Clock} title="24/7 Support" desc="Tickets et support réactif en continu" />
+        </div>
+      </section>
     </div>
   );
 }
@@ -120,16 +128,28 @@ function CreditPack({ name, amount, bonus, price }: { name: string; amount: numb
         <div>
           <div className="text-xs uppercase tracking-wider text-foreground/60">{name}</div>
           <div className="mt-1 text-2xl font-extrabold">{amount.toLocaleString()} RC</div>
-          <div className="text-xs text-accent font-semibold">Bonus {bonus}</div>
+          <div className="text-xs text-emerald-400 font-semibold">Bonus {bonus}</div>
         </div>
-        <div className="h-12 w-12 rounded-full bg-gradient-to-tr from-primary to-secondary ring-2 ring-primary/40" />
+        <GoldCoin />
       </div>
       <div className="mt-4 flex items-center justify-between">
-        <div className="text-foreground/80"><span className="text-lg font-bold">{price}</span></div>
-        <Button size="sm" className="bg-gradient-to-r from-primary to-secondary">Acheter</Button>
+        <div className="text-foreground/80"><span className="text-xl font-extrabold">{price}</span></div>
+        <Button size="sm" variant="secondary">Acheter</Button>
       </div>
       <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
     </motion.div>
+  );
+}
+
+function WhyItem({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-card p-5">
+      <div className="flex items-center gap-3">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 ring-1 ring-primary/30"><Icon className="h-5 w-5 text-white" /></span>
+        <div className="font-semibold">{title}</div>
+      </div>
+      <p className="mt-2 text-sm text-foreground/70">{desc}</p>
+    </div>
   );
 }
 
@@ -142,11 +162,12 @@ function StatPill({ label, value }: { label: string; value: string }) {
   );
 }
 
-function CoinsIcon() {
+function GoldCoin() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="8" cy="12" r="5" fill="hsl(var(--accent))"/>
-      <circle cx="16" cy="12" r="5" fill="hsl(var(--secondary))" fillOpacity="0.9"/>
+    <svg className="h-12 w-12" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="28" fill="#F9D84A"/>
+      <circle cx="32" cy="32" r="22" fill="#FFC928"/>
+      <path d="M24 32h16M32 24v16" stroke="#8B5E00" strokeWidth="4" strokeLinecap="round"/>
     </svg>
   );
 }
