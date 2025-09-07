@@ -1,4 +1,10 @@
-import { ReactNode, createContext, useContext, useEffect, useState } from "react";
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { type Role } from "@/components/RoleBadge";
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
@@ -16,7 +22,11 @@ interface ProfileCtx extends Profile {
 const defaultProfile: Profile = { credits: 0, role: "user" };
 const KEY = "brm_profile";
 
-const Ctx = createContext<ProfileCtx>({ ...defaultProfile, addCredits: async () => {}, setRole: async () => {} });
+const Ctx = createContext<ProfileCtx>({
+  ...defaultProfile,
+  addCredits: async () => {},
+  setRole: async () => {},
+});
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -37,7 +47,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     const unsub = onSnapshot(ref, (snap) => {
       const data = snap.data() as any | undefined;
       if (data) {
-        setProfile({ credits: Number(data.credits ?? 0), role: (data.role ?? "user") as Role });
+        setProfile({
+          credits: Number(data.credits ?? 0),
+          role: (data.role ?? "user") as Role,
+        });
       }
     });
     return () => unsub();
@@ -51,14 +64,22 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   const addCredits = async (n: number) => {
     if (!user) return;
-    await setDoc(doc(db, "users", user.uid), { credits: increment(n) }, { merge: true });
+    await setDoc(
+      doc(db, "users", user.uid),
+      { credits: increment(n) },
+      { merge: true },
+    );
   };
   const setRole = async (r: Role) => {
     if (!user) return;
     await setDoc(doc(db, "users", user.uid), { role: r }, { merge: true });
   };
 
-  return <Ctx.Provider value={{ ...profile, addCredits, setRole }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ ...profile, addCredits, setRole }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export const useProfile = () => useContext(Ctx);
