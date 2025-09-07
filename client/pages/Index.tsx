@@ -7,7 +7,33 @@ import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { createSmoothTiltHandlers } from "@/lib/tilt";
 
+import { useAuth } from "@/context/AuthProvider";
+
 export default function Index() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="container py-24 text-center">
+        <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-border border-t-primary" />
+      </div>
+    );
+  }
+  if (!user) {
+    return (
+      <div className="relative min-h-[60vh]">
+        <div className="absolute inset-0 bg-background/90 backdrop-blur-sm z-10 flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto rounded-xl border border-border/60 bg-card p-8 shadow-xl">
+            <h1 className="font-display text-2xl font-bold">Inscription requise</h1>
+            <p className="mt-2 text-sm text-foreground/70">Créez un compte ou connectez-vous pour accéder à Brainrot Market 🇫🇷.</p>
+            <div className="mt-5 flex items-center justify-center gap-3">
+              <Button asChild variant="secondary"><Link to="/login">Se connecter</Link></Button>
+              <Button asChild className="bg-gradient-to-r from-primary to-secondary"><Link to="/register">S'inscrire</Link></Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const products: Product[] = [
     { id: "1", title: "Brain Rot Rare #2187", price: 24, seller: { name: "Aetherius", role: "verified" }, rating: 4.9 },
     { id: "2", title: "Starter Brain Rot Pack", price: 9, seller: { name: "NovaByte", role: "verified" }, rating: 4.7 },
