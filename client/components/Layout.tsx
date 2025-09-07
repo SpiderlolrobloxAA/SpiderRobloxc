@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Crown, ShieldCheck, LifeBuoy, Star, User, ShoppingCart, Coins, Home, BadgeCheck, LogOut } from "lucide-react";
 import { useEffect } from "react";
 import { useAuth } from "@/context/AuthProvider";
+import { DEFAULT_AVATAR_IMG } from "@/lib/images";
+import { VERIFIED_IMG } from "@/components/RoleBadge";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
@@ -17,12 +19,12 @@ function Header() {
   const { user, logout } = useAuth();
   return (
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 bg-background/80 border-b border-border">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container grid h-16 grid-cols-2 md:grid-cols-3 items-center gap-4">
         <Link to="/" className="flex items-center gap-2 group">
           <img src="https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fa179a2c715a64edaafe6df770c43ddf5?format=webp&width=800" alt="Brainrot Market logo" className="h-8 w-8 rounded-md object-cover" />
           <span className="font-display text-xl tracking-tight">Brainrot Market <span role="img" aria-label="France">🇫🇷</span></span>
         </Link>
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center justify-center gap-1">
           {nav.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -40,13 +42,11 @@ function Header() {
             </NavLink>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-3">
           {!user ? (
             <>
-              <Button asChild variant="ghost" className="hidden sm:inline-flex"><Link to="/login">Se connecter</Link></Button>
-              <Button asChild className="bg-gradient-to-r from-primary to-secondary shadow-[0_0_24px_rgba(107,61,245,0.35)] hover:from-primary/90 hover:to-secondary/90">
-                <Link to="/register">S'inscrire</Link>
-              </Button>
+              <Button asChild variant="outline" className="h-9"><Link to="/login">Se connecter</Link></Button>
+              <Button asChild className="h-9 bg-gradient-to-r from-primary to-secondary shadow-[0_0_24px_rgba(107,61,245,0.35)] hover:from-primary/90 hover:to-secondary/90"><Link to="/register">S'inscrire</Link></Button>
             </>
           ) : (
             <UserInfo />
@@ -60,18 +60,38 @@ function Header() {
 import { useProfile } from "@/context/ProfileProvider";
 import { RoleBadge } from "@/components/RoleBadge";
 
+function CompactRole({ role }: { role: string }) {
+  if (role === "verified") {
+    return <img src={VERIFIED_IMG} alt="Certifié" title="Certifié" className="h-4 w-4 object-contain" />;
+  }
+  const map: Record<string, { label: string; icon: React.ReactNode }> = {
+    founder: { label: "Fondateur", icon: <span>👑</span> },
+    moderator: { label: "Mod", icon: <span>🛡️</span> },
+    helper: { label: "Helper", icon: <span>🧰</span> },
+    user: { label: "User", icon: <span>👤</span> },
+  };
+  const cfg = map[role] ?? map.user;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-[2px] text-[10px] text-foreground/80">
+      {cfg.icon}
+      {cfg.label}
+    </span>
+  );
+}
+
 function UserInfo() {
   const { user, logout } = useAuth();
   const { credits, role } = useProfile();
   return (
-    <div className="flex items-center gap-2">
-      <span className="hidden sm:inline text-sm text-foreground/80">{user?.displayName || user?.email}</span>
-      <RoleBadge role={role} />
-      <span className="inline-flex items-center gap-1 rounded-md border border-border/60 px-2 py-1 text-xs">
-        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#F9D84A"/><circle cx="12" cy="12" r="7" fill="#FFC928"/></svg>
+    <div className="hidden md:flex items-center gap-3">
+      <img src={DEFAULT_AVATAR_IMG} alt="avatar" className="h-7 w-7 rounded-full object-cover" />
+      <span className="max-w-[160px] truncate text-sm text-foreground/90">{user?.displayName || user?.email}</span>
+      <CompactRole role={role as any} />
+      <span className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-xs">
+        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#F9D84A"/><circle cx="12" cy="12" r="7" fill="#FFC928"/></svg>
         {credits.toLocaleString()} RC
       </span>
-      <Button variant="ghost" onClick={logout} className="inline-flex items-center gap-2"><LogOut className="h-4 w-4"/>Déconnexion</Button>
+      <Button variant="outline" onClick={logout} className="h-9 inline-flex items-center gap-2 ml-1"><LogOut className="h-4 w-4"/>Déconnexion</Button>
     </div>
   );
 }
