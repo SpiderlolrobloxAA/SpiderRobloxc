@@ -1,7 +1,8 @@
 import useEmblaCarousel from "embla-carousel-react";
 import { useEffect } from "react";
-import { RoleBadge, VERIFIED_IMG } from "./RoleBadge";
+import { RoleBadge } from "./RoleBadge";
 import { createSmoothTiltHandlers } from "@/lib/tilt";
+import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 
 export interface Seller {
   id: string;
@@ -42,7 +43,7 @@ export default function TopSellersCarousel({ sellers }: { sellers: Seller[] }) {
           >
             <div className="flex items-center gap-3">
               {(() => { const t = createSmoothTiltHandlers(8, 1.06); return (
-                <img src={VERIFIED_IMG} alt="avatar" className="h-10 w-10 rounded-full object-contain bg-transparent" {...t} />
+                <img src={DEFAULT_AVATAR_IMG} alt="avatar" className="h-10 w-10 rounded-full object-cover" {...t} />
               ); })()}
               <div className="flex-1">
                 <div className="text-sm font-semibold leading-tight flex items-center gap-1">
