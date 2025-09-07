@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
 import PayPalCheckout from "@/components/PayPalCheckout";
 import { ShieldCheck, Zap, BadgeDollarSign } from "lucide-react";
+import { useState } from "react";
 
 const packs = [
   { id: "starter", name: "Starter", coins: 500, price: 4.99, bonus: 5 },
