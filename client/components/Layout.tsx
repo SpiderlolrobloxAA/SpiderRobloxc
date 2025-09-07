@@ -39,9 +39,9 @@ function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" className="hidden sm:inline-flex">Se connecter</Button>
-          <Button className="bg-gradient-to-r from-primary to-secondary shadow-[0_0_24px_rgba(107,61,245,0.35)] hover:from-primary/90 hover:to-secondary/90">
-            S'inscrire
+          <Button asChild variant="ghost" className="hidden sm:inline-flex"><Link to="/login">Se connecter</Link></Button>
+          <Button asChild className="bg-gradient-to-r from-primary to-secondary shadow-[0_0_24px_rgba(107,61,245,0.35)] hover:from-primary/90 hover:to-secondary/90">
+            <Link to="/register">S'inscrire</Link>
           </Button>
         </div>
       </div>
