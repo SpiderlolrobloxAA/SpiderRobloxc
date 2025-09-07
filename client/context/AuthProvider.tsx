@@ -1,6 +1,7 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged, signOut } from "firebase/auth";
-import { auth, initAnalytics } from "@/lib/firebase";
+import { auth, initAnalytics, db } from "@/lib/firebase";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 interface AuthCtx {
   user: User | null;
