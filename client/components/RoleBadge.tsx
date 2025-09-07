@@ -1,9 +1,10 @@
 import { Crown, ShieldCheck, LifeBuoy, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createSmoothTiltHandlers } from "@/lib/tilt";
 
 export type Role = "founder" | "moderator" | "helper" | "verified" | "user";
 
-const VERIFIED_IMG = "https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fad5998f22c5a449f88de74ab7b33fdf4?format=webp&width=800";
+export const VERIFIED_IMG = "https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fad5998f22c5a449f88de74ab7b33fdf4?format=webp&width=800";
 
 const roleMap: Record<Role, { label: string; Icon: any | null; className: string }> = {
   founder: {
@@ -36,12 +37,14 @@ const roleMap: Record<Role, { label: string; Icon: any | null; className: string
 export function RoleBadge({ role, className }: { role: Role; className?: string }) {
   const cfg = roleMap[role];
   if (role === "verified") {
+    const handlers = createSmoothTiltHandlers(10, 1.08);
     return (
       <img
         src={VERIFIED_IMG}
         alt="Certifié"
         title="Certifié"
-        className={cn("h-4 w-4 object-contain", className)}
+        className={cn("h-4 w-4 object-contain will-change-transform", className)}
+        {...handlers}
       />
     );
   }
