@@ -3,30 +3,28 @@ import { cn } from "@/lib/utils";
 
 export type Role = "founder" | "moderator" | "helper" | "verified" | "user";
 
-const roleMap: Record<Role, { label: string; Icon: any; className: string }> = {
+const VERIFIED_IMG = "https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fad5998f22c5a449f88de74ab7b33fdf4?format=webp&width=800";
+
+const roleMap: Record<Role, { label: string; Icon: any | null; className: string }> = {
   founder: {
     label: "Fondateur",
     Icon: Crown,
-    className:
-      "bg-amber-500/20 text-white ring-1 ring-amber-400/40",
+    className: "bg-amber-500/20 text-white ring-1 ring-amber-400/40",
   },
   moderator: {
     label: "Modérateur",
     Icon: ShieldCheck,
-    className:
-      "bg-sky-500/20 text-white ring-1 ring-sky-400/40",
+    className: "bg-sky-500/20 text-white ring-1 ring-sky-400/40",
   },
   helper: {
     label: "Helper",
     Icon: LifeBuoy,
-    className:
-      "bg-emerald-500/20 text-white ring-1 ring-emerald-400/40",
+    className: "bg-emerald-500/20 text-white ring-1 ring-emerald-400/40",
   },
   verified: {
     label: "Vendeur certifié",
-    Icon: ShieldCheck,
-    className:
-      "bg-violet-500/20 text-white ring-1 ring-violet-400/40",
+    Icon: null,
+    className: "bg-blue-500/15 text-white ring-1 ring-blue-400/40",
   },
   user: {
     label: "Utilisateur",
@@ -45,7 +43,11 @@ export function RoleBadge({ role, className }: { role: Role; className?: string 
         className,
       )}
     >
-      <cfg.Icon className="h-3.5 w-3.5 text-white" />
+      {role === "verified" ? (
+        <img src={VERIFIED_IMG} alt="Vendeur certifié" className="h-3.5 w-3.5 object-contain" />
+      ) : (
+        cfg.Icon ? <cfg.Icon className="h-3.5 w-3.5 text-white" /> : null
+      )}
       {cfg.label}
     </span>
   );
