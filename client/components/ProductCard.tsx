@@ -38,8 +38,8 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="font-medium leading-tight line-clamp-1">{product.title}</h3>
-            <div className="mt-1 text-xs text-foreground/70 flex items-center gap-1">
-              <User className="h-3.5 w-3.5" />
+            <div className="mt-1 text-xs text-foreground/70 flex items-center gap-1.5">
+              <img src={DEFAULT_AVATAR_IMG} alt="avatar" className="h-4 w-4 rounded-full object-cover" />
               <span title={product.seller.name} className="font-medium">{product.seller.name}</span>
               <RoleBadge role={product.seller.role} className="h-4 w-4" />
             </div>
