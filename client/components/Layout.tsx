@@ -17,8 +17,8 @@ function Header() {
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 bg-background/80 border-b border-border">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <img src="https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fa179a2c715a64edaafe6df770c43ddf5?format=webp&width=800" alt="RotMarket logo" className="h-8 w-8 rounded-md object-cover" />
-          <span className="font-display text-xl tracking-tight">RotMarket</span>
+          <img src="https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fa179a2c715a64edaafe6df770c43ddf5?format=webp&width=800" alt="Brainrot Market [Fr] logo" className="h-8 w-8 rounded-md object-cover" />
+          <span className="font-display text-xl tracking-tight">Brainrot Market [Fr]</span>
         </Link>
         <nav className="hidden md:flex items-center gap-1">
           {nav.map(({ to, label, icon: Icon }) => (
@@ -55,8 +55,8 @@ function Footer() {
       <div className="container py-10 grid gap-8 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2">
-            <img src="https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fa179a2c715a64edaafe6df770c43ddf5?format=webp&width=800" alt="RotMarket logo" className="h-8 w-8 rounded-md object-cover" />
-            <span className="font-display text-lg">RotMarket</span>
+            <img src="https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fa179a2c715a64edaafe6df770c43ddf5?format=webp&width=800" alt="Brainrot Market [Fr] logo" className="h-8 w-8 rounded-md object-cover" />
+            <span className="font-display text-lg">Brainrot Market [Fr]</span>
           </div>
           <p className="mt-3 text-sm text-foreground/70 max-w-sm">
             Marketplace pro & gaming pour Steal a Brainrot. Achetez, vendez et gagnez des RotCoins en toute sécurité.
@@ -91,7 +91,7 @@ function Footer() {
         </div>
       </div>
       <div className="border-t border-border/60 py-4 text-center text-xs text-foreground/60">
-        © {new Date().getFullYear()} RotMarket — Projet communautaire non affilié à Roblox.
+        © {new Date().getFullYear()} Brainrot Market [Fr] — Projet communautaire non affilié à Roblox.
       </div>
     </footer>
   );
