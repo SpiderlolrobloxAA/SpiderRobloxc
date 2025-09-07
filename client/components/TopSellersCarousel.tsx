@@ -42,10 +42,12 @@ export default function TopSellersCarousel({ sellers }: { sellers: Seller[] }) {
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary to-secondary ring-2 ring-primary/40" />
               <div className="flex-1">
-                <div className="text-sm font-semibold leading-tight">{s.name}</div>
+                <div className="text-sm font-semibold leading-tight flex items-center gap-1">
+                  {s.name}
+                  <RoleBadge role="verified" className="h-4 w-4" />
+                </div>
                 <div className="text-xs text-foreground/70">{s.sales} ventes</div>
               </div>
-              <RoleBadge role="verified" />
             </div>
           </div>
         ))}
