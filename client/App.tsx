@@ -27,9 +27,10 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route element={<Layout />}>
+        <ProfileProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route element={<Layout />}>
               <Route path="/" element={<Index />} />
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/shop" element={<Shop />} />
@@ -43,7 +44,8 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
-        </BrowserRouter>
+          </BrowserRouter>
+        </ProfileProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
