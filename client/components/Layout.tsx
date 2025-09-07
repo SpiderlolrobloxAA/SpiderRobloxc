@@ -57,6 +57,25 @@ function Header() {
   );
 }
 
+import { useProfile } from "@/context/ProfileProvider";
+import { RoleBadge } from "@/components/RoleBadge";
+
+function UserInfo() {
+  const { user, logout } = useAuth();
+  const { credits, role } = useProfile();
+  return (
+    <div className="flex items-center gap-2">
+      <span className="hidden sm:inline text-sm text-foreground/80">{user?.displayName || user?.email}</span>
+      <RoleBadge role={role} />
+      <span className="inline-flex items-center gap-1 rounded-md border border-border/60 px-2 py-1 text-xs">
+        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#F9D84A"/><circle cx="12" cy="12" r="7" fill="#FFC928"/></svg>
+        {credits.toLocaleString()} RC
+      </span>
+      <Button variant="ghost" onClick={logout} className="inline-flex items-center gap-2"><LogOut className="h-4 w-4"/>Déconnexion</Button>
+    </div>
+  );
+}
+
 function Footer() {
   return (
     <footer className="border-t border-border/60 bg-gradient-to-b from-background to-background/40">
