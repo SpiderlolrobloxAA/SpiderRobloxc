@@ -112,7 +112,7 @@ export default function Index() {
       </section>
 
       <section className="container py-14">
-        <h2 className="font-display text-2xl font-bold">Pourquoi Brainrot Market [Fr] ?</h2>
+        <h2 className="font-display text-2xl font-bold">Pourquoi Brainrot Market 🇫🇷 ?</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <WhyItem icon={ShieldCheck} title="Safe Payments" desc="Protection acheteur & vendeur via PayPal" />
           <WhyItem icon={Zap} title="Instant Delivery" desc="Remises rapides avec notifications live" />
