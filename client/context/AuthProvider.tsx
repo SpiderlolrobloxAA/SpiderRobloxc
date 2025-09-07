@@ -1,4 +1,10 @@
-import { ReactNode, createContext, useContext, useEffect, useState } from "react";
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, initAnalytics, db } from "@/lib/firebase";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
@@ -8,7 +14,11 @@ interface AuthCtx {
   loading: boolean;
   logout: () => Promise<void>;
 }
-const Ctx = createContext<AuthCtx>({ user: null, loading: true, logout: async () => {} });
+const Ctx = createContext<AuthCtx>({
+  user: null,
+  loading: true,
+  logout: async () => {},
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -21,12 +31,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       if (u) {
         const ref = doc(db, "users", u.uid);
-        await setDoc(ref, {
-          email: u.email || null,
-          displayName: u.displayName || null,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+        await setDoc(
+          ref,
+          {
+            email: u.email || null,
+            displayName: u.displayName || null,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true },
+        );
       }
     });
     return () => unsub();
@@ -36,7 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
   };
 
-  return <Ctx.Provider value={{ user, loading, logout }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ user, loading, logout }}>{children}</Ctx.Provider>
+  );
 }
 
 export const useAuth = () => useContext(Ctx);

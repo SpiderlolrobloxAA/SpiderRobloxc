@@ -32,20 +32,35 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route element={<Layout />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/marketplace" element={<Marketplace />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/quests" element={<Placeholder title="Quêtes sociales" />} />
-              <Route path="/profile" element={<Placeholder title="Profil" />} />
-              <Route path="/transactions" element={<Placeholder title="Transactions" />} />
-              <Route path="/tickets" element={<Placeholder title="Tickets support" />} />
-              <Route path="/admin" element={<AdminPanel />} />
-              <Route path="/sell" element={<Placeholder title="Commencer à vendre" />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/shop" element={<Shop />} />
+                <Route
+                  path="/quests"
+                  element={<Placeholder title="Quêtes sociales" />}
+                />
+                <Route
+                  path="/profile"
+                  element={<Placeholder title="Profil" />}
+                />
+                <Route
+                  path="/transactions"
+                  element={<Placeholder title="Transactions" />}
+                />
+                <Route
+                  path="/tickets"
+                  element={<Placeholder title="Tickets support" />}
+                />
+                <Route path="/admin" element={<AdminPanel />} />
+                <Route
+                  path="/sell"
+                  element={<Placeholder title="Commencer à vendre" />}
+                />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            </Routes>
           </BrowserRouter>
         </ProfileProvider>
       </AuthProvider>
