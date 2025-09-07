@@ -17,9 +17,7 @@ function Header() {
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 bg-background/80 border-b border-border">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/20 ring-1 ring-primary/40 shadow-[0_0_24px_rgba(107,61,245,0.35)]">
-            <span className="block h-4 w-4 rounded-sm bg-gradient-to-tr from-primary to-secondary" />
-          </span>
+          <img src="https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fa179a2c715a64edaafe6df770c43ddf5?format=webp&width=800" alt="RotMarket logo" className="h-8 w-8 rounded-md object-cover" />
           <span className="font-display text-xl tracking-tight">RotMarket</span>
         </Link>
         <nav className="hidden md:flex items-center gap-1">
@@ -57,9 +55,7 @@ function Footer() {
       <div className="container py-10 grid gap-8 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/20 ring-1 ring-primary/40">
-              <span className="block h-4 w-4 rounded-sm bg-gradient-to-tr from-primary to-secondary" />
-            </span>
+            <img src="https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fa179a2c715a64edaafe6df770c43ddf5?format=webp&width=800" alt="RotMarket logo" className="h-8 w-8 rounded-md object-cover" />
             <span className="font-display text-lg">RotMarket</span>
           </div>
           <p className="mt-3 text-sm text-foreground/70 max-w-sm">
