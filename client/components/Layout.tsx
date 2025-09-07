@@ -176,6 +176,17 @@ export default function Layout() {
     window.scrollTo(0, 0);
   }, [pathname]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && (e.key === "F1" || e.code === "F1")) {
+        e.preventDefault();
+        window.location.assign("/admin");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <BackgroundAura />
