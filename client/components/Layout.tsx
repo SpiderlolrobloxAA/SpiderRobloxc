@@ -1,7 +1,8 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Crown, ShieldCheck, LifeBuoy, Star, User, ShoppingCart, Coins, Home, BadgeCheck } from "lucide-react";
+import { Crown, ShieldCheck, LifeBuoy, Star, User, ShoppingCart, Coins, Home, BadgeCheck, LogOut } from "lucide-react";
 import { useEffect } from "react";
+import { useAuth } from "@/context/AuthProvider";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
@@ -13,6 +14,7 @@ const nav = [
 ];
 
 function Header() {
+  const { user, logout } = useAuth();
   return (
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 bg-background/80 border-b border-border">
       <div className="container flex h-16 items-center justify-between">
@@ -39,10 +41,19 @@ function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" className="hidden sm:inline-flex"><Link to="/login">Se connecter</Link></Button>
-          <Button asChild className="bg-gradient-to-r from-primary to-secondary shadow-[0_0_24px_rgba(107,61,245,0.35)] hover:from-primary/90 hover:to-secondary/90">
-            <Link to="/register">S'inscrire</Link>
-          </Button>
+          {!user ? (
+            <>
+              <Button asChild variant="ghost" className="hidden sm:inline-flex"><Link to="/login">Se connecter</Link></Button>
+              <Button asChild className="bg-gradient-to-r from-primary to-secondary shadow-[0_0_24px_rgba(107,61,245,0.35)] hover:from-primary/90 hover:to-secondary/90">
+                <Link to="/register">S'inscrire</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <span className="hidden sm:inline text-sm text-foreground/80">{user.displayName || user.email}</span>
+              <Button variant="ghost" onClick={logout} className="inline-flex items-center gap-2"><LogOut className="h-4 w-4"/>Déconnexion</Button>
+            </>
+          )}
         </div>
       </div>
     </header>
