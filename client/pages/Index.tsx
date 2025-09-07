@@ -62,7 +62,10 @@ export default function Index() {
           </div>
           <div className="relative">
             <div className="relative aspect-[4/3] rounded-2xl border border-border bg-gradient-to-br from-primary/20 via-secondary/10 to-background p-[2px]">
-              <div className="h-full w-full rounded-2xl bg-[url('/placeholder.svg')] bg-cover bg-center opacity-70" />
+              <a
+                href="https://static.allwebgames.com/images/53fe6_1881371_1a560/e5c5bcb8c/2a00000197a7410a_0e3ea02/27230e1317d2eac9cc56_ffbe79/orig"
+                className="h-full w-full rounded-2xl bg-[url('/placeholder.svg')] bg-cover bg-center opacity-70 cursor-pointer pointer-events-auto flex"
+              />
               <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/5" />
             </div>
             <div className="absolute -bottom-4 -left-4 hidden md:block">
