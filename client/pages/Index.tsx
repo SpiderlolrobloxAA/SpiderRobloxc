@@ -68,9 +68,6 @@ export default function Index() {
               />
               <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/5" />
             </div>
-            <div className="absolute -bottom-4 -left-4 hidden md:block">
-              <StatPill label="Commissions redistribuées" value="30% admins / 70% vendeurs" />
-            </div>
           </div>
         </div>
       </section>
