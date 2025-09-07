@@ -53,12 +53,6 @@ export function ProductCard({ product }: { product: Product }) {
                 <MiniCoin />
               </div>
             )}
-            {product.rating ? (
-              <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-foreground/70">
-                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                {product.rating.toFixed(1)}
-              </div>
-            ) : null}
           </div>
         </div>
         <div className="mt-3 flex items-center justify-between gap-2">
