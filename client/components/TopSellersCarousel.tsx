@@ -1,6 +1,7 @@
 import useEmblaCarousel from "embla-carousel-react";
 import { useEffect } from "react";
-import { RoleBadge } from "./RoleBadge";
+import { RoleBadge, VERIFIED_IMG } from "./RoleBadge";
+import { createSmoothTiltHandlers } from "@/lib/tilt";
 
 export interface Seller {
   id: string;
@@ -40,7 +41,9 @@ export default function TopSellersCarousel({ sellers }: { sellers: Seller[] }) {
             className="min-w-[240px] rounded-xl border border-border/60 bg-card/80 px-4 py-3 shadow-[0_6px_18px_rgba(0,0,0,0.25)]"
           >
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary to-secondary ring-2 ring-primary/40" />
+              {(() => { const t = createSmoothTiltHandlers(8, 1.06); return (
+                <img src={VERIFIED_IMG} alt="avatar" className="h-10 w-10 rounded-full object-contain bg-transparent" {...t} />
+              ); })()}
               <div className="flex-1">
                 <div className="text-sm font-semibold leading-tight flex items-center gap-1">
                   {s.name}
