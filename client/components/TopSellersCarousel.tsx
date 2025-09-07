@@ -13,13 +13,22 @@ export default function TopSellersCarousel({ sellers }: { sellers: Seller[] }) {
 
   useEffect(() => {
     if (!embla) return;
-    let raf: number;
-    const autoplay = () => {
-      embla.scrollBy(0.5, true);
-      raf = requestAnimationFrame(autoplay);
-    };
-    raf = requestAnimationFrame(autoplay);
-    return () => cancelAnimationFrame(raf);
+    // Simple autoplay using scrollNext to ensure compatibility across embla versions
+    const interval = setInterval(() => {
+      if (!embla) return;
+      try {
+        if (typeof embla.canScrollNext === "function" ? embla.canScrollNext() : true) {
+          embla.scrollNext();
+        } else {
+          embla.scrollTo(0);
+        }
+      } catch (e) {
+        // Fallback: if methods not available, do nothing
+        // console.warn("Embla autoplay error:", e);
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
   }, [embla]);
 
   return (
