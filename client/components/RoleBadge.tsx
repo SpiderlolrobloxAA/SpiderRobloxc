@@ -35,6 +35,16 @@ const roleMap: Record<Role, { label: string; Icon: any | null; className: string
 
 export function RoleBadge({ role, className }: { role: Role; className?: string }) {
   const cfg = roleMap[role];
+  if (role === "verified") {
+    return (
+      <img
+        src={VERIFIED_IMG}
+        alt="Certifié"
+        title="Certifié"
+        className={cn("h-4 w-4 object-contain", className)}
+      />
+    );
+  }
   return (
     <span
       className={cn(
@@ -43,11 +53,7 @@ export function RoleBadge({ role, className }: { role: Role; className?: string 
         className,
       )}
     >
-      {role === "verified" ? (
-        <img src={VERIFIED_IMG} alt="Vendeur certifié" className="h-3.5 w-3.5 object-contain" />
-      ) : (
-        cfg.Icon ? <cfg.Icon className="h-3.5 w-3.5 text-white" /> : null
-      )}
+      {cfg.Icon ? <cfg.Icon className="h-3.5 w-3.5 text-white" /> : null}
       {cfg.label}
     </span>
   );
