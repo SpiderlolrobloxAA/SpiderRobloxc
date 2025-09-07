@@ -22,9 +22,9 @@ const roleMap: Record<Role, { label: string; Icon: any | null; className: string
     className: "bg-emerald-500/20 text-white ring-1 ring-emerald-400/40",
   },
   verified: {
-    label: "Vendeur certifié",
+    label: "Certifié",
     Icon: null,
-    className: "bg-blue-500/15 text-white ring-1 ring-blue-400/40",
+    className: "bg-violet-500/25 text-white ring-1 ring-violet-400/40",
   },
   user: {
     label: "Utilisateur",
