@@ -15,6 +15,7 @@ import Placeholder from "./pages/Placeholder";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import { AuthProvider } from "@/context/AuthProvider";
 
 const queryClient = new QueryClient();
 
@@ -23,23 +24,25 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/shop" element={<Placeholder title="Boutique RotCoins" />} />
-            <Route path="/quests" element={<Placeholder title="Quêtes sociales" />} />
-            <Route path="/profile" element={<Placeholder title="Profil" />} />
-            <Route path="/transactions" element={<Placeholder title="Transactions" />} />
-            <Route path="/tickets" element={<Placeholder title="Tickets support" />} />
-            <Route path="/sell" element={<Placeholder title="Commencer à vendre" />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/shop" element={<Placeholder title="Boutique RotCoins" />} />
+              <Route path="/quests" element={<Placeholder title="Quêtes sociales" />} />
+              <Route path="/profile" element={<Placeholder title="Profil" />} />
+              <Route path="/transactions" element={<Placeholder title="Transactions" />} />
+              <Route path="/tickets" element={<Placeholder title="Tickets support" />} />
+              <Route path="/sell" element={<Placeholder title="Commencer à vendre" />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
