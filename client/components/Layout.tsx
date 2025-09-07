@@ -49,10 +49,7 @@ function Header() {
               </Button>
             </>
           ) : (
-            <>
-              <span className="hidden sm:inline text-sm text-foreground/80">{user.displayName || user.email}</span>
-              <Button variant="ghost" onClick={logout} className="inline-flex items-center gap-2"><LogOut className="h-4 w-4"/>Déconnexion</Button>
-            </>
+            <UserInfo />
           )}
         </div>
       </div>
