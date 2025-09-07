@@ -16,9 +16,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     initAnalytics();
-    const unsub = onAuthStateChanged(auth, (u) => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setLoading(false);
+      if (u) {
+        const ref = doc(db, "users", u.uid);
+        await setDoc(ref, {
+          email: u.email || null,
+          displayName: u.displayName || null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      }
     });
     return () => unsub();
   }, []);
