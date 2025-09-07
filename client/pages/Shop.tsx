@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthProvider";
+import { useProfile } from "@/context/ProfileProvider";
+import PayPalCheckout from "@/components/PayPalCheckout";
 import { ShieldCheck, Zap, BadgeDollarSign } from "lucide-react";
 
 const packs = [
@@ -14,6 +16,8 @@ const packs = [
 export default function Shop() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { addCredits } = useProfile();
+  const [open, setOpen] = useState<string | null>(null);
 
   const onBuy = (id: string) => {
     const pack = packs.find((p) => p.id === id)!;
@@ -21,7 +25,7 @@ export default function Shop() {
       toast({ title: "Connexion requise", description: "Veuillez vous connecter pour acheter des RotCoins." });
       return;
     }
-    toast({ title: `Paiement PayPal`, description: `${pack.name} — ${pack.coins.toLocaleString()} RC | ${pack.price.toFixed(2)}€` });
+    setOpen(id);
   };
 
   return (
