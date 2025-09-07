@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { RoleBadge, type Role } from "./RoleBadge";
 import { motion } from "framer-motion";
-import { User, Star } from "lucide-react";
+import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 
 export interface Product {
   id: string;
