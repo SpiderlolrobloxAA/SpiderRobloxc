@@ -13,6 +13,8 @@ import Index from "./pages/Index";
 import Marketplace from "./pages/Marketplace";
 import Placeholder from "./pages/Placeholder";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,8 @@ const App = () => (
             <Route path="/transactions" element={<Placeholder title="Transactions" />} />
             <Route path="/tickets" element={<Placeholder title="Tickets support" />} />
             <Route path="/sell" element={<Placeholder title="Commencer à vendre" />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
