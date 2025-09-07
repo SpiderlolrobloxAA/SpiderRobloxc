@@ -25,7 +25,11 @@ export default function PayPalCheckout({ amount, currency = "EUR", onSuccess }: 
     if (!ready || !window.paypal || !ref.current) return;
     const buttons = window.paypal.Buttons({
       style: { layout: "horizontal", color: "blue", shape: "pill", label: "pay" },
-      createOrder: (_: any, actions: any) => actions.order.create({ purchase_units: [{ amount: { value: amount } }] }),
+      createOrder: (_: any, actions: any) => actions.order.create({
+        intent: "CAPTURE",
+        application_context: { brand_name: "BrainrotMarket" },
+        purchase_units: [{ amount: { value: amount } }],
+      }),
       onApprove: async (_: any, actions: any) => {
         const details = await actions.order.capture();
         onSuccess(details.id);
