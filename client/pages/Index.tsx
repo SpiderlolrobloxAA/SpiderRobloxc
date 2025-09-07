@@ -5,6 +5,7 @@ import { ArrowRight, ShoppingBag, Trophy, ShieldCheck, Zap, Lock, Clock } from "
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
+import { createSmoothTiltHandlers } from "@/lib/tilt";
 
 export default function Index() {
   const products: Product[] = [
@@ -62,20 +63,17 @@ export default function Index() {
           </div>
           <div className="relative">
             <div className="relative aspect-video rounded-2xl border border-border bg-gradient-to-br from-primary/20 via-secondary/10 to-background p-[2px]">
-              <a
-                href="https://cdn-www.bluestacks.com/bs-images/Screenshot-2025-07-10-112001.png"
-                className="h-full w-full rounded-2xl bg-cover bg-center opacity-90 cursor-pointer pointer-events-auto flex transition-transform duration-300 will-change-transform"
-                style={{ backgroundImage: "url('https://cdn-www.bluestacks.com/bs-images/Screenshot-2025-07-10-112001.png')" }}
-                onMouseMove={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = (e.clientX - rect.left) / rect.width - 0.5;
-                  const y = (e.clientY - rect.top) / rect.height - 0.5;
-                  e.currentTarget.style.transform = `perspective(1000px) rotateX(${(-y * 6).toFixed(2)}deg) rotateY(${(x * 6).toFixed(2)}deg) scale(1.02)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)";
-                }}
-              />
+              {(() => {
+                const handlers = createSmoothTiltHandlers(6, 1.02);
+                return (
+                  <a
+                    href="https://cdn-www.bluestacks.com/bs-images/Screenshot-2025-07-10-112001.png"
+                    className="h-full w-full rounded-2xl bg-cover bg-center opacity-90 cursor-pointer pointer-events-auto flex will-change-transform"
+                    style={{ backgroundImage: "url('https://cdn-www.bluestacks.com/bs-images/Screenshot-2025-07-10-112001.png')" }}
+                    {...handlers}
+                  />
+                );
+              })()}
               <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/5" />
             </div>
           </div>
