@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { RoleBadge, type Role } from "./RoleBadge";
 import { motion } from "framer-motion";
+import { User, Star } from "lucide-react";
 
 export interface Product {
   id: string;
@@ -12,6 +13,16 @@ export interface Product {
   rating?: number;
 }
 
+function MiniCoin() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="#F9D84A" />
+      <circle cx="12" cy="12" r="7" fill="#FFC928" />
+      <path d="M9 12h6M12 9v6" stroke="#8B5E00" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function ProductCard({ product }: { product: Product }) {
   return (
     <motion.div
@@ -20,30 +31,39 @@ export function ProductCard({ product }: { product: Product }) {
       viewport={{ once: true, amount: 0.3 }}
       className="group relative overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
     >
-      <div className="aspect-[4/3] w-full overflow-hidden bg-gradient-to-tr from-muted to-muted/60">
+      <div className="aspect-[16/10] w-full overflow-hidden bg-gradient-to-tr from-muted to-muted/60">
         <div className="h-full w-full bg-[url('/placeholder.svg')] bg-center bg-cover opacity-80 transition-transform duration-300 group-hover:scale-105" />
       </div>
-      <div className="p-4">
+      <div className="p-3.5">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="font-medium leading-tight">{product.title}</h3>
+          <div className="min-w-0">
+            <h3 className="font-medium leading-tight line-clamp-1">{product.title}</h3>
             <div className="mt-1 text-xs text-foreground/70 flex items-center gap-2">
-              <span className="truncate max-w-[140px] font-medium">{product.seller.name}</span>
+              <User className="h-3.5 w-3.5" />
+              <span title={product.seller.name} className="font-medium">{product.seller.name}</span>
               <RoleBadge role={product.seller.role} />
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-xl font-extrabold text-white">{product.free ? "GRATUIT" : `${product.price} RC`}</div>
+          <div className="text-right shrink-0">
+            {product.free ? (
+              <div className="text-sm font-bold text-emerald-400">GRATUIT</div>
+            ) : (
+              <div className="flex items-center justify-end gap-1">
+                <span className="text-base md:text-lg font-extrabold text-white">{product.price}</span>
+                <MiniCoin />
+              </div>
+            )}
             {product.rating ? (
-              <div className="text-[11px] text-foreground/70">★ {product.rating.toFixed(1)}</div>
+              <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-foreground/70">
+                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                {product.rating.toFixed(1)}
+              </div>
             ) : null}
           </div>
         </div>
-        <div className="mt-4 flex items-center justify-between">
-          <Button size="sm" variant="secondary">Détails</Button>
-          <Button size="sm" variant="outline" className="border-border/60 bg-background/40 hover:bg-muted">
-            Acheter
-          </Button>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <Button size="sm" variant="ghost" className="text-foreground/80 hover:text-foreground underline-offset-4 hover:underline">Détails</Button>
+          <Button size="sm" className="bg-gradient-to-r from-primary to-secondary">Acheter</Button>
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5 group-hover:ring-primary/40" />
