@@ -66,6 +66,18 @@ export default function Shop() {
               </div>
               <Button size="sm" onClick={() => onBuy(p.id)} className="bg-gradient-to-r from-primary to-secondary">Acheter</Button>
             </div>
+            {open === p.id && (
+              <div className="mt-4">
+                <PayPalCheckout
+                  amount={p.price.toFixed(2)}
+                  onSuccess={() => {
+                    addCredits(p.coins + Math.round((p.coins * p.bonus) / 100));
+                    setOpen(null);
+                    toast({ title: "Paiement réussi", description: `Vous avez reçu ${ (p.coins + Math.round((p.coins * p.bonus) / 100)).toLocaleString() } RC` });
+                  }}
+                />
+              </div>
+            )}
             <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
           </div>
         ))}
