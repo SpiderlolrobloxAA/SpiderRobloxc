@@ -7,15 +7,20 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
 const schema = z.object({
+  email: z.string().email("Email invalide"),
   username: z.string().min(3, "Minimum 3 caractères"),
   password: z.string().min(6, "Minimum 6 caractères"),
 });
 
 export default function Register() {
-  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { username: "", password: "" } });
+  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { email: "", username: "", password: "" } });
   const { toast } = useToast();
 
-  function onSubmit(values: z.infer<typeof schema>) {
+  async function onSubmit(values: z.infer<typeof schema>) {
+    const { createUserWithEmailAndPassword, updateProfile } = await import("firebase/auth");
+    const { auth } = await import("@/lib/firebase");
+    await createUserWithEmailAndPassword(auth, values.email, values.password);
+    if (auth.currentUser) await updateProfile(auth.currentUser, { displayName: values.username });
     toast({ title: `Bienvenue ${values.username} 🎉`, description: "+5 RotCoins offerts à l'inscription" });
   }
 
@@ -26,6 +31,17 @@ export default function Register() {
       <div className="mt-6 rounded-xl border border-border/60 bg-card p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl><Input type="email" placeholder="vous@exemple.com" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="username"
