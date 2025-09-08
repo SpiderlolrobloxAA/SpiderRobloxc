@@ -17,6 +17,7 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
+import { useProfile } from "@/context/ProfileProvider";
 
 const ROLES = ["user", "verified", "helper", "moderator", "founder"] as const;
 
