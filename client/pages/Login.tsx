@@ -17,7 +17,12 @@ export default function Login() {
 
   async function onSubmit(values: z.infer<typeof schema>) {
     const { signInWithEmailAndPassword } = await import("firebase/auth");
-    const { auth } = await import("@/lib/firebase");
+    const mod = await import("@/lib/firebase");
+    const auth = mod.auth;
+    if (!auth) {
+      toast({ title: "Auth indisponible", description: "Réessayez dans le navigateur (client)." });
+      return;
+    }
     await signInWithEmailAndPassword(auth, values.email, values.password);
     toast({ title: `Connexion réussie`, description: values.email });
   }
