@@ -18,7 +18,14 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+
+// Initialize Firestore only on the client. Initializing Firestore on the server
+// during the dev server middleware can cause the SDK to attempt streaming
+// operations using the environment's fetch/streams support which can lead to
+// errors like "ReadableStreamDefaultReader constructor can only accept
+// readable streams that are not yet locked to a reader". Guarding ensures
+// Firestore is only created in the browser runtime.
+export const db = typeof window !== "undefined" ? getFirestore(app) : (null as any);
 
 // Auth is browser-only: guard initialization so server builds don't initialize auth components
 export let auth: ReturnType<typeof getAuth> | null = null;
@@ -38,4 +45,9 @@ export async function initAnalytics() {
     // no-op
   }
   return null;
+}
+
+export function ensureDb() {
+  if (!db) throw new Error('Firestore is not available on the server. Use this function only in the browser.');
+  return db;
 }
