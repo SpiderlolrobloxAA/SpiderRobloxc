@@ -315,11 +315,11 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <Tabs defaultValue="helper" className="mt-8">
+      <Tabs defaultValue={role === 'founder' ? 'founder' : role === 'moderator' ? 'moderator' : 'helper'} className="mt-8">
         <TabsList>
-          <TabsTrigger value="helper">Helper</TabsTrigger>
-          <TabsTrigger value="moderator">Modérateur</TabsTrigger>
-          <TabsTrigger value="founder">Fondateur</TabsTrigger>
+          {(role === 'helper' || role === 'moderator' || role === 'founder') && <TabsTrigger value="helper">Helper</TabsTrigger>}
+          {(role === 'moderator' || role === 'founder') && <TabsTrigger value="moderator">Modérateur</TabsTrigger>}
+          {role === 'founder' && <TabsTrigger value="founder">Fondateur</TabsTrigger>}
         </TabsList>
         <TabsContent value="helper">
           <div className="grid gap-3 md:grid-cols-[300px,1fr]">
