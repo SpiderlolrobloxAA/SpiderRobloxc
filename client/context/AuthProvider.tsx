@@ -26,6 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     initAnalytics();
+    if (!auth) {
+      // Auth not available (SSR). Mark loading false and skip auth listeners.
+      setLoading(false);
+      return;
+    }
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setLoading(false);
