@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import TopSellersCarousel from "@/components/TopSellersCarousel";
 import { ProductCard, type Product } from "@/components/ProductCard";
@@ -8,9 +9,22 @@ import { Input } from "@/components/ui/input";
 import { createSmoothTiltHandlers } from "@/lib/tilt";
 
 import { useAuth } from "@/context/AuthProvider";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot, orderBy, limit, query } from "firebase/firestore";
 
 export default function Index() {
   const { user, loading } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const q = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(4));
+    const unsub = onSnapshot(q, (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as any[];
+      setProducts(rows.map(r => ({ id: r.id, title: r.title, price: r.price ?? 0, seller: { name: r.sellerName ?? "—", role: r.sellerRole ?? "user" } })));
+    });
+    return () => unsub();
+  }, []);
+
   if (loading) {
     return (
       <div className="container py-24 text-center">
@@ -34,12 +48,7 @@ export default function Index() {
       </div>
     );
   }
-  const products: Product[] = [
-    { id: "1", title: "Brain Rot Rare #2187", price: 24, seller: { name: "Aetherius", role: "verified" }, rating: 4.9 },
-    { id: "2", title: "Starter Brain Rot Pack", price: 9, seller: { name: "NovaByte", role: "verified" }, rating: 4.7 },
-    { id: "3", title: "Skin Emote – Glitch", price: 0, seller: { name: "Pixelya", role: "user" }, free: true, rating: 4.5 },
-    { id: "4", title: "Ultra Brain Rot – Neon", price: 39, seller: { name: "Kairox", role: "verified" }, rating: 5 },
-  ];
+  // Products now come from Firestore (latest 4)
   const sellers = [
     { id: "s1", name: "Aetherius", sales: 1021 },
     { id: "s2", name: "NovaByte", sales: 856 },
