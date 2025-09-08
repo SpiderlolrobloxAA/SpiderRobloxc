@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/
 import { useAuth } from "@/context/AuthProvider";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { VERIFIED_IMG } from "@/components/RoleBadge";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
@@ -175,6 +177,29 @@ function UserInfo() {
       </TooltipProvider>
     </div>
   );
+}
+
+function UnreadBadge() {
+  const { user } = useAuth();
+  const [count, setCount] = React.useState<number>(0);
+  React.useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, "threads"), where("participants", "array-contains", user.uid));
+    const unsub = onSnapshot(q, (snap) => {
+      let c = 0;
+      snap.forEach((d) => {
+        const data = d.data() as any;
+        const lastFrom = data.lastMessage?.senderId;
+        const lastReadAt = data.lastReadAt?.[user.uid]?.toMillis?.() ?? 0;
+        const updatedAt = data.updatedAt?.toMillis?.() ?? 0;
+        if (lastFrom && lastFrom !== user.uid && updatedAt > lastReadAt) c++;
+      });
+      setCount(c);
+    });
+    return () => unsub();
+  }, [user]);
+  if (!user || count <= 0) return <span className="text-xs text-foreground/50">0</span>;
+  return <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold">{count}</span>;
 }
 
 function Footer() {
