@@ -61,6 +61,7 @@ export default function AdminPanel() {
     () => localStorage.getItem("brm_admin") === "1",
   );
   const { toast } = useToast();
+  const { role } = useProfile();
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<any | null>(null);
