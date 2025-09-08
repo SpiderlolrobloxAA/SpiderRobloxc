@@ -114,3 +114,13 @@ export default function Quests() {
     </div>
   );
 }
+
+function QuestLink({ id }: { id: string }) {
+  let to = "/";
+  if (id === "profile_complete") to = "/profile";
+  else if (id === "first_purchase") to = "/shop";
+  else if (id === "open_ticket") to = "/tickets";
+  return (
+    <a href={to} className="text-xs text-primary hover:underline">Aller à la page</a>
+  );
+}
