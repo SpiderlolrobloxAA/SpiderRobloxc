@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
+import RequireAuth from "@/components/RequireAuth";
 import { AuthProvider } from "@/context/AuthProvider";
 import { ProfileProvider } from "@/context/ProfileProvider";
 
