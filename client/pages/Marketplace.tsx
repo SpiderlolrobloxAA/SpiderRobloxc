@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { addDoc, collection, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 export default function Marketplace() {
   const [queryStr, setQueryStr] = useState("");
@@ -65,7 +66,7 @@ export default function Marketplace() {
 
       <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {products.map((p: any) => (
-          <ProductCard key={p.id} product={{ id: p.id, title: p.title, price: p.price, free: false, seller: { name: p.sellerName, role: p.sellerRole }, rating: p.rating || 4.5 }} />
+          <ProductCard key={p.id} product={{ id: p.id, title: p.title, price: p.price ?? 0, image: p.imageUrl || p.image, free: (p.price ?? 0) === 0, seller: { name: p.sellerName, role: p.sellerRole }, rating: p.rating || 4.5 }} />
         ))}
       </div>
     </div>
@@ -75,19 +76,40 @@ export default function Marketplace() {
 function AddProduct({ onCreated, userId, sellerRole, sellerName, onCharge, userCredits }: { onCreated: () => void; userId: string; sellerRole: string; sellerName: string; onCharge: (n: number) => Promise<void>; userCredits: number; }) {
   const [title, setTitle] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [price, setPrice] = useState<number>(0);
+  const [file, setFile] = useState<File | null>(null);
+  const [free, setFree] = useState(false);
+  const [price, setPrice] = useState<number>(3);
   const [saving, setSaving] = useState(false);
   const cost = sellerRole === 'verified' ? 2 : 5;
-  const can = userCredits >= cost && title && imageUrl && price > 0;
+  const validPrice = free ? 0 : Math.max(3, Number(price) || 0);
+  const imgOk = Boolean(imageUrl) || Boolean(file);
+  const can = userCredits >= cost && title && imgOk && (free || validPrice >= 3);
+
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (f) setFile(f);
+  };
+
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) setFile(f);
+  };
 
   const create = async () => {
     if (!can) return;
     setSaving(true);
     try {
-      await addDoc(collection(db, "products"), {
-        title,
-        imageUrl,
-        price,
+      let finalUrl = imageUrl;
+      if (!finalUrl && file && storage) {
+        const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${file.name}`);
+        await uploadBytes(tmpRef, file);
+        finalUrl = await getDownloadURL(tmpRef);
+      }
+      const refDoc = await addDoc(collection(db, "products"), {
+        title: title.trim(),
+        imageUrl: finalUrl,
+        price: validPrice,
         sellerId: userId,
         sellerName,
         sellerRole,
@@ -95,7 +117,7 @@ function AddProduct({ onCreated, userId, sellerRole, sellerName, onCharge, userC
       });
       await onCharge(-cost);
       onCreated();
-      setTitle(""); setImageUrl(""); setPrice(0);
+      setTitle(""); setImageUrl(""); setFile(null); setPrice(3); setFree(false);
     } catch (e) {
       console.error('product:create failed', e);
     } finally {
@@ -104,11 +126,36 @@ function AddProduct({ onCreated, userId, sellerRole, sellerName, onCharge, userC
   };
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-3">
       <Input placeholder="Titre" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <Input placeholder="Image URL (obligatoire)" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
-      <Input placeholder="Prix (RC)" type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
-      <div className="text-xs text-foreground/70">Frais d'upload: {cost} RC (Certifié: 2 RC, sinon 5 RC)</div>
+      <div
+        className="rounded-md border border-dashed border-border/60 p-3 text-center text-sm"
+        onDragOver={(e)=>{e.preventDefault();}}
+        onDrop={onDrop}
+      >
+        <div className="flex items-center justify-center gap-2">
+          <input id="file" type="file" accept="image/*" className="hidden" onChange={onPick} />
+          <Button variant="outline" size="sm" onClick={()=>document.getElementById('file')?.click()}>Choisir une image</Button>
+          <span className="text-foreground/60">ou glissez-déposez</span>
+        </div>
+        {(file || imageUrl) && (
+          <div className="mt-2">
+            <img
+              src={file ? URL.createObjectURL(file) : imageUrl}
+              alt="aperçu"
+              className="mx-auto h-28 w-48 object-cover rounded-md"
+            />
+          </div>
+        )}
+      </div>
+      <Input placeholder="…ou URL de l'image" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+      <label className="inline-flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={free} onChange={(e)=>setFree(e.target.checked)} /> Gratuit
+      </label>
+      {!free && (
+        <Input placeholder="Prix (RC) — min 3" type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+      )}
+      <div className="text-xs text-foreground/70">Frais de publication: {cost} RC (Certifié: 2 RC, sinon 5 RC)</div>
       <Button onClick={create} disabled={!can || saving}>{saving ? "Publication…" : "Publier"}</Button>
     </div>
   );
