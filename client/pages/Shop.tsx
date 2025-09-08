@@ -19,6 +19,8 @@ export default function Shop() {
   const { user } = useAuth();
   const { addCredits } = useProfile();
   const [open, setOpen] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [done, setDone] = useState(false);
 
   const onBuy = (id: string) => {
     const pack = packs.find((p) => p.id === id)!;
@@ -64,18 +66,36 @@ export default function Shop() {
               <div className="text-foreground/80">
                 <span className="text-xl font-extrabold">{p.price.toFixed(2)}€</span>
               </div>
-              <Button size="sm" onClick={() => onBuy(p.id)} className="bg-gradient-to-r from-primary to-secondary">Acheter</Button>
+              <Button size="sm" onClick={() => onBuy(p.id)} variant="secondary" disabled={processing}>Acheter</Button>
             </div>
             {open === p.id && (
               <div className="mt-4">
-                <PayPalCheckout
-                  amount={p.price.toFixed(2)}
-                  onSuccess={() => {
-                    addCredits(p.coins + Math.round((p.coins * p.bonus) / 100));
-                    setOpen(null);
-                    toast({ title: "Paiement réussi", description: `Vous avez reçu ${ (p.coins + Math.round((p.coins * p.bonus) / 100)).toLocaleString() } RC` });
-                  }}
-                />
+                {processing ? (
+                  <div className="flex items-center gap-2 text-sm text-foreground/80">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
+                    Traitement du paiement…
+                  </div>
+                ) : done ? (
+                  <div className="text-sm text-emerald-400 font-semibold">Crédits ajoutés ✔</div>
+                ) : (
+                  <PayPalCheckout
+                    amount={p.price.toFixed(2)}
+                    onSuccess={async () => {
+                      try {
+                        setProcessing(true);
+                        await addCredits(p.coins + Math.round((p.coins * p.bonus) / 100));
+                        setDone(true);
+                        toast({ title: "Paiement réussi", description: `Vous avez reçu ${ (p.coins + Math.round((p.coins * p.bonus) / 100)).toLocaleString() } RC` });
+                      } finally {
+                        setProcessing(false);
+                        setTimeout(() => {
+                          setOpen(null);
+                          setDone(false);
+                        }, 1200);
+                      }
+                    }}
+                  />
+                )}
               </div>
             )}
             <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
