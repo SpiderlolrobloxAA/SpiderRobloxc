@@ -15,12 +15,26 @@ import { collection, onSnapshot, orderBy, limit, query } from "firebase/firestor
 export default function Index() {
   const { user, loading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
+  const [sellers, setSellers] = useState<{ id: string; name: string; sales: number }[]>([]);
 
   useEffect(() => {
     const q = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(4));
     const unsub = onSnapshot(q, (snap) => {
       const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as any[];
-      setProducts(rows.map(r => ({ id: r.id, title: r.title, price: r.price ?? 0, seller: { name: r.sellerName ?? "—", role: r.sellerRole ?? "user" } })));
+      setProducts(rows.map(r => ({ id: r.id, title: r.title, price: r.price ?? 0, seller: { name: r.sellerName ?? "—", role: r.sellerRole ?? "user" }, image: r.imageUrl || r.image || null as any })));
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const q = query(collection(db, "users"));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map(d=>({ id: d.id, ...(d.data() as any) }))
+        .filter(u => (u.role ?? "user") === "verified")
+        .map(u => ({ id: u.id, name: u.displayName || u.email || "Utilisateur", sales: Number(u.sales ?? 0) }))
+        .sort((a,b)=> b.sales - a.sales)
+        .slice(0,5);
+      setSellers(list);
     });
     return () => unsub();
   }, []);
@@ -91,10 +105,12 @@ export default function Index() {
                 </Link>
               </Button>
             </div>
-            <div className="mt-8">
-              <h3 className="text-sm uppercase tracking-wider text-foreground/60">Vendeurs certifiés — Top 5</h3>
-              <div className="mt-3"><TopSellersCarousel sellers={sellers} /></div>
-            </div>
+            {sellers.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-sm uppercase tracking-wider text-foreground/60">Vendeurs certifiés — Top 5</h3>
+                <div className="mt-3"><TopSellersCarousel sellers={sellers} /></div>
+              </div>
+            )}
           </div>
           <div className="relative">
             <div className="relative aspect-video rounded-2xl border border-border bg-gradient-to-br from-primary/20 via-secondary/10 to-background p-[2px]">
