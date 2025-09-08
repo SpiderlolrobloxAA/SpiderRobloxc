@@ -39,11 +39,20 @@ export default function PayPalCheckout({ amount, currency = "EUR", onSuccess }: 
         purchase_units: [{ amount: { value: amount } }],
       }),
       onApprove: async (_: any, actions: any) => {
-        const details = await actions.order.capture();
-        onSuccess(details.id);
+        try {
+          const details = await actions.order.capture();
+          onSuccess(details.id);
+        } catch (err) {
+          console.error('PayPal onApprove error', err);
+        }
       },
     });
-    buttons.render(ref.current);
+    try {
+      buttons.render(ref.current);
+    } catch (err) {
+      console.error('PayPal render failed', err);
+      setReady(false);
+    }
     return () => {
       try { buttons.close(); } catch {}
     };
