@@ -66,6 +66,13 @@ export default function AdminPanel() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [filter, setFilter] = useState("");
+  const [activeTicket, setActiveTicket] = useState<string | null>(null);
+  const [ticketMsgs, setTicketMsgs] = useState<any[]>([]);
+  const [reply, setReply] = useState("");
+  const [promo, setPromo] = useState<number>(0);
+  const [announcement, setAnnouncement] = useState("");
+  const [banDays, setBanDays] = useState<number>(0);
+  const [banHours, setBanHours] = useState<number>(0);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [savingRole, setSavingRole] = useState(false);
@@ -97,11 +104,21 @@ export default function AdminPanel() {
       collection(db, "tickets"),
       where("status", "in", ["open", "pending"]),
     );
-    const unsub = onSnapshot(q, (snap) =>
-      setTickets(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-    );
+    const unsub = onSnapshot(q, (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setTickets(rows);
+      if (!activeTicket && rows.length) setActiveTicket(rows[0].id);
+    });
     return () => unsub();
-  }, []);
+  }, [activeTicket]);
+
+  useEffect(() => {
+    if (!activeTicket) return;
+    const unsub = onSnapshot(collection(db, 'tickets', activeTicket, 'messages'), (snap) => {
+      setTicketMsgs(snap.docs.map(d=>({ id: d.id, ...(d.data() as any) })));
+    });
+    return () => unsub();
+  }, [activeTicket]);
 
   const findUser = async () => {
     try {
@@ -164,12 +181,13 @@ export default function AdminPanel() {
       createdAt: serverTimestamp(),
     });
   };
-  const replyTicket = async (id: string, message: string) => {
-    await updateDoc(doc(db, "tickets", id), {
-      lastReply: message,
-      updatedAt: serverTimestamp(),
-      status: "pending",
-    });
+  const sendReply = async () => {
+    if (!activeTicket || !reply.trim()) return;
+    try {
+      await setDoc(doc(collection(db, 'tickets', activeTicket, 'messages')), { text: reply.trim(), senderId: 'admin', createdAt: serverTimestamp() });
+      await updateDoc(doc(db, 'tickets', activeTicket), { updatedAt: serverTimestamp(), status: 'pending' });
+      setReply('');
+    } catch (e) { console.error('ticket:reply failed', e); }
   };
   const closeTicket = async (id: string, reason: string) => {
     await updateDoc(doc(db, "tickets", id), {
@@ -302,42 +320,35 @@ export default function AdminPanel() {
           <TabsTrigger value="founder">Fondateur</TabsTrigger>
         </TabsList>
         <TabsContent value="helper">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-[300px,1fr]">
             <div className="rounded-xl border border-border/60 bg-card p-4">
               <h3 className="font-semibold">Tickets (ouverts)</h3>
-              <div className="mt-3 space-y-2 max-h-72 overflow-auto">
+              <div className="mt-3 max-h-[60vh] overflow-auto divide-y divide-border/60">
                 {tickets.map((t) => (
-                  <div
-                    key={t.id}
-                    className="rounded-md border border-border/60 p-3"
-                  >
+                  <button key={t.id} onClick={()=>setActiveTicket(t.id)} className={`w-full text-left px-2 py-2 hover:bg-muted ${activeTicket===t.id?'bg-muted':''}`}>
                     <div className="text-sm font-semibold">{t.title}</div>
-                    <div className="text-xs text-foreground/70">{t.body}</div>
-                    <div className="mt-2 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          replyTicket(t.id, "Merci, nous regardons.")
-                        }
-                      >
-                        Répondre
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => closeTicket(t.id, "Résolu")}
-                      >
-                        Fermer
-                      </Button>
-                    </div>
-                  </div>
+                    <div className="text-xs text-foreground/70 capitalize">{t.status}</div>
+                  </button>
                 ))}
               </div>
             </div>
             <div className="rounded-xl border border-border/60 bg-card p-4">
-              <h3 className="font-semibold">Créer un ticket</h3>
-              <CreateTicket onCreate={createTicket} />
+              <h3 className="font-semibold">Chat</h3>
+              {activeTicket ? (
+                <div className="flex h-[60vh] flex-col">
+                  <div className="flex-1 space-y-2 overflow-auto">
+                    {ticketMsgs.map(m => (
+                      <div key={m.id} className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId==='admin'? 'ml-auto bg-secondary/20' : 'bg-muted'}`}>{m.text}</div>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Input value={reply} onChange={(e)=>setReply(e.target.value)} placeholder="Réponse…" onKeyDown={(e)=>{ if(e.key==='Enter') sendReply(); }} />
+                    <Button size="sm" onClick={sendReply}>Envoyer</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-foreground/70">Sélectionnez un ticket.</div>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -348,35 +359,41 @@ export default function AdminPanel() {
               Bannir / avertir via mise à jour du document utilisateur.
             </p>
             {userId ? (
-              <div className="mt-3 flex gap-2">
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={async () => {
-                    await setDoc(
-                      doc(db, "users", userId),
-                      { banned: true, bannedAt: serverTimestamp() },
-                      { merge: true },
-                    );
-                    toast({ title: "Utilisateur banni" });
-                  }}
-                >
-                  Bannir
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={async () => {
-                    await setDoc(
-                      doc(db, "users", userId),
-                      { warnings: increment(1) },
-                      { merge: true },
-                    );
-                    toast({ title: "Avertissement envoyé" });
-                  }}
-                >
-                  Warn
-                </Button>
+              <div className="mt-3 grid gap-2">
+                <div className="flex items-center gap-2">
+                  <Input type="number" placeholder="Jours" value={banDays} onChange={(e)=>setBanDays(Number(e.target.value))} className="w-24" />
+                  <Input type="number" placeholder="Heures" value={banHours} onChange={(e)=>setBanHours(Number(e.target.value))} className="w-24" />
+                  <Button size="sm" variant="destructive" onClick={async () => {
+                    const ms = (banDays*24 + banHours) * 60 * 60 * 1000;
+                    const until = new Date(Date.now() + ms);
+                    await setDoc(doc(db, 'users', userId), { bannedUntil: until }, { merge: true });
+                    toast({ title: 'Ban temporaire appliqué' });
+                  }}>Ban temporaire</Button>
+                  <Button size="sm" variant="destructive" onClick={async () => {
+                    await setDoc(doc(db, 'users', userId), { banned: true, bannedAt: serverTimestamp() }, { merge: true });
+                    toast({ title: 'Ban permanent' });
+                  }}>Ban permanent</Button>
+                  <Button size="sm" variant="outline" onClick={async ()=>{
+                    await setDoc(doc(db, 'users', userId), { banned: false, bannedUntil: null }, { merge: true });
+                    toast({ title: 'Ban levé' });
+                  }}>Lever</Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      await setDoc(
+                        doc(db, "users", userId),
+                        { warnings: increment(1) },
+                        { merge: true },
+                      );
+                      toast({ title: "Avertissement envoyé" });
+                    }}
+                  >
+                    Warn
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="text-sm text-foreground/70">
@@ -386,12 +403,25 @@ export default function AdminPanel() {
           </div>
         </TabsContent>
         <TabsContent value="founder">
-          <div className="rounded-xl border border-border/60 bg-card p-4">
+          <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
             <h3 className="font-semibold">Fondateur</h3>
-            <p className="text-sm text-foreground/70">
-              Accès complet: rôles, crédits, suppression de posts/avis (à
-              implémenter).
-            </p>
+            <div>
+              <div className="text-sm font-semibold">Annonce globale</div>
+              <Input placeholder="Message à afficher" value={announcement} onChange={(e)=>setAnnouncement(e.target.value)} />
+              <Button className="mt-2" size="sm" onClick={async ()=>{
+                await setDoc(doc(collection(db,'announcements')), { text: announcement, createdAt: serverTimestamp() });
+                setAnnouncement("");
+                toast({ title: 'Annonce publiée' });
+              }}>Publier</Button>
+            </div>
+            <div>
+              <div className="text-sm font-semibold">Promotions RotCoins (%)</div>
+              <Input type="number" placeholder="Réduction % pour tous les packs" value={promo} onChange={(e)=>setPromo(Number(e.target.value))} className="w-40" />
+              <Button className="ml-2" size="sm" onClick={async ()=>{
+                await setDoc(doc(db,'promotions','packs'), { all: Number(promo)||0 }, { merge: true });
+                toast({ title: 'Promo mise à jour' });
+              }}>Appliquer</Button>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
