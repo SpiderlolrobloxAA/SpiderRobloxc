@@ -6,6 +6,7 @@ import {
 } from "firebase/auth";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { initializeFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDMsFeXMVm61NlmN8QBk7UmH1ngPFW8TWo",
@@ -48,6 +49,8 @@ export async function initAnalytics() {
   }
   return null;
 }
+
+export const storage = typeof window !== "undefined" ? getStorage(app) : (null as any);
 
 export function ensureDb() {
   if (!db) throw new Error('Firestore is not available on the server. Use this function only in the browser.');
