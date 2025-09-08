@@ -30,7 +30,7 @@ function Header() {
   const { user, logout } = useAuth();
   return (
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 bg-background/80 border-b border-border">
-      <div className="container grid h-14 md:h-16 grid-cols-2 md:grid-cols-3 items-center gap-2 md:gap-4">
+      <div className="container grid h-14 md:h-16 grid-cols-2 md:grid-cols-[auto,1fr,auto] items-center gap-2 md:gap-6">
         <Link to="/" className="flex items-center gap-2 group">
           <img
             src="https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fa179a2c715a64edaafe6df770c43ddf5?format=webp&width=800"
@@ -101,7 +101,7 @@ function CompactRole({ role }: { role: string }) {
   const map: Record<string, { label: string; icon: React.ReactNode }> = {
     founder: { label: "Fondateur", icon: <span>👑</span> },
     moderator: { label: "Mod", icon: <span>🛡️</span> },
-    helper: { label: "Helper", icon: <span>🧰</span> },
+    helper: { label: "Helper", icon: <span>��</span> },
     user: { label: "User", icon: <span>👤</span> },
   };
   const cfg = map[role] ?? map.user;
@@ -117,17 +117,19 @@ function UserInfo() {
   const { user, logout } = useAuth();
   const { credits, role } = useProfile();
   return (
-    <div className="hidden md:flex items-center gap-3">
-      <img
-        src={DEFAULT_AVATAR_IMG}
-        alt="avatar"
-        className="h-6 w-6 rounded-full object-cover"
-      />
-      <span className="max-w-[140px] truncate text-xs md:text-sm text-foreground/90">
-        {user?.displayName || user?.email}
-      </span>
-      <CompactRole role={role as any} />
-      <span className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-[11px] md:text-xs">
+    <div className="hidden md:flex items-center justify-end gap-4">
+      <div className="flex items-center gap-2 min-w-0">
+        <img
+          src={DEFAULT_AVATAR_IMG}
+          alt="avatar"
+          className="h-8 w-8 rounded-full object-cover"
+        />
+        <span className="max-w-[160px] truncate text-sm text-foreground/90">
+          {user?.displayName || user?.email}
+        </span>
+        <CompactRole role={role as any} />
+      </div>
+      <span className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-xs whitespace-nowrap" title="Crédits disponibles">
         <svg
           className="h-3.5 w-3.5"
           viewBox="0 0 24 24"
@@ -141,9 +143,9 @@ function UserInfo() {
       <Button
         variant="outline"
         onClick={logout}
-        className="h-8 md:h-9 text-xs md:text-sm px-2 md:px-3 inline-flex items-center gap-2 ml-1"
+        className="h-9 px-3 inline-flex items-center gap-2 whitespace-nowrap"
       >
-        <LogOut className="h-3.5 w-3.5 md:h-4 md:w-4" />
+        <LogOut className="h-4 w-4" />
         Déconnexion
       </Button>
     </div>
