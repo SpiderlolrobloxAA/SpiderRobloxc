@@ -36,37 +36,66 @@ function TicketsPage() {
   const [title, setTitle] = useState("");
   const [msg, setMsg] = useState("");
   const [tickets, setTickets] = useState<any[]>([]);
+  const [active, setActive] = useState<string | null>(null);
+  const [msgs, setMsgs] = useState<any[]>([]);
+  const [text, setText] = useState("");
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "tickets"), (snap) =>
-      setTickets(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-    );
+    const unsub = onSnapshot(collection(db, "tickets"), (snap) => {
+      const rows = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((t: any) => t.uid === user?.uid);
+      setTickets(rows as any);
+      if (!active && rows.length) setActive(rows[0].id);
+    });
     return () => unsub();
-  }, []);
+  }, [user, active]);
 
   const create = async () => {
     if (!user || !title) return;
     try {
-      await addDoc(collection(db, "tickets"), {
+      const ref = await addDoc(collection(db, "tickets"), {
         uid: user.uid,
         email: user.email,
         title,
-        body: msg,
         status: "open",
+        createdAt: serverTimestamp(),
+      });
+      await addDoc(collection(db, "tickets", ref.id, "messages"), {
+        senderId: user.uid,
+        text: msg || "Ticket créé",
         createdAt: serverTimestamp(),
       });
       setTitle("");
       setMsg("");
+      setActive(ref.id);
     } catch (e) {
       console.error('ticket:create failed', e);
     }
   };
 
+  useEffect(() => {
+    if (!active) return;
+    const unsub = onSnapshot(query(collection(db, 'tickets', active, 'messages')), (snap) => {
+      setMsgs(snap.docs.map(d=>({ id: d.id, ...(d.data() as any) })));
+    });
+    return () => unsub();
+  }, [active]);
+
+  const send = async () => {
+    if (!user || !active || !text.trim()) return;
+    try {
+      await addDoc(collection(db, 'tickets', active, 'messages'), { senderId: user.uid, text: text.trim(), createdAt: serverTimestamp() });
+    } catch (e) { console.error('ticket:send failed', e); }
+    setText('');
+  };
+
   return (
     <div className="container py-10">
       <h1 className="font-display text-2xl font-bold">Tickets</h1>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 md:grid-cols-[300px,1fr]">
         <div className="rounded-xl border border-border/60 bg-card p-4 space-y-2">
+          <div className="text-sm font-semibold">Nouveau ticket</div>
           <input
             className="w-full rounded-md bg-background px-3 py-2 border border-border/60"
             placeholder="Titre"
@@ -80,20 +109,35 @@ function TicketsPage() {
             onChange={(e) => setMsg(e.target.value)}
           />
           <Button onClick={create}>Créer</Button>
+          <div className="mt-4">
+            <div className="font-semibold text-sm">Vos tickets</div>
+            <div className="mt-2 max-h-[50vh] overflow-auto divide-y divide-border/60">
+              {tickets.map((t) => (
+                <button key={t.id} onClick={() => setActive(t.id)} className={`w-full text-left px-2 py-2 hover:bg-muted ${active===t.id?'bg-muted':''}`}>
+                  <div className="text-sm">{t.title}</div>
+                  <div className="text-xs text-foreground/60 capitalize">{t.status}</div>
+                </button>
+              ))}
+              {tickets.length===0 && <div className="text-sm text-foreground/60 px-2 py-2">Aucun ticket</div>}
+            </div>
+          </div>
         </div>
         <div className="rounded-xl border border-border/60 bg-card p-4">
-          <h3 className="font-semibold">Vos tickets</h3>
-          <div className="mt-3 space-y-2 max-h-72 overflow-auto">
-            {tickets.map((t) => (
-              <div
-                key={t.id}
-                className="rounded-md border border-border/60 p-3"
-              >
-                <div className="text-sm font-semibold">{t.title}</div>
-                <div className="text-xs text-foreground/70">{t.status}</div>
+          {active ? (
+            <div className="flex h-[60vh] flex-col">
+              <div className="flex-1 space-y-2 overflow-auto">
+                {msgs.map(m => (
+                  <div key={m.id} className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId===user?.uid? 'ml-auto bg-secondary/20' : 'bg-muted'}`}>{m.text}</div>
+                ))}
               </div>
-            ))}
-          </div>
+              <div className="mt-2 flex items-center gap-2">
+                <input className="flex-1 rounded-md bg-background px-3 py-2 border border-border/60" value={text} onChange={(e)=>setText(e.target.value)} placeholder="Votre message…" onKeyDown={(e)=>{ if(e.key==='Enter') send(); }} />
+                <Button onClick={send}>Envoyer</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-foreground/70">Sélectionnez un ticket pour ouvrir le chat.</div>
+          )}
         </div>
       </div>
     </div>
