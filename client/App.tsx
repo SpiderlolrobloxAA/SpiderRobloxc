@@ -13,6 +13,10 @@ import Index from "./pages/Index";
 import Marketplace from "./pages/Marketplace";
 import Shop from "./pages/Shop";
 import Placeholder from "./pages/Placeholder";
+import Quests from "./pages/Quests";
+import Profile from "./pages/Profile";
+import Transactions from "./pages/Transactions";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -35,22 +39,11 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/marketplace" element={<Marketplace />} />
                 <Route path="/shop" element={<Shop />} />
-                <Route
-                  path="/quests"
-                  element={<Placeholder title="Quêtes sociales" />}
-                />
-                <Route
-                  path="/profile"
-                  element={<Placeholder title="Profil" />}
-                />
-                <Route
-                  path="/transactions"
-                  element={<Placeholder title="Transactions" />}
-                />
-                <Route
-                  path="/tickets"
-                  element={<Placeholder title="Tickets support" />}
-                />
+                <Route path="/quests" element={<Quests />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/tickets" element={<Placeholder title="Tickets support" />} />
+                <Route path="/messages" element={<Messages />} />
                 <Route path="/admin" element={<AdminPanel />} />
                 <Route
                   path="/sell"
