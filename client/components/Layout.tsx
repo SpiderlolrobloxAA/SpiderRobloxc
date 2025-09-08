@@ -26,7 +26,7 @@ const nav = [
   { to: "/marketplace", label: "Marketplace", icon: ShoppingCart },
   { to: "/shop", label: "RotCoins", icon: Coins },
   { to: "/quests", label: "Quêtes", icon: BadgeCheck },
-  { to: "/profile", label: "Profil", icon: User },
+  { to: "/tickets", label: "Tickets", icon: LifeBuoy },
   { to: "/transactions", label: "Transactions", icon: Coins },
 ];
 
