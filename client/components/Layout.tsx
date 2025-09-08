@@ -181,8 +181,8 @@ function UserInfo() {
 
 function UnreadBadge() {
   const { user } = useAuth();
-  const [count, setCount] = React.useState<number>(0);
-  React.useEffect(() => {
+  const [count, setCount] = useState<number>(0);
+  useEffect(() => {
     if (!user) return;
     const q = query(collection(db, "threads"), where("participants", "array-contains", user.uid));
     const unsub = onSnapshot(q, (snap) => {
