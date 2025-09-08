@@ -26,6 +26,11 @@ export default function Register() {
     }
     await createUserWithEmailAndPassword(auth, values.email, values.password);
     if (auth.currentUser) await updateProfile(auth.currentUser, { displayName: values.username });
+    try {
+      const { doc, setDoc, increment } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+      await setDoc(doc(db, "users", auth.currentUser!.uid), { credits: increment(5) }, { merge: true });
+    } catch {}
     toast({ title: `Bienvenue ${values.username} 🎉`, description: "+5 RotCoins offerts à l'inscription" });
   }
 

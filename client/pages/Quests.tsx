@@ -77,10 +77,14 @@ export default function Quests() {
     if (!user) return;
     const eligible = q.eligible(ctx);
     if (!eligible) return;
-    await addCredits(q.reward);
-    await setDoc(doc(db, "users", user.uid, "meta", "quests"), {
-      [q.id]: { claimedAt: serverTimestamp(), reward: q.reward },
-    }, { merge: true });
+    try {
+      await addCredits(q.reward);
+      await setDoc(doc(db, "users", user.uid, "meta", "quests"), {
+        [q.id]: { claimedAt: serverTimestamp(), reward: q.reward },
+      }, { merge: true });
+    } catch (e) {
+      console.error('quests:claim failed', e);
+    }
   };
 
   return (
@@ -89,7 +93,7 @@ export default function Quests() {
       <p className="text-sm text-foreground/70">Complétez des quêtes et gagnez des RotCoins.</p>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((q) => (
-          <div key={q.id} className="rounded-xl border border-border/60 bg-card p-4">
+          <div key={q.id} className="rounded-xl border border-border/60 bg-card p-4 space-y-2">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="font-semibold">{q.title}</div>
@@ -103,6 +107,7 @@ export default function Quests() {
                 <span className="text-xs text-foreground/60">Non éligible</span>
               )}
             </div>
+            <QuestLink id={q.id} />
           </div>
         ))}
       </div>

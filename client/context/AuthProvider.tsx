@@ -35,17 +35,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(u);
       setLoading(false);
       if (u) {
-        const ref = doc(db, "users", u.uid);
-        await setDoc(
-          ref,
-          {
-            email: u.email || null,
-            displayName: u.displayName || null,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true },
-        );
+        try {
+          const ref = doc(db, "users", u.uid);
+          await setDoc(
+            ref,
+            {
+              email: u.email || null,
+              displayName: u.displayName || null,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true },
+          );
+        } catch (e) {
+          console.error('auth:setUserDoc failed', e);
+        }
       }
     });
     return () => unsub();

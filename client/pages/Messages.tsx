@@ -57,16 +57,20 @@ function Thread({ id }: { id: string }) {
 
   const send = async () => {
     if (!user || !text.trim()) return;
-    await addDoc(collection(db, "threads", id, "messages"), {
-      senderId: user.uid,
-      text: text.trim(),
-      createdAt: serverTimestamp(),
-    });
-    await setDoc(doc(db, "threads", id), {
-      lastMessage: { text: text.trim(), senderId: user.uid },
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-    setText("");
+    try {
+      await addDoc(collection(db, "threads", id, "messages"), {
+        senderId: user.uid,
+        text: text.trim(),
+        createdAt: serverTimestamp(),
+      });
+      await setDoc(doc(db, "threads", id), {
+        lastMessage: { text: text.trim(), senderId: user.uid },
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      setText("");
+    } catch (e) {
+      console.error('thread:send failed', e);
+    }
   };
 
   return (

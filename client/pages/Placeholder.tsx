@@ -46,16 +46,20 @@ function TicketsPage() {
 
   const create = async () => {
     if (!user || !title) return;
-    await addDoc(collection(db, "tickets"), {
-      uid: user.uid,
-      email: user.email,
-      title,
-      body: msg,
-      status: "open",
-      createdAt: serverTimestamp(),
-    });
-    setTitle("");
-    setMsg("");
+    try {
+      await addDoc(collection(db, "tickets"), {
+        uid: user.uid,
+        email: user.email,
+        title,
+        body: msg,
+        status: "open",
+        createdAt: serverTimestamp(),
+      });
+      setTitle("");
+      setMsg("");
+    } catch (e) {
+      console.error('ticket:create failed', e);
+    }
   };
 
   return (
