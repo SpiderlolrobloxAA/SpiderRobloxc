@@ -30,14 +30,14 @@ function Header() {
   const { user, logout } = useAuth();
   return (
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 bg-background/80 border-b border-border">
-      <div className="container grid h-16 grid-cols-2 md:grid-cols-3 items-center gap-4">
+      <div className="container grid h-14 md:h-16 grid-cols-2 md:grid-cols-3 items-center gap-2 md:gap-4">
         <Link to="/" className="flex items-center gap-2 group">
           <img
             src="https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fa179a2c715a64edaafe6df770c43ddf5?format=webp&width=800"
             alt="Brainrot Market logo"
             className="h-8 w-8 rounded-md object-cover"
           />
-          <span className="font-display text-xl tracking-tight">
+          <span className="font-display text-lg md:text-xl tracking-tight">
             Brainrot Market{" "}
             <span role="img" aria-label="France">
               🇫🇷
@@ -50,14 +50,14 @@ function Header() {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `px-3 py-2 rounded-md text-sm transition-colors inline-flex items-center gap-2 ${
+                `px-2.5 py-2 rounded-md text-[13px] md:text-sm transition-colors inline-flex items-center gap-2 ${
                   isActive
                     ? "bg-muted text-foreground"
                     : "text-foreground/80 hover:text-foreground hover:bg-muted"
                 }`
               }
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
               {label}
             </NavLink>
           ))}
@@ -65,12 +65,12 @@ function Header() {
         <div className="flex items-center justify-end gap-3">
           {!user ? (
             <>
-              <Button asChild variant="outline" className="h-9">
+              <Button asChild variant="outline" className="h-8 md:h-9 px-2 md:px-3 text-xs md:text-sm">
                 <Link to="/login">Se connecter</Link>
               </Button>
               <Button
                 asChild
-                className="h-9 bg-gradient-to-r from-primary to-secondary shadow-[0_0_24px_rgba(107,61,245,0.35)] hover:from-primary/90 hover:to-secondary/90"
+                className="h-8 md:h-9 px-2 md:px-3 text-xs md:text-sm bg-gradient-to-r from-primary to-secondary shadow-[0_0_24px_rgba(107,61,245,0.35)] hover:from-primary/90 hover:to-secondary/90"
               >
                 <Link to="/register">S'inscrire</Link>
               </Button>
@@ -106,7 +106,7 @@ function CompactRole({ role }: { role: string }) {
   };
   const cfg = map[role] ?? map.user;
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-[2px] text-[10px] text-foreground/80">
+    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-[2px] text-[10px] md:text-[11px] text-foreground/80">
       {cfg.icon}
       {cfg.label}
     </span>
@@ -121,13 +121,13 @@ function UserInfo() {
       <img
         src={DEFAULT_AVATAR_IMG}
         alt="avatar"
-        className="h-7 w-7 rounded-full object-cover"
+        className="h-6 w-6 rounded-full object-cover"
       />
-      <span className="max-w-[160px] truncate text-sm text-foreground/90">
+      <span className="max-w-[140px] truncate text-xs md:text-sm text-foreground/90">
         {user?.displayName || user?.email}
       </span>
       <CompactRole role={role as any} />
-      <span className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-xs">
+      <span className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-[11px] md:text-xs">
         <svg
           className="h-3.5 w-3.5"
           viewBox="0 0 24 24"
@@ -141,9 +141,9 @@ function UserInfo() {
       <Button
         variant="outline"
         onClick={logout}
-        className="h-9 inline-flex items-center gap-2 ml-1"
+        className="h-8 md:h-9 text-xs md:text-sm px-2 md:px-3 inline-flex items-center gap-2 ml-1"
       >
-        <LogOut className="h-4 w-4" />
+        <LogOut className="h-3.5 w-3.5 md:h-4 md:w-4" />
         Déconnexion
       </Button>
     </div>
