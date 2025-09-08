@@ -19,7 +19,7 @@ import { useAuth } from "@/context/AuthProvider";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { VERIFIED_IMG } from "@/components/RoleBadge";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
@@ -139,6 +139,9 @@ function UserInfo() {
         <DialogContent className="max-w-xs p-4">
           <DialogTitle className="text-sm">Mon compte</DialogTitle>
           <div className="mt-3 grid gap-2">
+            {role !== 'user' && (
+              <Link to="/admin" className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted">Admin Panel</Link>
+            )}
             <Link to="/profile" className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted">Profil</Link>
             <Link to="/transactions" className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted">Transactions</Link>
             <Link to="/quests" className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted">Quêtes</Link>
@@ -178,6 +181,47 @@ function UserInfo() {
       </TooltipProvider>
     </div>
   );
+}
+
+function BanOverlay() {
+  const { user } = useAuth();
+  const [state, setState] = useState<{ banned?: boolean; bannedUntil?: number } | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, 'users', user.uid), (d) => {
+      const data = d.data() as any;
+      if (data) setState({ banned: data.banned, bannedUntil: data.bannedUntil?.toMillis?.() ?? undefined });
+    });
+    return () => unsub();
+  }, [user]);
+  const now = Date.now();
+  const active = Boolean(state?.banned) || (state?.bannedUntil ? state.bannedUntil > now : false);
+  if (!active) return null;
+  const endTxt = state?.bannedUntil ? new Date(state.bannedUntil).toLocaleString() : '—';
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center">
+      <div className="rounded-xl border border-border/60 bg-card p-6 max-w-sm text-center">
+        <h3 className="font-semibold text-lg">Compte restreint</h3>
+        <p className="mt-2 text-sm text-foreground/70">Vous avez été temporairement banni.
+          {state?.bannedUntil && (<><br/>Fin: {endTxt}</>)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Announcements() {
+  const [msg, setMsg] = useState<string | null>(null);
+  useEffect(() => {
+    const q = query(collection(db, 'announcements'));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map(d=>d.data() as any).filter(a=>!a.startsAt || a.startsAt.toMillis?.() < Date.now());
+      if (list.length) setMsg(list[0].text || null);
+    });
+    return () => unsub();
+  }, []);
+  if (!msg) return null;
+  return <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-md border border-border/60 bg-card/90 px-4 py-2 text-sm shadow-lg">{msg}</div>;
 }
 
 function UnreadBadge() {
@@ -400,6 +444,8 @@ export default function Layout() {
     <div className="min-h-screen bg-background text-foreground">
       <BackgroundAura />
       <Header />
+      <BanOverlay />
+      <Announcements />
       <main className="relative z-10">
         <Outlet />
       </main>
