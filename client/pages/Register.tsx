@@ -18,7 +18,12 @@ export default function Register() {
 
   async function onSubmit(values: z.infer<typeof schema>) {
     const { createUserWithEmailAndPassword, updateProfile } = await import("firebase/auth");
-    const { auth } = await import("@/lib/firebase");
+    const mod = await import("@/lib/firebase");
+    const auth = mod.auth;
+    if (!auth) {
+      toast({ title: "Auth indisponible", description: "Réessayez dans le navigateur (client)." });
+      return;
+    }
     await createUserWithEmailAndPassword(auth, values.email, values.password);
     if (auth.currentUser) await updateProfile(auth.currentUser, { displayName: values.username });
     toast({ title: `Bienvenue ${values.username} 🎉`, description: "+5 RotCoins offerts à l'inscription" });
