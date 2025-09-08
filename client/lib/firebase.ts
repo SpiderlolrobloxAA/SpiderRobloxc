@@ -5,7 +5,7 @@ import {
   browserLocalPersistence,
 } from "firebase/auth";
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDMsFeXMVm61NlmN8QBk7UmH1ngPFW8TWo",
@@ -25,7 +25,9 @@ export const app = initializeApp(firebaseConfig);
 // errors like "ReadableStreamDefaultReader constructor can only accept
 // readable streams that are not yet locked to a reader". Guarding ensures
 // Firestore is only created in the browser runtime.
-export const db = typeof window !== "undefined" ? getFirestore(app) : (null as any);
+export const db = typeof window !== "undefined"
+  ? initializeFirestore(app, { useFetchStreams: false, experimentalForceLongPolling: true })
+  : (null as any);
 
 // Auth is browser-only: guard initialization so server builds don't initialize auth components
 export let auth: ReturnType<typeof getAuth> | null = null;
