@@ -14,11 +14,19 @@ export default function PayPalCheckout({ amount, currency = "EUR", onSuccess }: 
     const qs = new URLSearchParams({ "client-id": clientId, currency }).toString();
     const src = `https://www.paypal.com/sdk/js?${qs}`;
     const existing = document.querySelector(`script[src^="https://www.paypal.com/sdk/js"]`) as HTMLScriptElement | null;
-    const script = existing ?? Object.assign(document.createElement("script"), { src, async: true });
+    const script = existing ?? Object.assign(document.createElement("script"), { src, async: true, crossOrigin: 'anonymous' as any });
     if (!existing) document.body.appendChild(script);
     const onLoad = () => setReady(true);
+    const onError = (e: any) => {
+      console.error('PayPal script failed to load', e);
+      setReady(false);
+    };
     script.addEventListener("load", onLoad);
-    return () => script.removeEventListener("load", onLoad);
+    script.addEventListener("error", onError);
+    return () => {
+      script.removeEventListener("load", onLoad);
+      script.removeEventListener("error", onError);
+    };
   }, [clientId, currency]);
 
   useEffect(() => {
