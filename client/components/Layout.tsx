@@ -343,7 +343,27 @@ export default function Layout() {
       }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+
+    // Global error listeners to help debug 'Script error.' and uncaught rejections
+    const onError = (event: ErrorEvent) => {
+      // Log detailed info to help debugging
+      // Script errors from cross-origin may show as 'Script error.'; adding crossorigin on external scripts helps.
+      // Keep logs in console for now.
+      // eslint-disable-next-line no-console
+      console.error('Global error captured:', event.message, event.filename, event.lineno, event.colno, event.error);
+    };
+    const onRejection = (event: PromiseRejectionEvent) => {
+      // eslint-disable-next-line no-console
+      console.error('Unhandled promise rejection:', event.reason);
+    };
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
+    };
   }, []);
 
   return (
