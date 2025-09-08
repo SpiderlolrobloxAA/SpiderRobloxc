@@ -66,18 +66,28 @@ export default function AdminPanel() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [filter, setFilter] = useState("");
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [savingRole, setSavingRole] = useState(false);
+  const [adjusting, setAdjusting] = useState(false);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "users"), (snap) =>
-      setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
+    const unsub = onSnapshot(collection(db, "users"), (snap) => {
+      setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setLoadingUsers(false);
+    });
     return () => unsub();
   }, []);
 
   useEffect(() => {
     if (!userId) return;
     const unsub = onSnapshot(doc(db, "users", userId), (d) => {
-      if (d.exists()) setUserInfo({ id: d.id, ...d.data() });
+      if (d.exists()) {
+        const data = { id: d.id, ...d.data() } as any;
+        setUserInfo(data);
+        if (selectedRole == null) setSelectedRole(((data.role ?? "user") as Role));
+      }
     });
     return () => unsub();
   }, [userId]);
@@ -94,39 +104,55 @@ export default function AdminPanel() {
   }, []);
 
   const findUser = async () => {
-    const q = query(collection(db, "users"), where("email", "==", email));
-    const res = await getDocs(q);
-    if (!res.empty) {
-      const d = res.docs[0];
-      setUserId(d.id);
-      setUserInfo(d.data());
-      toast({ title: "Utilisateur trouvé", description: d.data().email });
-    } else {
-      toast({ title: "Introuvable", description: email });
+    try {
+      setSearching(true);
+      const q = query(collection(db, "users"), where("email", "==", email));
+      const res = await getDocs(q);
+      if (!res.empty) {
+        const d = res.docs[0];
+        setUserId(d.id);
+        setUserInfo(d.data());
+        setSelectedRole((((d.data() as any).role ?? "user") as Role));
+        toast({ title: "Utilisateur trouvé", description: (d.data() as any).email });
+      } else {
+        toast({ title: "Introuvable", description: email });
+      }
+    } finally {
+      setSearching(false);
     }
   };
 
-  const setRole = async (role: Role) => {
-    if (!userId) return;
-    await setDoc(
-      doc(db, "users", userId),
-      { role, updatedAt: serverTimestamp() },
-      { merge: true },
-    );
-    toast({ title: "Rôle mis à jour", description: `${role}` });
+  const saveRole = async () => {
+    if (!userId || !selectedRole) return;
+    try {
+      setSavingRole(true);
+      await setDoc(
+        doc(db, "users", userId),
+        { role: selectedRole, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      toast({ title: "Rôle sauvegardé", description: `${selectedRole}` });
+    } finally {
+      setSavingRole(false);
+    }
   };
 
   const adjustCredits = async (amount: number) => {
     if (!userId) return;
-    await setDoc(
-      doc(db, "users", userId),
-      { credits: increment(amount), updatedAt: serverTimestamp() },
-      { merge: true },
-    );
-    toast({
-      title: "Crédits modifiés",
-      description: `${amount > 0 ? "+" : ""}${amount} RC`,
-    });
+    try {
+      setAdjusting(true);
+      await setDoc(
+        doc(db, "users", userId),
+        { credits: increment(amount), updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      toast({
+        title: "Crédits modifiés",
+        description: `${amount > 0 ? "+" : ""}${amount} RC`,
+      });
+    } finally {
+      setAdjusting(false);
+    }
   };
 
   const createTicket = async (title: string, body: string) => {
@@ -171,6 +197,9 @@ export default function AdminPanel() {
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
+          {loadingUsers ? (
+            <div className="mt-3 text-sm text-foreground/70">Chargement…</div>
+          ) : (
           <div className="mt-2 max-h-80 overflow-auto divide-y divide-border/50">
             {users
               .filter((u) => {
@@ -188,6 +217,7 @@ export default function AdminPanel() {
                   onClick={() => {
                     setUserId(u.id);
                     setUserInfo(u);
+                    setSelectedRole(((u.role ?? "user") as Role));
                   }}
                   className={`w-full text-left px-2 py-2 hover:bg-muted transition-colors ${
                     userId === u.id ? "bg-muted" : ""
@@ -202,6 +232,7 @@ export default function AdminPanel() {
                 </button>
               ))}
           </div>
+          )}
         </div>
         <div className="rounded-xl border border-border/60 bg-card p-4 md:col-span-2">
           <div className="flex flex-wrap items-end gap-2">
@@ -211,7 +242,7 @@ export default function AdminPanel() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-64"
             />
-            <Button onClick={findUser}>Rechercher</Button>
+            <Button onClick={findUser} disabled={searching}>{searching ? "Recherche…" : "Rechercher"}</Button>
             {userInfo && (
               <div className="text-sm text-foreground/80">
                 {userInfo.displayName || userInfo.email}
@@ -225,33 +256,39 @@ export default function AdminPanel() {
                 <Button
                   key={r}
                   size="sm"
-                  variant={userInfo?.role === r ? "default" : "outline"}
-                  onClick={() => setRole(r as Role)}
+                  variant={selectedRole === r ? "default" : "outline"}
+                  onClick={() => setSelectedRole(r as Role)}
                 >
                   {r}
                 </Button>
               ))}
+              <Button size="sm" className="ml-2" onClick={saveRole} disabled={savingRole}>
+                {savingRole ? "Sauvegarde…" : "Sauvegarder"}
+              </Button>
               <span className="ml-4 text-xs text-foreground/70">Crédits:</span>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => adjustCredits(100)}
+                disabled={adjusting}
               >
-                +100
+                {adjusting ? "…" : "+100"}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => adjustCredits(1000)}
+                disabled={adjusting}
               >
-                +1000
+                {adjusting ? "…" : "+1000"}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => adjustCredits(-100)}
+                disabled={adjusting}
               >
-                -100
+                {adjusting ? "…" : "-100"}
               </Button>
             </div>
           )}
