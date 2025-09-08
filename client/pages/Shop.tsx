@@ -4,9 +4,9 @@ import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
 import PayPalCheckout from "@/components/PayPalCheckout";
 import { ShieldCheck, Zap, BadgeDollarSign } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, doc, onSnapshot, serverTimestamp } from "firebase/firestore";
 
 const packs = [
   { id: "starter", name: "Starter", coins: 500, price: 4.99, bonus: 5 },
@@ -23,6 +23,15 @@ export default function Shop() {
   const [open, setOpen] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
+  const [promo, setPromo] = useState<number>(0);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'promotions', 'packs'), (d) => {
+      const data = d.data() as any;
+      setPromo(Number(data?.all || 0));
+    });
+    return () => unsub();
+  }, []);
 
   const onBuy = (id: string) => {
     const pack = packs.find((p) => p.id === id)!;
@@ -66,7 +75,14 @@ export default function Shop() {
             </div>
             <div className="mt-4 flex items-center justify-between">
               <div className="text-foreground/80">
-                <span className="text-xl font-extrabold">{p.price.toFixed(2)}€</span>
+                {promo>0 ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm line-through opacity-70">{p.price.toFixed(2)}€</span>
+                    <span className="text-xl font-extrabold">{(p.price*(1-promo/100)).toFixed(2)}€</span>
+                  </div>
+                ) : (
+                  <span className="text-xl font-extrabold">{p.price.toFixed(2)}€</span>
+                )}
               </div>
               <Button size="sm" onClick={() => onBuy(p.id)} variant="secondary" disabled={processing}>Acheter</Button>
             </div>
@@ -80,9 +96,11 @@ export default function Shop() {
                 ) : done ? (
                   <div className="text-sm text-emerald-400 font-semibold">Crédits ajoutés ✔</div>
                 ) : (
-                  <PayPalCheckout
-                    amount={p.price.toFixed(2)}
-                    onSuccess={async (orderId) => {
+                  <div>
+                    {promo>0 && <div className="mb-2 text-xs text-foreground/70">Promo: -{promo}%</div>}
+                    <PayPalCheckout
+                      amount={(p.price*(1-promo/100)).toFixed(2)}
+                      onSuccess={async (orderId) => {
                       try {
                         setProcessing(true);
                         const credits = p.coins + Math.round((p.coins * p.bonus) / 100);
@@ -106,8 +124,9 @@ export default function Shop() {
                           setDone(false);
                         }, 1200);
                       }
-                    }}
-                  />
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             )}
