@@ -13,6 +13,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { useEffect } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthProvider";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { VERIFIED_IMG } from "@/components/RoleBadge";
@@ -101,7 +103,7 @@ function CompactRole({ role }: { role: string }) {
   const map: Record<string, { label: string; icon: React.ReactNode }> = {
     founder: { label: "Fondateur", icon: <span>👑</span> },
     moderator: { label: "Mod", icon: <span>🛡️</span> },
-    helper: { label: "Helper", icon: <span>��</span> },
+    helper: { label: "Helper", icon: <span>🧰</span> },
     user: { label: "User", icon: <span>👤</span> },
   };
   const cfg = map[role] ?? map.user;
@@ -118,17 +120,29 @@ function UserInfo() {
   const { credits, role } = useProfile();
   return (
     <div className="hidden md:flex items-center justify-end gap-4">
-      <div className="flex items-center gap-2 min-w-0">
-        <img
-          src={DEFAULT_AVATAR_IMG}
-          alt="avatar"
-          className="h-8 w-8 rounded-full object-cover"
-        />
-        <span className="max-w-[160px] truncate text-sm text-foreground/90">
-          {user?.displayName || user?.email}
-        </span>
-        <CompactRole role={role as any} />
-      </div>
+      <Dialog>
+        <DialogTrigger asChild>
+          <button className="flex items-center gap-2 min-w-0 hover:bg-muted/60 px-2 py-1 rounded-md">
+            <img
+              src={DEFAULT_AVATAR_IMG}
+              alt="avatar"
+              className="h-8 w-8 rounded-full object-cover"
+            />
+            <span className="max-w-[160px] truncate text-sm text-foreground/90 text-left">
+              {user?.displayName || user?.email}
+            </span>
+            <CompactRole role={role as any} />
+          </button>
+        </DialogTrigger>
+        <DialogContent className="max-w-xs p-4">
+          <DialogTitle className="text-sm">Mon compte</DialogTitle>
+          <div className="mt-3 grid gap-2">
+            <Link to="/profile" className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted">Profil</Link>
+            <Link to="/transactions" className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted">Transactions</Link>
+            <Link to="/quests" className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted">Quêtes</Link>
+          </div>
+        </DialogContent>
+      </Dialog>
       <span className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-xs whitespace-nowrap" title="Crédits disponibles">
         <svg
           className="h-3.5 w-3.5"
@@ -140,14 +154,21 @@ function UserInfo() {
         </svg>
         {credits.toLocaleString()} RC
       </span>
-      <Button
-        variant="outline"
-        onClick={logout}
-        className="h-9 px-3 inline-flex items-center gap-2 whitespace-nowrap"
-      >
-        <LogOut className="h-4 w-4" />
-        Déconnexion
-      </Button>
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              onClick={logout}
+              className="h-9 w-9 p-0 inline-flex items-center justify-center"
+              aria-label="Déconnexion"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">Déconnexion</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 }
