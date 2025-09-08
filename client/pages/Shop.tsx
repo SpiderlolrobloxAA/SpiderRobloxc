@@ -5,6 +5,8 @@ import { useProfile } from "@/context/ProfileProvider";
 import PayPalCheckout from "@/components/PayPalCheckout";
 import { ShieldCheck, Zap, BadgeDollarSign } from "lucide-react";
 import { useState } from "react";
+import { db } from "@/lib/firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 const packs = [
   { id: "starter", name: "Starter", coins: 500, price: 4.99, bonus: 5 },
@@ -85,24 +87,16 @@ export default function Shop() {
                         setProcessing(true);
                         const credits = p.coins + Math.round((p.coins * p.bonus) / 100);
                         await addCredits(credits);
-                        try {
-                          const { addDoc, collection, serverTimestamp } = await import("firebase/firestore");
-                          const { db } = await import("@/lib/firebase");
-                          const { user } = await import("@/context/AuthProvider");
-                        } catch {}
                         // Write transaction
-                        try {
-                          const { addDoc, collection, serverTimestamp } = await import("firebase/firestore");
-                          await addDoc(collection(db, "transactions"), {
-                            uid: user?.uid,
-                            email: user?.email,
-                            type: "credits_purchase",
-                            orderId,
-                            amountEUR: p.price,
-                            credits,
-                            createdAt: serverTimestamp(),
-                          });
-                        } catch {}
+                        await addDoc(collection(db, "transactions"), {
+                          uid: user?.uid,
+                          email: user?.email,
+                          type: "credits_purchase",
+                          orderId,
+                          amountEUR: p.price,
+                          credits,
+                          createdAt: serverTimestamp(),
+                        });
                         setDone(true);
                         toast({ title: "Paiement réussi", description: `Vous avez reçu ${ credits.toLocaleString() } RC` });
                       } finally {
