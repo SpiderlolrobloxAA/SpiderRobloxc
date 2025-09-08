@@ -70,13 +70,12 @@ export default function Quests() {
     const st = status[q.id] as any | undefined;
     const claimed = Boolean(st?.claimedAt);
     const eligible = q.eligible(ctx);
-    return { ...q, claimed, eligible };
+    return { id: q.id, title: q.title, reward: q.reward, claimed, eligible };
   }), [status, ctx]);
 
-  const claim = async (q: QuestDef) => {
+  const claim = async (q: { id: string; reward: number; eligible: boolean }) => {
     if (!user) return;
-    const eligible = q.eligible(ctx);
-    if (!eligible) return;
+    if (!q.eligible) return;
     try {
       await addCredits(q.reward);
       await setDoc(doc(db, "users", user.uid, "meta", "quests"), {
