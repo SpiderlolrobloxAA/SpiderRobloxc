@@ -69,13 +69,13 @@ export default function Index() {
               Paiements PayPal, vendeurs certifiés, redistribution automatique.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild className="bg-gradient-to-r from-primary to-secondary">
+              <Button asChild variant="outline">
                 <Link to="/marketplace" className="inline-flex items-center gap-2">
                   <ShoppingBag className="h-4 w-4" />
                   Browse Marketplace
                 </Link>
               </Button>
-              <Button asChild variant="secondary">
+              <Button asChild variant="ghost" className="border border-border/60">
                 <Link to="/sell" className="inline-flex items-center gap-2">
                   <Trophy className="h-4 w-4" />
                   Start Selling
