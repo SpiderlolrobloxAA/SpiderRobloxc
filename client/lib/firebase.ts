@@ -18,9 +18,15 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
 export const db = getFirestore(app);
-setPersistence(auth, browserLocalPersistence);
+
+// Auth is browser-only: guard initialization so server builds don't initialize auth components
+export let auth: ReturnType<typeof getAuth> | null = null;
+if (typeof window !== "undefined") {
+  auth = getAuth(app);
+  // set persistence only in browser
+  setPersistence(auth, browserLocalPersistence).catch(()=>{});
+}
 
 export async function initAnalytics() {
   if (typeof window === "undefined") return null;
