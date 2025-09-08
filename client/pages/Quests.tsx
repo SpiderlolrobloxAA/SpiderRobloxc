@@ -3,13 +3,26 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
 import { db } from "@/lib/firebase";
-import { collection, doc, getDocs, onSnapshot, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+} from "firebase/firestore";
 
 interface QuestDef {
   id: string;
   title: string;
   reward: number; // RC
-  eligible: (ctx: { hasPurchase: boolean; hasTicket: boolean; hasProfile: boolean }) => boolean;
+  eligible: (ctx: {
+    hasPurchase: boolean;
+    hasTicket: boolean;
+    hasProfile: boolean;
+  }) => boolean;
 }
 
 const QUESTS: QuestDef[] = [
@@ -38,7 +51,11 @@ export default function Quests() {
   const { addCredits } = useProfile();
   const [status, setStatus] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
-  const [ctx, setCtx] = useState({ hasPurchase: false, hasTicket: false, hasProfile: false });
+  const [ctx, setCtx] = useState({
+    hasPurchase: false,
+    hasTicket: false,
+    hasProfile: false,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -53,8 +70,20 @@ export default function Quests() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const hasPurchase = !(await getDocs(query(collection(db, "transactions"), where("uid", "==", user.uid), where("type", "==", "credits_purchase")))).empty;
-      const hasTicket = !(await getDocs(query(collection(db, "tickets"), where("uid", "==", user.uid)))).empty;
+      const hasPurchase = !(
+        await getDocs(
+          query(
+            collection(db, "transactions"),
+            where("uid", "==", user.uid),
+            where("type", "==", "credits_purchase"),
+          ),
+        )
+      ).empty;
+      const hasTicket = !(
+        await getDocs(
+          query(collection(db, "tickets"), where("uid", "==", user.uid)),
+        )
+      ).empty;
       // Profile complete if displayName exists on auth or users doc
       let hasProfile = Boolean(user.displayName);
       try {
@@ -66,42 +95,71 @@ export default function Quests() {
     })();
   }, [user]);
 
-  const items = useMemo(() => QUESTS.map((q) => {
-    const st = status[q.id] as any | undefined;
-    const claimed = Boolean(st?.claimedAt);
-    const eligible = q.eligible(ctx);
-    return { id: q.id, title: q.title, reward: q.reward, claimed, eligible };
-  }), [status, ctx]);
+  const items = useMemo(
+    () =>
+      QUESTS.map((q) => {
+        const st = status[q.id] as any | undefined;
+        const claimed = Boolean(st?.claimedAt);
+        const eligible = q.eligible(ctx);
+        return {
+          id: q.id,
+          title: q.title,
+          reward: q.reward,
+          claimed,
+          eligible,
+        };
+      }),
+    [status, ctx],
+  );
 
-  const claim = async (q: { id: string; reward: number; eligible: boolean }) => {
+  const claim = async (q: {
+    id: string;
+    reward: number;
+    eligible: boolean;
+  }) => {
     if (!user) return;
     if (!q.eligible) return;
     try {
       await addCredits(q.reward);
-      await setDoc(doc(db, "users", user.uid, "meta", "quests"), {
-        [q.id]: { claimedAt: serverTimestamp(), reward: q.reward },
-      }, { merge: true });
+      await setDoc(
+        doc(db, "users", user.uid, "meta", "quests"),
+        {
+          [q.id]: { claimedAt: serverTimestamp(), reward: q.reward },
+        },
+        { merge: true },
+      );
     } catch (e) {
-      console.error('quests:claim failed', e);
+      console.error("quests:claim failed", e);
     }
   };
 
   return (
     <div className="container py-10">
       <h1 className="font-display text-2xl font-bold">Quêtes</h1>
-      <p className="text-sm text-foreground/70">Complétez des quêtes et gagnez des RotCoins.</p>
+      <p className="text-sm text-foreground/70">
+        Complétez des quêtes et gagnez des RotCoins.
+      </p>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((q) => (
-          <div key={q.id} className="rounded-xl border border-border/60 bg-card p-4 space-y-2">
+          <div
+            key={q.id}
+            className="rounded-xl border border-border/60 bg-card p-4 space-y-2"
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="font-semibold">{q.title}</div>
-                <div className="text-xs text-foreground/70">Récompense: {q.reward} RC</div>
+                <div className="text-xs text-foreground/70">
+                  Récompense: {q.reward} RC
+                </div>
               </div>
               {q.claimed ? (
-                <span className="text-xs text-emerald-400 font-semibold">Réclamée ✔</span>
+                <span className="text-xs text-emerald-400 font-semibold">
+                  Réclamée ✔
+                </span>
               ) : q.eligible ? (
-                <Button size="sm" onClick={() => claim(q)}>Réclamer</Button>
+                <Button size="sm" onClick={() => claim(q)}>
+                  Réclamer
+                </Button>
               ) : (
                 <span className="text-xs text-foreground/60">Non éligible</span>
               )}
@@ -120,6 +178,8 @@ function QuestLink({ id }: { id: string }) {
   else if (id === "first_purchase") to = "/shop";
   else if (id === "open_ticket") to = "/tickets";
   return (
-    <a href={to} className="text-xs text-primary hover:underline">Aller à la page</a>
+    <a href={to} className="text-xs text-primary hover:underline">
+      Aller à la page
+    </a>
   );
 }

@@ -38,19 +38,79 @@ const App = () => (
             <Routes>
               <Route element={<Layout />}>
                 <Route path="/" element={<Index />} />
-                <Route path="/marketplace" element={<RequireAuth><Marketplace /></RequireAuth>} />
-                <Route path="/shop" element={<RequireAuth><Shop /></RequireAuth>} />
-                <Route path="/rotcoins" element={<RequireAuth><Shop /></RequireAuth>} />
-                <Route path="/quests" element={<RequireAuth><Quests /></RequireAuth>} />
-                <Route path="/quetes" element={<RequireAuth><Quests /></RequireAuth>} />
+                <Route
+                  path="/marketplace"
+                  element={
+                    <RequireAuth>
+                      <Marketplace />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/shop"
+                  element={
+                    <RequireAuth>
+                      <Shop />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/rotcoins"
+                  element={
+                    <RequireAuth>
+                      <Shop />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/quests"
+                  element={
+                    <RequireAuth>
+                      <Quests />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/quetes"
+                  element={
+                    <RequireAuth>
+                      <Quests />
+                    </RequireAuth>
+                  }
+                />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/transactions" element={<RequireAuth><Transactions /></RequireAuth>} />
-                <Route path="/tickets" element={<RequireAuth><Placeholder title="Tickets support" /></RequireAuth>} />
-                <Route path="/messages" element={<RequireAuth><Messages /></RequireAuth>} />
+                <Route
+                  path="/transactions"
+                  element={
+                    <RequireAuth>
+                      <Transactions />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/tickets"
+                  element={
+                    <RequireAuth>
+                      <Placeholder title="Tickets support" />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/messages"
+                  element={
+                    <RequireAuth>
+                      <Messages />
+                    </RequireAuth>
+                  }
+                />
                 <Route path="/admin" element={<AdminPanel />} />
                 <Route
                   path="/sell"
-                  element={<RequireAuth><Placeholder title="Commencer à vendre" /></RequireAuth>}
+                  element={
+                    <RequireAuth>
+                      <Placeholder title="Commencer à vendre" />
+                    </RequireAuth>
+                  }
                 />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />

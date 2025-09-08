@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             { merge: true },
           );
         } catch (e) {
-          console.error('auth:setUserDoc failed', e);
+          console.error("auth:setUserDoc failed", e);
         }
       }
     });

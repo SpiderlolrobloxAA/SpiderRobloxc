@@ -95,7 +95,8 @@ export default function AdminPanel() {
       if (d.exists()) {
         const data = { id: d.id, ...d.data() } as any;
         setUserInfo(data);
-        if (selectedRole == null) setSelectedRole(((data.role ?? "user") as Role));
+        if (selectedRole == null)
+          setSelectedRole((data.role ?? "user") as Role);
       }
     });
     return () => unsub();
@@ -116,9 +117,14 @@ export default function AdminPanel() {
 
   useEffect(() => {
     if (!activeTicket) return;
-    const unsub = onSnapshot(collection(db, 'tickets', activeTicket, 'messages'), (snap) => {
-      setTicketMsgs(snap.docs.map(d=>({ id: d.id, ...(d.data() as any) })));
-    });
+    const unsub = onSnapshot(
+      collection(db, "tickets", activeTicket, "messages"),
+      (snap) => {
+        setTicketMsgs(
+          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })),
+        );
+      },
+    );
     return () => unsub();
   }, [activeTicket]);
 
@@ -131,8 +137,11 @@ export default function AdminPanel() {
         const d = res.docs[0];
         setUserId(d.id);
         setUserInfo(d.data());
-        setSelectedRole((((d.data() as any).role ?? "user") as Role));
-        toast({ title: "Utilisateur trouvé", description: (d.data() as any).email });
+        setSelectedRole(((d.data() as any).role ?? "user") as Role);
+        toast({
+          title: "Utilisateur trouvé",
+          description: (d.data() as any).email,
+        });
       } else {
         toast({ title: "Introuvable", description: email });
       }
@@ -186,10 +195,19 @@ export default function AdminPanel() {
   const sendReply = async () => {
     if (!activeTicket || !reply.trim()) return;
     try {
-      await setDoc(doc(collection(db, 'tickets', activeTicket, 'messages')), { text: reply.trim(), senderId: 'admin', createdAt: serverTimestamp() });
-      await updateDoc(doc(db, 'tickets', activeTicket), { updatedAt: serverTimestamp(), status: 'pending' });
-      setReply('');
-    } catch (e) { console.error('ticket:reply failed', e); }
+      await setDoc(doc(collection(db, "tickets", activeTicket, "messages")), {
+        text: reply.trim(),
+        senderId: "admin",
+        createdAt: serverTimestamp(),
+      });
+      await updateDoc(doc(db, "tickets", activeTicket), {
+        updatedAt: serverTimestamp(),
+        status: "pending",
+      });
+      setReply("");
+    } catch (e) {
+      console.error("ticket:reply failed", e);
+    }
   };
   const closeTicket = async (id: string, reason: string) => {
     await updateDoc(doc(db, "tickets", id), {
@@ -220,38 +238,39 @@ export default function AdminPanel() {
           {loadingUsers ? (
             <div className="mt-3 text-sm text-foreground/70">Chargement…</div>
           ) : (
-          <div className="mt-2 max-h-80 overflow-auto divide-y divide-border/50">
-            {users
-              .filter((u) => {
-                const q = filter.toLowerCase();
-                if (!q) return true;
-                return (
-                  (u.email ?? "").toLowerCase().includes(q) ||
-                  (u.displayName ?? "").toLowerCase().includes(q) ||
-                  (u.role ?? "").toLowerCase().includes(q)
-                );
-              })
-              .map((u) => (
-                <button
-                  key={u.id}
-                  onClick={() => {
-                    setUserId(u.id);
-                    setUserInfo(u);
-                    setSelectedRole(((u.role ?? "user") as Role));
-                  }}
-                  className={`w-full text-left px-2 py-2 hover:bg-muted transition-colors ${
-                    userId === u.id ? "bg-muted" : ""
-                  }`}
-                >
-                  <div className="text-sm">
-                    {u.displayName || u.email || u.id}
-                  </div>
-                  <div className="text-xs text-foreground/60">
-                    {(u.role ?? "user").toString()} · {(u.credits ?? 0).toLocaleString()} RC
-                  </div>
-                </button>
-              ))}
-          </div>
+            <div className="mt-2 max-h-80 overflow-auto divide-y divide-border/50">
+              {users
+                .filter((u) => {
+                  const q = filter.toLowerCase();
+                  if (!q) return true;
+                  return (
+                    (u.email ?? "").toLowerCase().includes(q) ||
+                    (u.displayName ?? "").toLowerCase().includes(q) ||
+                    (u.role ?? "").toLowerCase().includes(q)
+                  );
+                })
+                .map((u) => (
+                  <button
+                    key={u.id}
+                    onClick={() => {
+                      setUserId(u.id);
+                      setUserInfo(u);
+                      setSelectedRole((u.role ?? "user") as Role);
+                    }}
+                    className={`w-full text-left px-2 py-2 hover:bg-muted transition-colors ${
+                      userId === u.id ? "bg-muted" : ""
+                    }`}
+                  >
+                    <div className="text-sm">
+                      {u.displayName || u.email || u.id}
+                    </div>
+                    <div className="text-xs text-foreground/60">
+                      {(u.role ?? "user").toString()} ·{" "}
+                      {(u.credits ?? 0).toLocaleString()} RC
+                    </div>
+                  </button>
+                ))}
+            </div>
           )}
         </div>
         <div className="rounded-xl border border-border/60 bg-card p-4 md:col-span-2">
@@ -262,7 +281,9 @@ export default function AdminPanel() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-64"
             />
-            <Button onClick={findUser} disabled={searching}>{searching ? "Recherche…" : "Rechercher"}</Button>
+            <Button onClick={findUser} disabled={searching}>
+              {searching ? "Recherche…" : "Rechercher"}
+            </Button>
             {userInfo && (
               <div className="text-sm text-foreground/80">
                 {userInfo.displayName || userInfo.email}
@@ -282,7 +303,12 @@ export default function AdminPanel() {
                   {r}
                 </Button>
               ))}
-              <Button size="sm" className="ml-2" onClick={saveRole} disabled={savingRole}>
+              <Button
+                size="sm"
+                className="ml-2"
+                onClick={saveRole}
+                disabled={savingRole}
+              >
                 {savingRole ? "Sauvegarde…" : "Sauvegarder"}
               </Button>
               <span className="ml-4 text-xs text-foreground/70">Crédits:</span>
@@ -315,11 +341,28 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <Tabs defaultValue={role === 'founder' ? 'founder' : role === 'moderator' ? 'moderator' : 'helper'} className="mt-8">
+      <Tabs
+        defaultValue={
+          role === "founder"
+            ? "founder"
+            : role === "moderator"
+              ? "moderator"
+              : "helper"
+        }
+        className="mt-8"
+      >
         <TabsList>
-          {(role === 'helper' || role === 'moderator' || role === 'founder') && <TabsTrigger value="helper">Helper</TabsTrigger>}
-          {(role === 'moderator' || role === 'founder') && <TabsTrigger value="moderator">Modérateur</TabsTrigger>}
-          {role === 'founder' && <TabsTrigger value="founder">Fondateur</TabsTrigger>}
+          {(role === "helper" ||
+            role === "moderator" ||
+            role === "founder") && (
+            <TabsTrigger value="helper">Helper</TabsTrigger>
+          )}
+          {(role === "moderator" || role === "founder") && (
+            <TabsTrigger value="moderator">Modérateur</TabsTrigger>
+          )}
+          {role === "founder" && (
+            <TabsTrigger value="founder">Fondateur</TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="helper">
           <div className="grid gap-3 md:grid-cols-[300px,1fr]">
@@ -327,9 +370,15 @@ export default function AdminPanel() {
               <h3 className="font-semibold">Tickets (ouverts)</h3>
               <div className="mt-3 max-h-[60vh] overflow-auto divide-y divide-border/60">
                 {tickets.map((t) => (
-                  <button key={t.id} onClick={()=>setActiveTicket(t.id)} className={`w-full text-left px-2 py-2 hover:bg-muted ${activeTicket===t.id?'bg-muted':''}`}>
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTicket(t.id)}
+                    className={`w-full text-left px-2 py-2 hover:bg-muted ${activeTicket === t.id ? "bg-muted" : ""}`}
+                  >
                     <div className="text-sm font-semibold">{t.title}</div>
-                    <div className="text-xs text-foreground/70 capitalize">{t.status}</div>
+                    <div className="text-xs text-foreground/70 capitalize">
+                      {t.status}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -339,17 +388,33 @@ export default function AdminPanel() {
               {activeTicket ? (
                 <div className="flex h-[60vh] flex-col">
                   <div className="flex-1 space-y-2 overflow-auto">
-                    {ticketMsgs.map(m => (
-                      <div key={m.id} className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId==='admin'? 'ml-auto bg-secondary/20' : 'bg-muted'}`}>{m.text}</div>
+                    {ticketMsgs.map((m) => (
+                      <div
+                        key={m.id}
+                        className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === "admin" ? "ml-auto bg-secondary/20" : "bg-muted"}`}
+                      >
+                        {m.text}
+                      </div>
                     ))}
                   </div>
                   <div className="mt-2 flex items-center gap-2">
-                    <Input value={reply} onChange={(e)=>setReply(e.target.value)} placeholder="Réponse…" onKeyDown={(e)=>{ if(e.key==='Enter') sendReply(); }} />
-                    <Button size="sm" onClick={sendReply}>Envoyer</Button>
+                    <Input
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      placeholder="Réponse…"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") sendReply();
+                      }}
+                    />
+                    <Button size="sm" onClick={sendReply}>
+                      Envoyer
+                    </Button>
                   </div>
                 </div>
               ) : (
-                <div className="text-sm text-foreground/70">Sélectionnez un ticket.</div>
+                <div className="text-sm text-foreground/70">
+                  Sélectionnez un ticket.
+                </div>
               )}
             </div>
           </div>
@@ -363,22 +428,64 @@ export default function AdminPanel() {
             {userId ? (
               <div className="mt-3 grid gap-2">
                 <div className="flex items-center gap-2">
-                  <Input type="number" placeholder="Jours" value={banDays} onChange={(e)=>setBanDays(Number(e.target.value))} className="w-24" />
-                  <Input type="number" placeholder="Heures" value={banHours} onChange={(e)=>setBanHours(Number(e.target.value))} className="w-24" />
-                  <Button size="sm" variant="destructive" onClick={async () => {
-                    const ms = (banDays*24 + banHours) * 60 * 60 * 1000;
-                    const until = new Date(Date.now() + ms);
-                    await setDoc(doc(db, 'users', userId), { bannedUntil: until }, { merge: true });
-                    toast({ title: 'Ban temporaire appliqué' });
-                  }}>Ban temporaire</Button>
-                  <Button size="sm" variant="destructive" onClick={async () => {
-                    await setDoc(doc(db, 'users', userId), { banned: true, bannedAt: serverTimestamp() }, { merge: true });
-                    toast({ title: 'Ban permanent' });
-                  }}>Ban permanent</Button>
-                  <Button size="sm" variant="outline" onClick={async ()=>{
-                    await setDoc(doc(db, 'users', userId), { banned: false, bannedUntil: null }, { merge: true });
-                    toast({ title: 'Ban levé' });
-                  }}>Lever</Button>
+                  <Input
+                    type="number"
+                    placeholder="Jours"
+                    value={banDays}
+                    onChange={(e) => setBanDays(Number(e.target.value))}
+                    className="w-24"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Heures"
+                    value={banHours}
+                    onChange={(e) => setBanHours(Number(e.target.value))}
+                    className="w-24"
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={async () => {
+                      const ms = (banDays * 24 + banHours) * 60 * 60 * 1000;
+                      const until = new Date(Date.now() + ms);
+                      await setDoc(
+                        doc(db, "users", userId),
+                        { bannedUntil: until },
+                        { merge: true },
+                      );
+                      toast({ title: "Ban temporaire appliqué" });
+                    }}
+                  >
+                    Ban temporaire
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={async () => {
+                      await setDoc(
+                        doc(db, "users", userId),
+                        { banned: true, bannedAt: serverTimestamp() },
+                        { merge: true },
+                      );
+                      toast({ title: "Ban permanent" });
+                    }}
+                  >
+                    Ban permanent
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      await setDoc(
+                        doc(db, "users", userId),
+                        { banned: false, bannedUntil: null },
+                        { merge: true },
+                      );
+                      toast({ title: "Ban levé" });
+                    }}
+                  >
+                    Lever
+                  </Button>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -409,20 +516,51 @@ export default function AdminPanel() {
             <h3 className="font-semibold">Fondateur</h3>
             <div>
               <div className="text-sm font-semibold">Annonce globale</div>
-              <Input placeholder="Message à afficher" value={announcement} onChange={(e)=>setAnnouncement(e.target.value)} />
-              <Button className="mt-2" size="sm" onClick={async ()=>{
-                await setDoc(doc(collection(db,'announcements')), { text: announcement, createdAt: serverTimestamp() });
-                setAnnouncement("");
-                toast({ title: 'Annonce publiée' });
-              }}>Publier</Button>
+              <Input
+                placeholder="Message à afficher"
+                value={announcement}
+                onChange={(e) => setAnnouncement(e.target.value)}
+              />
+              <Button
+                className="mt-2"
+                size="sm"
+                onClick={async () => {
+                  await setDoc(doc(collection(db, "announcements")), {
+                    text: announcement,
+                    createdAt: serverTimestamp(),
+                  });
+                  setAnnouncement("");
+                  toast({ title: "Annonce publiée" });
+                }}
+              >
+                Publier
+              </Button>
             </div>
             <div>
-              <div className="text-sm font-semibold">Promotions RotCoins (%)</div>
-              <Input type="number" placeholder="Réduction % pour tous les packs" value={promo} onChange={(e)=>setPromo(Number(e.target.value))} className="w-40" />
-              <Button className="ml-2" size="sm" onClick={async ()=>{
-                await setDoc(doc(db,'promotions','packs'), { all: Number(promo)||0 }, { merge: true });
-                toast({ title: 'Promo mise à jour' });
-              }}>Appliquer</Button>
+              <div className="text-sm font-semibold">
+                Promotions RotCoins (%)
+              </div>
+              <Input
+                type="number"
+                placeholder="Réduction % pour tous les packs"
+                value={promo}
+                onChange={(e) => setPromo(Number(e.target.value))}
+                className="w-40"
+              />
+              <Button
+                className="ml-2"
+                size="sm"
+                onClick={async () => {
+                  await setDoc(
+                    doc(db, "promotions", "packs"),
+                    { all: Number(promo) || 0 },
+                    { merge: true },
+                  );
+                  toast({ title: "Promo mise à jour" });
+                }}
+              >
+                Appliquer
+              </Button>
             </div>
           </div>
         </TabsContent>

@@ -71,24 +71,33 @@ function TicketsPage() {
       setMsg("");
       setActive(ref.id);
     } catch (e) {
-      console.error('ticket:create failed', e);
+      console.error("ticket:create failed", e);
     }
   };
 
   useEffect(() => {
     if (!active) return;
-    const unsub = onSnapshot(query(collection(db, 'tickets', active, 'messages')), (snap) => {
-      setMsgs(snap.docs.map(d=>({ id: d.id, ...(d.data() as any) })));
-    });
+    const unsub = onSnapshot(
+      query(collection(db, "tickets", active, "messages")),
+      (snap) => {
+        setMsgs(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+      },
+    );
     return () => unsub();
   }, [active]);
 
   const send = async () => {
     if (!user || !active || !text.trim()) return;
     try {
-      await addDoc(collection(db, 'tickets', active, 'messages'), { senderId: user.uid, text: text.trim(), createdAt: serverTimestamp() });
-    } catch (e) { console.error('ticket:send failed', e); }
-    setText('');
+      await addDoc(collection(db, "tickets", active, "messages"), {
+        senderId: user.uid,
+        text: text.trim(),
+        createdAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.error("ticket:send failed", e);
+    }
+    setText("");
   };
 
   return (
@@ -114,12 +123,22 @@ function TicketsPage() {
             <div className="font-semibold text-sm">Vos tickets</div>
             <div className="mt-2 max-h-[50vh] overflow-auto divide-y divide-border/60">
               {tickets.map((t) => (
-                <button key={t.id} onClick={() => setActive(t.id)} className={`w-full text-left px-2 py-2 hover:bg-muted ${active===t.id?'bg-muted':''}`}>
+                <button
+                  key={t.id}
+                  onClick={() => setActive(t.id)}
+                  className={`w-full text-left px-2 py-2 hover:bg-muted ${active === t.id ? "bg-muted" : ""}`}
+                >
                   <div className="text-sm">{t.title}</div>
-                  <div className="text-xs text-foreground/60 capitalize">{t.status}</div>
+                  <div className="text-xs text-foreground/60 capitalize">
+                    {t.status}
+                  </div>
                 </button>
               ))}
-              {tickets.length===0 && <div className="text-sm text-foreground/60 px-2 py-2">Aucun ticket</div>}
+              {tickets.length === 0 && (
+                <div className="text-sm text-foreground/60 px-2 py-2">
+                  Aucun ticket
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -127,17 +146,32 @@ function TicketsPage() {
           {active ? (
             <div className="flex h-[60vh] flex-col">
               <div className="flex-1 space-y-2 overflow-auto">
-                {msgs.map(m => (
-                  <div key={m.id} className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId===user?.uid? 'ml-auto bg-secondary/20' : 'bg-muted'}`}>{m.text}</div>
+                {msgs.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === user?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
+                  >
+                    {m.text}
+                  </div>
                 ))}
               </div>
               <div className="mt-2 flex items-center gap-2">
-                <input className="flex-1 rounded-md bg-background px-3 py-2 border border-border/60" value={text} onChange={(e)=>setText(e.target.value)} placeholder="Votre message…" onKeyDown={(e)=>{ if(e.key==='Enter') send(); }} />
+                <input
+                  className="flex-1 rounded-md bg-background px-3 py-2 border border-border/60"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Votre message…"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") send();
+                  }}
+                />
                 <Button onClick={send}>Envoyer</Button>
               </div>
             </div>
           ) : (
-            <div className="text-sm text-foreground/70">Sélectionnez un ticket pour ouvrir le chat.</div>
+            <div className="text-sm text-foreground/70">
+              Sélectionnez un ticket pour ouvrir le chat.
+            </div>
           )}
         </div>
       </div>

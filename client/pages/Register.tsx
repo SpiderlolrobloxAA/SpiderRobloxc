@@ -2,7 +2,14 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,31 +20,49 @@ const schema = z.object({
 });
 
 export default function Register() {
-  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { email: "", username: "", password: "" } });
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: "", username: "", password: "" },
+  });
   const { toast } = useToast();
 
   async function onSubmit(values: z.infer<typeof schema>) {
-    const { createUserWithEmailAndPassword, updateProfile } = await import("firebase/auth");
+    const { createUserWithEmailAndPassword, updateProfile } = await import(
+      "firebase/auth"
+    );
     const mod = await import("@/lib/firebase");
     const auth = mod.auth;
     if (!auth) {
-      toast({ title: "Auth indisponible", description: "Réessayez dans le navigateur (client)." });
+      toast({
+        title: "Auth indisponible",
+        description: "Réessayez dans le navigateur (client).",
+      });
       return;
     }
     await createUserWithEmailAndPassword(auth, values.email, values.password);
-    if (auth.currentUser) await updateProfile(auth.currentUser, { displayName: values.username });
+    if (auth.currentUser)
+      await updateProfile(auth.currentUser, { displayName: values.username });
     try {
       const { doc, setDoc, increment } = await import("firebase/firestore");
       const { db } = await import("@/lib/firebase");
-      await setDoc(doc(db, "users", auth.currentUser!.uid), { credits: increment(5) }, { merge: true });
+      await setDoc(
+        doc(db, "users", auth.currentUser!.uid),
+        { credits: increment(5) },
+        { merge: true },
+      );
     } catch {}
-    toast({ title: `Bienvenue ${values.username} 🎉`, description: "+5 RotCoins offerts à l'inscription" });
+    toast({
+      title: `Bienvenue ${values.username} 🎉`,
+      description: "+5 RotCoins offerts à l'inscription",
+    });
   }
 
   return (
     <div className="container max-w-md py-12">
       <h1 className="font-display text-2xl font-bold">Créer un compte</h1>
-      <p className="text-sm text-foreground/70">Rejoignez Brainrot Market 🇫🇷 en quelques secondes.</p>
+      <p className="text-sm text-foreground/70">
+        Rejoignez Brainrot Market 🇫🇷 en quelques secondes.
+      </p>
       <div className="mt-6 rounded-xl border border-border/60 bg-card p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -47,7 +72,13 @@ export default function Register() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
-                  <FormControl><Input type="email" placeholder="vous@exemple.com" {...field} /></FormControl>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="vous@exemple.com"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -58,7 +89,9 @@ export default function Register() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Pseudo</FormLabel>
-                  <FormControl><Input placeholder="Votre pseudo" {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="Votre pseudo" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -69,12 +102,19 @@ export default function Register() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Mot de passe</FormLabel>
-                  <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                  <FormControl>
+                    <Input type="password" placeholder="••••••••" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-gradient-to-r from-primary to-secondary">Créer mon compte</Button>
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-primary to-secondary"
+            >
+              Créer mon compte
+            </Button>
           </form>
         </Form>
       </div>
