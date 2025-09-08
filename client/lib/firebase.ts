@@ -26,7 +26,7 @@ export const app = initializeApp(firebaseConfig);
 // readable streams that are not yet locked to a reader". Guarding ensures
 // Firestore is only created in the browser runtime.
 export const db = typeof window !== "undefined"
-  ? initializeFirestore(app, { useFetchStreams: false, experimentalForceLongPolling: true })
+  ? initializeFirestore(app, { useFetchStreams: false, experimentalForceLongPolling: true } as any)
   : (null as any);
 
 // Auth is browser-only: guard initialization so server builds don't initialize auth components
