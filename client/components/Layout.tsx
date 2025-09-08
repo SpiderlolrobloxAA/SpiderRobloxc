@@ -12,7 +12,7 @@ import {
   BadgeCheck,
   LogOut,
 } from "lucide-react";
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthProvider";
