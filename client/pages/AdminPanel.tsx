@@ -64,6 +64,23 @@ export default function AdminPanel() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<any | null>(null);
   const [tickets, setTickets] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [filter, setFilter] = useState("");
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "users"), (snap) =>
+      setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    );
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    const unsub = onSnapshot(doc(db, "users", userId), (d) => {
+      if (d.exists()) setUserInfo({ id: d.id, ...d.data() });
+    });
+    return () => unsub();
+  }, [userId]);
 
   useEffect(() => {
     const q = query(
@@ -145,58 +162,100 @@ export default function AdminPanel() {
         CTRL + F1 pour ouvrir rapidement cet écran.
       </p>
 
-      <div className="mt-6 rounded-xl border border-border/60 bg-card p-4">
-        <div className="flex flex-wrap items-end gap-2">
-          <Input
-            placeholder="Email utilisateur"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-64"
-          />
-          <Button onClick={findUser}>Rechercher</Button>
-          {userInfo && (
-            <div className="text-sm text-foreground/80">
-              {userInfo.displayName || userInfo.email}
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="rounded-xl border border-border/60 bg-card p-3 md:col-span-1">
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Filtrer par email/nom"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+          </div>
+          <div className="mt-2 max-h-80 overflow-auto divide-y divide-border/50">
+            {users
+              .filter((u) => {
+                const q = filter.toLowerCase();
+                if (!q) return true;
+                return (
+                  (u.email ?? "").toLowerCase().includes(q) ||
+                  (u.displayName ?? "").toLowerCase().includes(q) ||
+                  (u.role ?? "").toLowerCase().includes(q)
+                );
+              })
+              .map((u) => (
+                <button
+                  key={u.id}
+                  onClick={() => {
+                    setUserId(u.id);
+                    setUserInfo(u);
+                  }}
+                  className={`w-full text-left px-2 py-2 hover:bg-muted transition-colors ${
+                    userId === u.id ? "bg-muted" : ""
+                  }`}
+                >
+                  <div className="text-sm">
+                    {u.displayName || u.email || u.id}
+                  </div>
+                  <div className="text-xs text-foreground/60">
+                    {(u.role ?? "user").toString()} · {(u.credits ?? 0).toLocaleString()} RC
+                  </div>
+                </button>
+              ))}
+          </div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-card p-4 md:col-span-2">
+          <div className="flex flex-wrap items-end gap-2">
+            <Input
+              placeholder="Email utilisateur"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-64"
+            />
+            <Button onClick={findUser}>Rechercher</Button>
+            {userInfo && (
+              <div className="text-sm text-foreground/80">
+                {userInfo.displayName || userInfo.email}
+              </div>
+            )}
+          </div>
+          {userId && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-foreground/70">Rôle:</span>
+              {ROLES.map((r) => (
+                <Button
+                  key={r}
+                  size="sm"
+                  variant={userInfo?.role === r ? "default" : "outline"}
+                  onClick={() => setRole(r as Role)}
+                >
+                  {r}
+                </Button>
+              ))}
+              <span className="ml-4 text-xs text-foreground/70">Crédits:</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => adjustCredits(100)}
+              >
+                +100
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => adjustCredits(1000)}
+              >
+                +1000
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => adjustCredits(-100)}
+              >
+                -100
+              </Button>
             </div>
           )}
         </div>
-        {userId && (
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-foreground/70">Rôle:</span>
-            {ROLES.map((r) => (
-              <Button
-                key={r}
-                size="sm"
-                variant="outline"
-                onClick={() => setRole(r as Role)}
-              >
-                {r}
-              </Button>
-            ))}
-            <span className="ml-4 text-xs text-foreground/70">Crédits:</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => adjustCredits(100)}
-            >
-              +100
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => adjustCredits(1000)}
-            >
-              +1000
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => adjustCredits(-100)}
-            >
-              -100
-            </Button>
-          </div>
-        )}
       </div>
 
       <Tabs defaultValue="helper" className="mt-8">
