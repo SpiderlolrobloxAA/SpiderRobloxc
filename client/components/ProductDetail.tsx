@@ -34,13 +34,22 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const purchase = async () => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const purchase = async (confirm = false) => {
     if (!user) {
       toast({ title: "Connectez-vous", description: "Veuillez vous connecter pour acheter.", variant: "destructive" });
       return;
     }
     const sellerId = product.seller.id;
     const price = product.price || 0;
+
+    // Prevent seller from buying their own product
+    if (sellerId && user.uid === sellerId) {
+      toast({ title: "Achat impossible", description: "Vous ne pouvez pas acheter votre propre produit.", variant: "destructive" });
+      return;
+    }
+
     try {
       if (product.free) {
         // create thread
