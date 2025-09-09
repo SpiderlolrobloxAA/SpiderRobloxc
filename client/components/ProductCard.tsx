@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { RoleBadge, type Role } from "./RoleBadge";
+import { emailToUsername } from "@/lib/usernameAuth";
 import { motion } from "framer-motion";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { Dialog, DialogTrigger, DialogContent } from "./ui/dialog";
