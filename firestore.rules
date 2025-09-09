@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function userId() { return request.auth.uid; }
+    function hasRole(r) { return isSignedIn() && exists(/databases/$(database)/documents/users/$(userId())) && get(/databases/$(database)/documents/users/$(userId())).data.role == r; }
+    function inRoles(rs) { return isSignedIn() && rs.hasAny(get(/databases/$(database)/documents/users/$(userId())).data.role); }
+
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if hasRole('founder');
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && uid == userId();
+    }
+
+    match /products/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /orders/{id} {
+      allow read: if isSignedIn() && (resource.data.buyerId == userId() || resource.data.sellerId == userId() || hasRole('moderator') || hasRole('founder'));
+      allow write: if false; // server only
+    }
+
+    match /payments/{id} { allow read: if hasRole('founder'); allow write: if false; }
+    match /commissions/{id} { allow read: if hasRole('founder'); allow write: if false; }
+
+    match /tickets/{ticketId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (hasRole('helper') || hasRole('moderator') || hasRole('founder') || request.resource.data.userId == userId());
+      match /messages/{msgId} { allow read, create: if isSignedIn(); allow update, delete: if false; }
+    }
+
+    match /threads/{id}/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /reviews/{id} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+  }
+}
