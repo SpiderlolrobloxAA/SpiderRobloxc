@@ -166,15 +166,32 @@ export default function AdminPanel() {
     }
   };
 
+  const { user: currentUser } = useAuth();
+
   const adjustCredits = async (amount: number) => {
     if (!userId) return;
     try {
       setAdjusting(true);
-      await setDoc(
-        doc(db, "users", userId),
-        { credits: increment(amount), updatedAt: serverTimestamp() },
-        { merge: true },
-      );
+
+      // Atomically increment balances.available on user doc
+      await updateDoc(doc(db, "users", userId), { "balances.available": increment(amount) } as any);
+
+      // Create a transaction record to keep history and show admin as giver
+      try {
+        await addDoc(collection(db, "transactions"), {
+          uid: userId,
+          type: "admin_grant",
+          credits: amount,
+          adminId: currentUser?.uid || "admin",
+          adminName: currentUser?.displayName || currentUser?.email || "admin",
+          note: `Grant by admin ${currentUser?.displayName || currentUser?.email || "admin"}`,
+          status: "completed",
+          createdAt: serverTimestamp(),
+        });
+      } catch (e) {
+        console.error("admin:create transaction failed", e);
+      }
+
       toast({
         title: "Crédits modifiés",
         description: `${amount > 0 ? "+" : ""}${amount} RC`,
