@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthProvider";
+import { useLocation } from "react-router-dom";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { VERIFIED_IMG } from "@/components/RoleBadge";
 import { db } from "@/lib/firebase";
