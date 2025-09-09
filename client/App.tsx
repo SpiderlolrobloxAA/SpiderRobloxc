@@ -61,12 +61,6 @@ const App = () => (
                 <Route path="/admin-roles" element={<PrivateRoute />}>
                   <Route index element={<AdminRoles />} />
                 </Route>
-                <Route element={<PrivateRoute />}>
-                  <Route
-                    path="/sell"
-                    element={<Placeholder title="Commencer à vendre" />}
-                  />
-                </Route>
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
