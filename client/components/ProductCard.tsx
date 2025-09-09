@@ -77,11 +77,17 @@ export function ProductCard({ product }: { product: Product }) {
             </DialogTrigger>
 
             <div className="flex items-center gap-2">
-              <DialogTrigger asChild>
-                <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-gradient-to-r from-primary to-secondary text-white">
-                  Acheter
+              {user && product.seller?.id && user.uid === product.seller.id ? (
+                <button disabled className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-muted text-foreground/60" title="Vous êtes le vendeur">
+                  Votre produit
                 </button>
-              </DialogTrigger>
+              ) : (
+                <DialogTrigger asChild>
+                  <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-gradient-to-r from-primary to-secondary text-white">
+                    Acheter
+                  </button>
+                </DialogTrigger>
+              )}
 
               {/* If current user is the seller, show delete button */}
               {user && product.seller?.id && user.uid === product.seller.id ? (
