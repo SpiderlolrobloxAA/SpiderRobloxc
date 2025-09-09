@@ -660,9 +660,20 @@ export default function AdminPanel() {
                 <span id="product-count">Chargement…</span>
               </div>
               <div className="mt-2">
-                <label className="inline-flex items-center gap-2">
-                  <input id="maintenance-toggle" type="checkbox" className="rounded" /> Activer le mode maintenance
-                </label>
+                <div className="space-y-2">
+                  <label className="inline-flex items-center gap-2">
+                    <input id="maintenance-toggle" type="checkbox" className="rounded" /> Activer le mode maintenance
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <select id="maintenance-scope" className="rounded-md bg-background px-2 py-1 border border-border/60">
+                      <option value="global">Global (tout le site)</option>
+                      <option value="marketplace">Marketplace</option>
+                      <option value="shop">Boutique</option>
+                      <option value="tickets">Tickets</option>
+                    </select>
+                    <input id="maintenance-message" className="flex-1 rounded-md bg-background px-3 py-2 border border-border/60" placeholder="Message affiché pendant la maintenance" />
+                  </div>
+                </div>
               </div>
             </div>
             <div>
