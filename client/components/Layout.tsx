@@ -31,6 +31,7 @@ import { VERIFIED_IMG } from "@/components/RoleBadge";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import TosModal from "@/components/TosModal";
+import Notifications from "@/components/Notifications";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
