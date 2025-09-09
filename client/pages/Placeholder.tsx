@@ -66,6 +66,7 @@ function TicketsPage() {
       await addDoc(collection(db, "tickets", ref.id, "messages"), {
         senderId: user.uid,
         senderName: user.displayName || user.email || "Utilisateur",
+        senderRole: role || "user",
         text: msg || "Ticket créé",
         createdAt: serverTimestamp(),
       });
