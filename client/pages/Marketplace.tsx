@@ -365,7 +365,7 @@ function AddProduct({
     const reasons: string[] = [];
     if (!title.trim()) reasons.push("Titre requis");
     if (!imageUrl) reasons.push("Image requise (collez une URL ou choisissez un fichier)");
-    if (balance < cost) reasons.push(`Solde insuffisant (il vous faut ${cost} RC)`);
+    if (userCredits < cost) reasons.push(`Solde insuffisant (il vous faut ${cost} RC)`);
     if (!free && (Number(price) || 0) < 3) reasons.push("Prix minimum 3 RC sauf si Gratuit");
 
     if (reasons.length > 0) {
