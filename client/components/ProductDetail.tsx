@@ -31,6 +31,7 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
   const { user } = useAuth();
   const { credits } = useProfile();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const purchase = async () => {
     if (!user) {
