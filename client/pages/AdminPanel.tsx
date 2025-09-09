@@ -19,6 +19,7 @@ import {
   addDoc,
 } from "firebase/firestore";
 import { useProfile } from "@/context/ProfileProvider";
+import { useAuth } from "@/context/AuthProvider";
 
 const ROLES = ["user", "verified", "helper", "moderator", "founder"] as const;
 
