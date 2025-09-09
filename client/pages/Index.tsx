@@ -199,15 +199,23 @@ export default function Index() {
           </Link>
         </div>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <CreditPack name="Starter" amount={500} bonus={"+5%"} price="4,99€" />
-          <CreditPack name="Gamer" amount={1200} bonus={"+12%"} price="9,99€" />
-          <CreditPack
-            name="Elite"
-            amount={3500}
-            bonus={"+18%"}
-            price="24,99€"
-          />
-          <CreditPack name="Pro" amount={8000} bonus={"+25%"} price="49,99€" />
+          {packs.slice(0,4).map((p) => {
+            const promo = packPromo ?? 0;
+            const hasPromo = promo > 0;
+            const discounted = (p.price * (1 - promo / 100)).toFixed(2) + "€";
+            const priceStr = hasPromo ? discounted : p.price.toFixed(2) + "€";
+            return (
+              <CreditPack
+                key={p.id}
+                name={p.name}
+                amount={p.coins}
+                bonus={`+${p.bonus}%`}
+                price={priceStr}
+                originalPrice={p.price}
+                promo={promo}
+              />
+            );
+          })}
         </div>
       </section>
 
