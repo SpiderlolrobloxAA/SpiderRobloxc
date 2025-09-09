@@ -39,22 +39,27 @@ export default function Register() {
       });
       return;
     }
-    await createUserWithEmailAndPassword(auth, values.email, values.password);
+    const cred = await createUserWithEmailAndPassword(auth, values.email, values.password);
     if (auth.currentUser)
       await updateProfile(auth.currentUser, { displayName: values.username });
     try {
-      const { doc, setDoc, increment } = await import("firebase/firestore");
+      const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
       const { db } = await import("@/lib/firebase");
       await setDoc(
-        doc(db, "users", auth.currentUser!.uid),
-        { credits: increment(5) },
+        doc(db, "users", cred.user.uid),
+        {
+          email: values.email,
+          username: values.username,
+          role: "user",
+          balances: { available: 0, pending: 0 },
+          quests: { completed: [], progress: {} },
+          stats: { sales: 0, purchases: 0, joinedAt: serverTimestamp() },
+          lastSeen: serverTimestamp(),
+        },
         { merge: true },
       );
-    } catch {}
-    toast({
-      title: `Bienvenue ${values.username} 🎉`,
-      description: "+5 RotCoins offerts à l'inscription",
-    });
+    } catch (e) { console.error('register:setUser failed', e); }
+    toast({ title: `Bienvenue ${values.username} 🎉` });
   }
 
   return (
