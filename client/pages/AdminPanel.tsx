@@ -444,14 +444,13 @@ export default function AdminPanel() {
                 <div className="flex h-[60vh] flex-col">
                   <div className="flex-1 space-y-2 overflow-auto">
                     {ticketMsgs.map((m) => (
-                      <div
-                        key={m.id}
-                        className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === "admin" ? "ml-auto bg-secondary/20" : "bg-muted"}`}
-                      >
+                      <div key={m.id} className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === currentUser?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}>
+                        <div className="text-xs text-foreground/60 mb-1">{m.senderName || (m.senderId === "admin" ? "Admin" : "Utilisateur")}</div>
                         {m.text}
                       </div>
                     ))}
                   </div>
+
                   <div className="mt-2 flex items-center gap-2">
                     <Input
                       value={reply}
@@ -464,6 +463,18 @@ export default function AdminPanel() {
                     <Button size="sm" onClick={sendReply}>
                       Envoyer
                     </Button>
+                    {/* Close allowed for helpers+ */}
+                    {(role === "helper" || role === "moderator" || role === "founder") && (
+                      <Button size="sm" variant="outline" onClick={() => closeTicket(activeTicket)}>
+                        Fermer
+                      </Button>
+                    )}
+                    {/* Delete only for moderator/founder */}
+                    {(role === "moderator" || role === "founder") && (
+                      <Button size="sm" variant="destructive" onClick={() => deleteTicket(activeTicket)}>
+                        Supprimer
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
