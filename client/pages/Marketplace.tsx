@@ -179,6 +179,33 @@ function AddProduct({
     cost,
   });
 
+  const onPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    try {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        if (it.kind === "file" && it.type.startsWith("image/")) {
+          const f = it.getAsFile();
+          if (f) {
+            setFile(f);
+            return;
+          }
+        }
+        if (it.kind === "string") {
+          it.getAsString((s) => {
+            const trimmed = s.trim();
+            if (trimmed.startsWith("data:image/") || /(https?:\/\/.+\.(png|jpe?g|webp|gif))/i.test(trimmed)) {
+              setImageUrl(trimmed);
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("paste handling failed", err);
+    }
+  };
+
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
