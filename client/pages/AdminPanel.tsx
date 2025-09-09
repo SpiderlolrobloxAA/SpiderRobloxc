@@ -446,7 +446,12 @@ export default function AdminPanel() {
                   <div className="flex-1 space-y-2 overflow-auto">
                     {ticketMsgs.map((m) => (
                       <div key={m.id} className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === currentUser?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}>
-                        <div className="text-xs text-foreground/60 mb-1">{m.senderName || (m.senderId === "admin" ? "Admin" : "Utilisateur")}</div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="text-xs text-foreground/60">{m.senderName || (m.senderId === "admin" ? "Admin" : "Utilisateur")}</div>
+                          {m.senderRole && m.senderRole !== 'user' && (
+                            <div className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">{m.senderRole}</div>
+                          )}
+                        </div>
                         {m.text}
                       </div>
                     ))}
