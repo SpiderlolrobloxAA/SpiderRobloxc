@@ -102,8 +102,19 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
         createdAt: serverTimestamp(),
       });
 
-      // mark product sold
-      await updateDoc(doc(db, "products", product.id), { status: "sold", soldAt: serverTimestamp(), buyerId: user.uid });
+      // remove product for everyone (delete main doc and user mirror)
+      try {
+        await deleteDoc(doc(db, "products", product.id));
+      } catch (e) {
+        // ignore
+      }
+      try {
+        if (sellerId) {
+          await deleteDoc(doc(db, "DataProject", "data1", "users", sellerId, "products", product.id));
+        }
+      } catch (e) {
+        // ignore
+      }
 
       // create a thread between buyer and seller
       const thRef = await addDoc(collection(db, "threads"), {
