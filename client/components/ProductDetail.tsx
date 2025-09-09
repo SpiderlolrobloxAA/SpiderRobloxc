@@ -36,8 +36,10 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
   const navigate = useNavigate();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
   const purchase = async (confirm = false) => {
+    setIsPurchasing(true);
     if (!user) {
       toast({ title: "Connectez-vous", description: "Veuillez vous connecter pour acheter.", variant: "destructive" });
       return;
