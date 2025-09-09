@@ -126,6 +126,8 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
 
       toast({ title: "Achat confirmé", description: "Conversation ouverte avec le vendeur.", variant: "default" });
       onClose?.();
+      // redirect to messages thread
+      navigate(`/messages?thread=${thRef.id}`);
     } catch (e) {
       console.error("purchase failed", e);
       toast({ title: "Erreur", description: "Impossible d'effectuer l'achat.", variant: "destructive" });
