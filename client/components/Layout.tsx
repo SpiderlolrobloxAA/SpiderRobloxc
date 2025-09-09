@@ -294,9 +294,9 @@ function MaintenanceOverlay() {
   const [state, setState] = useState<{ on: boolean; message?: string; scope?: string } | null>(null);
   const location = useLocation();
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "settings", "app"), (d) => {
+    const unsub = onSnapshot(doc(db, "maintenance", "global"), (d) => {
       const data = d.data() as any;
-      if (data) setState({ on: Boolean(data.maintenance), message: data.message, scope: data.scope });
+      if (data) setState({ on: Boolean(data.on), message: data.message, scope: data.scope });
     });
     return () => unsub();
   }, []);
