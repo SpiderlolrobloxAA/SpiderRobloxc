@@ -4,6 +4,10 @@ import { motion } from "framer-motion";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { Dialog, DialogTrigger, DialogContent } from "./ui/dialog";
 import { ProductDetailContent } from "./ProductDetail";
+import { useAuth } from "@/context/AuthProvider";
+import { db } from "@/lib/firebase";
+import { deleteDoc, doc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Product {
   id: string;
