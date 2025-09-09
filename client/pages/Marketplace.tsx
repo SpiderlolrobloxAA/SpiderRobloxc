@@ -43,12 +43,20 @@ export default function Marketplace() {
   const [maintenance, setMaintenance] = useState(false);
 
   useEffect(() => {
-    const metaRef = doc(db, "meta", "site");
+    const settingsRef = doc(db, "settings", "app");
     const unsubMeta = onSnapshot(
-      metaRef,
+      settingsRef,
       (d) => {
         const data = d.data() as any | undefined;
-        setMaintenance(Boolean(data?.maintenance));
+        // Show maintenance only if scope is global or marketplace
+        const isOn = Boolean(data?.maintenance);
+        const scope = data?.scope || "global";
+        if (!isOn) {
+          setMaintenance(false);
+          return;
+        }
+        if (scope === "global" || scope === "marketplace") setMaintenance(true);
+        else setMaintenance(false);
       },
       () => {},
     );
