@@ -481,7 +481,12 @@ export default function AdminPanel() {
                   <Button
                     size="sm"
                     variant="destructive"
+                    disabled={userId === currentUser?.uid}
                     onClick={async () => {
+                      if (userId === currentUser?.uid) {
+                        toast({ title: "Action interdite", description: "Vous ne pouvez pas vous auto-bannir.", variant: "destructive" });
+                        return;
+                      }
                       const ms = (banDays * 24 + banHours) * 60 * 60 * 1000;
                       const until = new Date(Date.now() + ms);
                       await setDoc(
@@ -497,7 +502,12 @@ export default function AdminPanel() {
                   <Button
                     size="sm"
                     variant="destructive"
+                    disabled={userId === currentUser?.uid}
                     onClick={async () => {
+                      if (userId === currentUser?.uid) {
+                        toast({ title: "Action interdite", description: "Vous ne pouvez pas vous auto-bannir.", variant: "destructive" });
+                        return;
+                      }
                       await setDoc(
                         doc(db, "users", userId),
                         { banned: true, bannedAt: serverTimestamp() },
@@ -511,7 +521,12 @@ export default function AdminPanel() {
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={userId === currentUser?.uid}
                     onClick={async () => {
+                      if (userId === currentUser?.uid) {
+                        toast({ title: "Action interdite", description: "Vous ne pouvez pas lever votre propre ban via cet écran.", variant: "destructive" });
+                        return;
+                      }
                       await setDoc(
                         doc(db, "users", userId),
                         { banned: false, bannedUntil: null },
