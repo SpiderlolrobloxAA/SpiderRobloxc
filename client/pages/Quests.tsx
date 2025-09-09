@@ -60,30 +60,49 @@ export default function Quests() {
   useEffect(() => {
     if (!user) return;
     const ref = doc(db, "users", user.uid, "meta", "quests");
-    const unsub = onSnapshot(ref, (snap) => {
-      setStatus((snap.data() as any) ?? {});
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        setStatus((snap.data() as any) ?? {});
+        setLoading(false);
+      },
+      (err) => {
+        console.error("quests:onSnapshot failed", err);
+        setLoading(false);
+      },
+    );
     return () => unsub();
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const hasPurchase = !(
-        await getDocs(
-          query(
-            collection(db, "transactions"),
-            where("uid", "==", user.uid),
-            where("type", "==", "credits_purchase"),
-          ),
-        )
-      ).empty;
-      const hasTicket = !(
-        await getDocs(
-          query(collection(db, "tickets"), where("uid", "==", user.uid)),
-        )
-      ).empty;
+      let hasPurchase = false;
+      let hasTicket = false;
+      try {
+        hasPurchase = !(
+          await getDocs(
+            query(
+              collection(db, "transactions"),
+              where("uid", "==", user.uid),
+              where("type", "==", "credits_purchase"),
+            ),
+          )
+        ).empty;
+      } catch (e) {
+        console.error("quests:hasPurchase query failed", e);
+      }
+
+      try {
+        hasTicket = !(
+          await getDocs(
+            query(collection(db, "tickets"), where("uid", "==", user.uid)),
+          )
+        ).empty;
+      } catch (e) {
+        console.error("quests:hasTicket query failed", e);
+      }
+
       // Profile complete if displayName exists on auth or users doc
       let hasProfile = Boolean(user.displayName);
       try {
