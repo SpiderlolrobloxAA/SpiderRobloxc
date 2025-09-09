@@ -78,7 +78,7 @@ export function ProductCard({ product }: { product: Product }) {
 
             <div className="flex items-center gap-2">
               {user && product.seller?.id && user.uid === product.seller.id ? (
-                <button disabled className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-muted text-foreground/60" title="Vous êtes le vendeur">
+                <button disabled className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium h-8 px-2 bg-muted text-foreground/60" title="Vous êtes le vendeur">
                   Votre produit
                 </button>
               ) : (
