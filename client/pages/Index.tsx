@@ -15,16 +15,12 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { createSmoothTiltHandlers } from "@/lib/tilt";
+import { useEffect, useState } from "react";
 
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
-import {
-  collection,
-  onSnapshot,
-  orderBy,
-  limit,
-  query,
-} from "firebase/firestore";
+import { doc, collection, onSnapshot, orderBy, limit, query } from "firebase/firestore";
+import { packs } from "@/lib/packs";
 
 export default function Index() {
   const { user, loading } = useAuth();
