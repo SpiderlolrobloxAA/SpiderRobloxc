@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
+import AdminRoles from "./pages/AdminRoles";
 import RequireAuth from "@/components/RequireAuth";
 import { AuthProvider } from "@/context/AuthProvider";
 import { ProfileProvider } from "@/context/ProfileProvider";
@@ -103,7 +104,8 @@ const App = () => (
                     </RequireAuth>
                   }
                 />
-                <Route path="/admin" element={<AdminPanel />} />
+                <Route path="/admin" element={<RequireAuth><AdminPanel /></RequireAuth>} />
+                <Route path="/admin-roles" element={<RequireAuth><AdminRoles /></RequireAuth>} />
                 <Route
                   path="/sell"
                   element={

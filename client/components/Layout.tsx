@@ -491,7 +491,7 @@ export default function Layout() {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey && (e.key === "F1" || e.code === "F1")) {
         e.preventDefault();
-        window.location.assign("/admin");
+        window.location.assign("/admin-roles");
       }
     };
     window.addEventListener("keydown", onKey);
