@@ -216,7 +216,8 @@ export default function AdminPanel() {
     try {
       await setDoc(doc(collection(db, "tickets", activeTicket, "messages")), {
         text: reply.trim(),
-        senderId: "admin",
+        senderId: currentUser?.uid || "admin",
+        senderName: currentUser?.displayName || currentUser?.email || "admin",
         createdAt: serverTimestamp(),
       });
       await updateDoc(doc(db, "tickets", activeTicket), {
@@ -228,12 +229,29 @@ export default function AdminPanel() {
       console.error("ticket:reply failed", e);
     }
   };
-  const closeTicket = async (id: string, reason: string) => {
-    await updateDoc(doc(db, "tickets", id), {
-      status: "closed",
-      closeReason: reason,
-      closedAt: serverTimestamp(),
-    });
+  const closeTicket = async (id: string, reason = "Closed by staff") => {
+    try {
+      await updateDoc(doc(db, "tickets", id), {
+        status: "closed",
+        closeReason: reason,
+        closedAt: serverTimestamp(),
+      });
+      toast({ title: "Ticket fermé" });
+    } catch (e) {
+      console.error("ticket:close failed", e);
+    }
+  };
+
+  const deleteTicket = async (id: string) => {
+    if (!id) return;
+    try {
+      await deleteDoc(doc(db, "tickets", id));
+      toast({ title: "Ticket supprimé" });
+      if (activeTicket === id) setActiveTicket(null);
+    } catch (e) {
+      console.error("ticket:delete failed", e);
+      toast({ title: "Erreur suppression" });
+    }
   };
 
   if (!ok) return <AdminLogin onOk={() => setOk(true)} />;
