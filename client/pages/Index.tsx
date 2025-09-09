@@ -15,7 +15,6 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { createSmoothTiltHandlers } from "@/lib/tilt";
-import { useEffect, useState } from "react";
 
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
