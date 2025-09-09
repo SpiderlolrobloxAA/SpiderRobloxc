@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import ModerationWarning from "@/components/ModerationWarning";
 
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
