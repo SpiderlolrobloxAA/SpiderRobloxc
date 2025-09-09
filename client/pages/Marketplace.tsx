@@ -416,7 +416,7 @@ function AddProduct({
         text={title}
         onCancel={() => setModerationOpen(false)}
         onAccept={async () => {
-          setModerationAccepted(true);
+          // Accepting acknowledges the warning but product will remain pending review (not published)
           setModerationOpen(false);
           await doCreate();
         }}
