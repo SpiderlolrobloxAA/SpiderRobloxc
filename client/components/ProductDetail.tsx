@@ -42,14 +42,17 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
     setIsPurchasing(true);
     if (!user) {
       toast({ title: "Connectez-vous", description: "Veuillez vous connecter pour acheter.", variant: "destructive" });
+      setIsPurchasing(false);
       return;
     }
-    const sellerId = product.seller.id;
+    // robust seller id extraction
+    const sellerId = (product as any)?.seller?.id ?? (product as any)?.sellerId ?? null;
     const price = product.price || 0;
 
     // Prevent seller from buying their own product
     if (sellerId && user.uid === sellerId) {
       toast({ title: "Achat impossible", description: "Vous ne pouvez pas acheter votre propre produit.", variant: "destructive" });
+      setIsPurchasing(false);
       return;
     }
 
