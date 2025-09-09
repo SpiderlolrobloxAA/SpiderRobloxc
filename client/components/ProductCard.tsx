@@ -56,12 +56,13 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h3 className="font-medium leading-tight line-clamp-1">{product.title}</h3>
-              <div className="mt-1 text-xs text-foreground/70 flex items-center gap-1.5">
+              <div className="mt-1 text-xs text-foreground/70 flex items-center gap-1">
                 <img src={DEFAULT_AVATAR_IMG} alt="avatar" className="h-4 w-4 rounded-full object-cover" />
-                <span title={product.seller.name} className="font-medium">
+                <span title={product.seller.name} className="font-medium mr-2">
                   {product.seller.name}
                 </span>
-                <RoleBadge role={product.seller.role} className="h-4 w-4" />
+                {/* compact role icon (no bubble) */}
+                <RoleBadge role={product.seller.role} compact className="ml-0" />
               </div>
             </div>
             <div className="text-right shrink-0">
