@@ -49,4 +49,15 @@ export async function initAnalytics() {
   return null;
 }
 
-export const storage = typeof window !== "undefined" ? getStorage(app) : undefined;
+export async function getStorageClient() {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const mod = await import("firebase/storage");
+    return mod.getStorage(app);
+  } catch (e) {
+    // Storage not available in this environment or failed to load
+    // eslint-disable-next-line no-console
+    console.error('getStorageClient failed', e);
+    return undefined;
+  }
+}
