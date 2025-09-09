@@ -12,6 +12,7 @@ import {
   updateDoc,
   setDoc,
   arrayUnion,
+  increment,
 } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
