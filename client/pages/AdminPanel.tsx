@@ -334,7 +334,7 @@ export default function AdminPanel() {
   if (role === "user" || role === "verified") {
     return (
       <div className="container py-10">
-        <h1 className="font-display text-2xl font-bold">Accès refusé</h1>
+        <h1 className="font-display text-2xl font-bold">Accès refus��</h1>
         <p className="text-sm text-foreground/70">
           Vous n'avez pas les permissions pour accéder à l'Admin Panel.
         </p>
@@ -345,9 +345,44 @@ export default function AdminPanel() {
   return (
     <div className="container py-10">
       <h1 className="font-display text-3xl font-extrabold">Admin Panel</h1>
-      <p className="text-sm text-foreground/70">
-        CTRL + F1 pour ouvrir rapidement cet écran.
-      </p>
+      <p className="text-sm text-foreground/70">CTRL + F1 pour ouvrir rapidement cet écran.</p>
+
+      {/* Users overview - big table */}
+      <div className="mt-6 rounded-xl border border-border/60 bg-card p-4">
+        <h2 className="font-semibold mb-3">Utilisateurs (aperçu)</h2>
+        <div className="overflow-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-foreground/60">
+                <th className="p-2">Email / Nom</th>
+                <th className="p-2">Rôle</th>
+                <th className="p-2">Crédits</th>
+                <th className="p-2">Ventes</th>
+                <th className="p-2">Achats</th>
+                <th className="p-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id} className="border-t border-border/50">
+                  <td className="p-2">{u.displayName || u.email || u.id}</td>
+                  <td className="p-2">{u.role}</td>
+                  <td className="p-2">{(u.balances?.available || 0).toLocaleString()} RC</td>
+                  <td className="p-2">{Number(u.sales || u.stats?.sales || 0)}</td>
+                  <td className="p-2">{Number(u.purchases || u.stats?.purchases || 0)}</td>
+                  <td className="p-2">
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => { setUserId(u.id); setUserInfo(u); setSelectedRole((u.role ?? 'user') as any); window.scrollTo({ top: 400, behavior: 'smooth' }); }}>
+                        Gérer
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-border/60 bg-card p-3 md:col-span-1">
