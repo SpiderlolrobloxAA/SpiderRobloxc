@@ -83,7 +83,7 @@ export function ProductCard({ product }: { product: Product }) {
                 </button>
               ) : (
                 <DialogTrigger asChild>
-                  <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-gradient-to-r from-primary to-secondary text-white">
+                  <button className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium h-8 px-2 bg-gradient-to-r from-primary to-secondary text-white">
                     Acheter
                   </button>
                 </DialogTrigger>
