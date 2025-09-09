@@ -38,6 +38,10 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
+  // compute sellerId and isSeller for UI
+  const sellerId = (product as any)?.seller?.id ?? (product as any)?.sellerId ?? null;
+  const isSeller = Boolean(user && sellerId && user.uid === sellerId);
+
   const purchase = async (confirm = false) => {
     setIsPurchasing(true);
     if (!user) {
@@ -45,12 +49,11 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
       setIsPurchasing(false);
       return;
     }
-    // robust seller id extraction
-    const sellerId = (product as any)?.seller?.id ?? (product as any)?.sellerId ?? null;
+
     const price = product.price || 0;
 
     // Prevent seller from buying their own product
-    if (sellerId && user.uid === sellerId) {
+    if (isSeller) {
       toast({ title: "Achat impossible", description: "Vous ne pouvez pas acheter votre propre produit.", variant: "destructive" });
       setIsPurchasing(false);
       return;
