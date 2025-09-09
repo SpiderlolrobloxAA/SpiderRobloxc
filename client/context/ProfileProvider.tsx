@@ -47,8 +47,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     const unsub = onSnapshot(ref, (snap) => {
       const data = snap.data() as any | undefined;
       if (data) {
+        const credits = data.balances?.available ?? data.credits ?? 0;
         setProfile({
-          credits: Number(data.credits ?? 0),
+          credits: Number(credits),
           role: (data.role ?? "user") as Role,
         });
       }
