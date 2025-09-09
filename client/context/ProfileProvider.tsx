@@ -67,7 +67,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     await setDoc(
       doc(db, "users", user.uid),
-      { credits: increment(n) },
+      { balances: { available: increment(n) } as any },
       { merge: true },
     );
   };
