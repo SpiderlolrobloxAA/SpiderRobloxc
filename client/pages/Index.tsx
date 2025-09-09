@@ -27,6 +27,7 @@ export default function Index() {
   const [sellers, setSellers] = useState<
     { id: string; name: string; sales: number }[]
   >([]);
+  const [packPromo, setPackPromo] = useState<number>(0);
 
   useEffect(() => {
     const q = query(
