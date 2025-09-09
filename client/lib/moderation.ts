@@ -1,4 +1,8 @@
-export type ModerationResult = { flagged: boolean; reasons: string[]; evidence?: string };
+export type ModerationResult = {
+  flagged: boolean;
+  reasons: string[];
+  evidence?: string;
+};
 
 export async function moderateText(text: string): Promise<ModerationResult> {
   try {
@@ -11,7 +15,11 @@ export async function moderateText(text: string): Promise<ModerationResult> {
     const json = await res.json();
     return {
       flagged: Boolean(json.flagged),
-      reasons: Array.isArray(json.reasons) ? json.reasons : json.reasons ? [String(json.reasons)] : [],
+      reasons: Array.isArray(json.reasons)
+        ? json.reasons
+        : json.reasons
+          ? [String(json.reasons)]
+          : [],
       evidence: json.evidence || "",
     };
   } catch (e) {

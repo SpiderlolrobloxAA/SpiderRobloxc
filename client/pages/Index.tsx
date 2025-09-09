@@ -18,7 +18,14 @@ import { createSmoothTiltHandlers } from "@/lib/tilt";
 
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
-import { doc, collection, onSnapshot, orderBy, limit, query } from "firebase/firestore";
+import {
+  doc,
+  collection,
+  onSnapshot,
+  orderBy,
+  limit,
+  query,
+} from "firebase/firestore";
 import { packs } from "@/lib/packs";
 
 export default function Index() {
@@ -45,7 +52,11 @@ export default function Index() {
           id: r.id,
           title: r.title,
           price: r.price ?? 0,
-          seller: { id: (r.sellerId ?? (r.seller && r.seller.id)) || null, name: r.sellerName ?? "—", role: r.sellerRole ?? "user" },
+          seller: {
+            id: (r.sellerId ?? (r.seller && r.seller.id)) || null,
+            name: r.sellerName ?? "—",
+            role: r.sellerRole ?? "user",
+          },
           image: r.imageUrl || r.image || (null as any),
         })),
       );
@@ -208,7 +219,7 @@ export default function Index() {
           </Link>
         </div>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {packs.slice(0,4).map((p) => {
+          {packs.slice(0, 4).map((p) => {
             const promo = packPromo ?? 0;
             const hasPromo = promo > 0;
             const discounted = (p.price * (1 - promo / 100)).toFixed(2) + "€";
@@ -318,7 +329,9 @@ function CreditPack({
         <div className="text-foreground/80">
           {hasPromo ? (
             <div className="flex items-center gap-2">
-              <span className="text-sm line-through opacity-70">{originalPrice?.toFixed(2)}€</span>
+              <span className="text-sm line-through opacity-70">
+                {originalPrice?.toFixed(2)}€
+              </span>
               <span className="text-xl font-extrabold">{price}</span>
             </div>
           ) : (

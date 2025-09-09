@@ -58,8 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else {
             // Don't overwrite balances on every auth change — only update missing fields and timestamps
             const data = snap.data() as any;
-            const updates: any = { lastSeen: serverTimestamp(), updatedAt: serverTimestamp() };
-            if (!data.username && u.displayName) updates.username = u.displayName;
+            const updates: any = {
+              lastSeen: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            };
+            if (!data.username && u.displayName)
+              updates.username = u.displayName;
             if (!data.email && u.email) updates.email = u.email;
             await setDoc(ref, updates, { merge: true });
           }

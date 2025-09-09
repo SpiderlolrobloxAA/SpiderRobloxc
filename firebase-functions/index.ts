@@ -52,10 +52,13 @@ export const processSalePending = functions.firestore
 
     try {
       // increment seller pending balance
-      await db.collection("users").doc(sellerId).set(
-        { balances: { pending: FieldValue.increment(credits) } },
-        { merge: true },
-      );
+      await db
+        .collection("users")
+        .doc(sellerId)
+        .set(
+          { balances: { pending: FieldValue.increment(credits) } },
+          { merge: true },
+        );
 
       // schedule redistribution after ~60 seconds
       const delayMs = 60 * 1000;
@@ -65,19 +68,34 @@ export const processSalePending = functions.firestore
           const founderShare = credits - sellerShare;
 
           // move pending -> available for seller
-          await db.collection("users").doc(sellerId).set(
-            { balances: { pending: FieldValue.increment(-credits), available: FieldValue.increment(sellerShare) } },
-            { merge: true },
-          );
-
-          // credit founder (first found)
-          const foundersSnap = await db.collection("users").where("role", "==", "founder").limit(1).get();
-          if (!foundersSnap.empty) {
-            const founderId = foundersSnap.docs[0].id;
-            await db.collection("users").doc(founderId).set(
-              { balances: { available: FieldValue.increment(founderShare) } },
+          await db
+            .collection("users")
+            .doc(sellerId)
+            .set(
+              {
+                balances: {
+                  pending: FieldValue.increment(-credits),
+                  available: FieldValue.increment(sellerShare),
+                },
+              },
               { merge: true },
             );
+
+          // credit founder (first found)
+          const foundersSnap = await db
+            .collection("users")
+            .where("role", "==", "founder")
+            .limit(1)
+            .get();
+          if (!foundersSnap.empty) {
+            const founderId = foundersSnap.docs[0].id;
+            await db
+              .collection("users")
+              .doc(founderId)
+              .set(
+                { balances: { available: FieldValue.increment(founderShare) } },
+                { merge: true },
+              );
             // record founder transaction
             await db.collection("transactions").add({
               uid: founderId,
@@ -90,7 +108,10 @@ export const processSalePending = functions.firestore
           }
 
           // update original transaction status to completed
-          await txRef.update({ status: "completed", releasedAt: FieldValue.serverTimestamp() });
+          await txRef.update({
+            status: "completed",
+            releasedAt: FieldValue.serverTimestamp(),
+          });
 
           // record seller released transaction
           await db.collection("transactions").add({

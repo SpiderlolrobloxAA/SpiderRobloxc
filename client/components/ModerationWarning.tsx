@@ -1,5 +1,10 @@
 import React from "react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "./ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "./ui/dialog";
 import { Button } from "./ui/button";
 
 export default function ModerationWarning({
@@ -20,7 +25,8 @@ export default function ModerationWarning({
       <DialogContent>
         <DialogTitle>Contenu potentiellement offensant</DialogTitle>
         <DialogDescription>
-          Nous avons détecté que votre contenu peut contenir des insultes ou du langage offensant. Veuillez vérifier et accepter pour continuer.
+          Nous avons détecté que votre contenu peut contenir des insultes ou du
+          langage offensant. Veuillez vérifier et accepter pour continuer.
         </DialogDescription>
         <div className="mt-4 text-sm">
           {reasons && reasons.length > 0 && (
@@ -35,7 +41,10 @@ export default function ModerationWarning({
           )}
           {text && (
             <div className="mt-2 text-xs text-foreground/60">
-              Aperçu: <span className="italic">{text.length > 120 ? text.slice(0, 120) + "…" : text}</span>
+              Aperçu:{" "}
+              <span className="italic">
+                {text.length > 120 ? text.slice(0, 120) + "…" : text}
+              </span>
             </div>
           )}
         </div>

@@ -15,7 +15,10 @@ import { useProfile } from "@/context/ProfileProvider";
 export default function Transactions() {
   const { user } = useAuth();
   const [rows, setRows] = useState<any[]>([]);
-  const [balances, setBalances] = useState<{ available: number; pending: number } | null>(null);
+  const [balances, setBalances] = useState<{
+    available: number;
+    pending: number;
+  } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -31,7 +34,11 @@ export default function Transactions() {
       (err) => {
         console.error("transactions:onSnapshot error", err);
         const msg = String(err?.message || err);
-        toast({ title: "Erreur de données", description: msg, variant: "destructive" });
+        toast({
+          title: "Erreur de données",
+          description: msg,
+          variant: "destructive",
+        });
       },
     );
 
@@ -57,9 +64,12 @@ export default function Transactions() {
         <h1 className="font-display text-2xl font-bold">Transactions</h1>
         {balances && (
           <div className="text-sm text-foreground/70">
-            Solde disponible: <strong className="ml-2">{balances.available} RC</strong>
+            Solde disponible:{" "}
+            <strong className="ml-2">{balances.available} RC</strong>
             {balances.pending > 0 && (
-              <span className="ml-4 text-amber-400">En attente: {balances.pending} RC</span>
+              <span className="ml-4 text-amber-400">
+                En attente: {balances.pending} RC
+              </span>
             )}
           </div>
         )}
@@ -91,10 +101,14 @@ export default function Transactions() {
                 <div>
                   <div className="capitalize">{t.type}</div>
                   {t.adminName && (
-                    <div className="text-xs text-foreground/60">par {t.adminName}</div>
+                    <div className="text-xs text-foreground/60">
+                      par {t.adminName}
+                    </div>
                   )}
                   {t.status === "pending" && (
-                    <div className="text-xs text-amber-400 font-semibold">En attente</div>
+                    <div className="text-xs text-amber-400 font-semibold">
+                      En attente
+                    </div>
                   )}
                 </div>
                 <div>{t.orderId || t.note || "—"}</div>

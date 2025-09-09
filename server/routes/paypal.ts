@@ -1,7 +1,6 @@
 import type { RequestHandler } from "express";
 import { getAdminDb } from "../firebaseAdmin";
 
-
 const PAYPAL_API = "https://api-m.paypal.com";
 
 async function verifyWebhook(headers: any, body: any) {

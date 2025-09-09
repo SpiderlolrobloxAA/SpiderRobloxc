@@ -3,13 +3,15 @@ import { Request, Response } from "express";
 export async function moderateHandler(req: Request, res: Response) {
   try {
     const { text } = req.body || {};
-    if (!text || typeof text !== "string") return res.status(400).json({ error: "Missing text" });
+    if (!text || typeof text !== "string")
+      return res.status(400).json({ error: "Missing text" });
 
     const key = process.env.OPENROUTER_API_KEY;
 
     // Fallback simple heuristic
     const heuristic = (t: string) => {
-      const re = /\b(?:idiot|stupid|shit|fuck|bitch|asshole|con(nard)?|salope|salaud|merde|encul|pute)\b/i;
+      const re =
+        /\b(?:idiot|stupid|shit|fuck|bitch|asshole|con(nard)?|salope|salaud|merde|encul|pute)\b/i;
       const m = re.exec(t);
       if (m) {
         return { flagged: true, reasons: ["insult"], evidence: m[0] };
@@ -28,7 +30,11 @@ export async function moderateHandler(req: Request, res: Response) {
     const body = {
       model: "openai/gpt-3.5-turbo",
       messages: [
-        { role: "system", content: "You are a content moderation assistant. Be concise and return only the JSON object as specified." },
+        {
+          role: "system",
+          content:
+            "You are a content moderation assistant. Be concise and return only the JSON object as specified.",
+        },
         { role: "user", content: prompt },
       ],
       max_tokens: 120,
@@ -60,7 +66,11 @@ export async function moderateHandler(req: Request, res: Response) {
         // ensure shape
         return res.json({
           flagged: Boolean(parsed.flagged),
-          reasons: Array.isArray(parsed.reasons) ? parsed.reasons : parsed.reasons ? [String(parsed.reasons)] : [],
+          reasons: Array.isArray(parsed.reasons)
+            ? parsed.reasons
+            : parsed.reasons
+              ? [String(parsed.reasons)]
+              : [],
           evidence: parsed.evidence ? String(parsed.evidence) : "",
         });
       } catch (e) {

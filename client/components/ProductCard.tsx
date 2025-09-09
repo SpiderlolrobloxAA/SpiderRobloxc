@@ -21,7 +21,8 @@ export interface Product {
 }
 
 function MiniCoin() {
-  const src = "https://cdn.builder.io/api/v1/image/assets%2F7ca6692b844e492da4519bd1be30c27d%2F010980b0e1d0488b82cdd1e39f84e4d5?format=webp&width=800";
+  const src =
+    "https://cdn.builder.io/api/v1/image/assets%2F7ca6692b844e492da4519bd1be30c27d%2F010980b0e1d0488b82cdd1e39f84e4d5?format=webp&width=800";
   return <img src={src} alt="RC" className="h-4 w-4 object-contain" />;
 }
 
@@ -48,22 +49,38 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="p-3.5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="font-medium leading-tight line-clamp-1">{product.title}</h3>
+              <h3 className="font-medium leading-tight line-clamp-1">
+                {product.title}
+              </h3>
               <div className="mt-1 text-xs text-foreground/70 flex items-center gap-1">
-                <img src={DEFAULT_AVATAR_IMG} alt="avatar" className="h-4 w-4 rounded-full object-cover" />
+                <img
+                  src={DEFAULT_AVATAR_IMG}
+                  alt="avatar"
+                  className="h-4 w-4 rounded-full object-cover"
+                />
                 <span title={product.seller.name} className="font-medium mr-2">
-                  {product.seller.name && product.seller.name.includes("@") ? emailToUsername(product.seller.name) : product.seller.name}
+                  {product.seller.name && product.seller.name.includes("@")
+                    ? emailToUsername(product.seller.name)
+                    : product.seller.name}
                 </span>
                 {/* compact role icon (no bubble) */}
-                <RoleBadge role={product.seller.role} compact className="ml-0" />
+                <RoleBadge
+                  role={product.seller.role}
+                  compact
+                  className="ml-0"
+                />
               </div>
             </div>
             <div className="text-right shrink-0">
               {product.free ? (
-                <div className="text-sm font-bold text-emerald-400">GRATUIT</div>
+                <div className="text-sm font-bold text-emerald-400">
+                  GRATUIT
+                </div>
               ) : (
                 <div className="flex items-center justify-end gap-1">
-                  <span className="text-base md:text-lg font-extrabold text-white">{product.price}</span>
+                  <span className="text-base md:text-lg font-extrabold text-white">
+                    {product.price}
+                  </span>
                   <MiniCoin />
                 </div>
               )}
@@ -78,7 +95,11 @@ export function ProductCard({ product }: { product: Product }) {
 
             <div className="flex items-center gap-2">
               {user && product.seller?.id && user.uid === product.seller.id ? (
-                <button disabled className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium h-8 px-2 bg-muted text-foreground/60" title="Vous êtes le vendeur">
+                <button
+                  disabled
+                  className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium h-8 px-2 bg-muted text-foreground/60"
+                  title="Vous êtes le vendeur"
+                >
                   Votre produit
                 </button>
               ) : (
@@ -94,13 +115,26 @@ export function ProductCard({ product }: { product: Product }) {
                 <button
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const ok = window.confirm("Supprimer ce produit ? Cette action est irréversible.");
+                    const ok = window.confirm(
+                      "Supprimer ce produit ? Cette action est irréversible.",
+                    );
                     if (!ok) return;
                     try {
                       await deleteDoc(doc(db, "products", product.id));
                     } catch (err) {}
                     try {
-                      if (product.seller.id) await deleteDoc(doc(db, "DataProject", "data1", "users", product.seller.id, "products", product.id));
+                      if (product.seller.id)
+                        await deleteDoc(
+                          doc(
+                            db,
+                            "DataProject",
+                            "data1",
+                            "users",
+                            product.seller.id,
+                            "products",
+                            product.id,
+                          ),
+                        );
                     } catch (err) {}
                     toast({ title: "Produit supprimé", variant: "default" });
                   }}

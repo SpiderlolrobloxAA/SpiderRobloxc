@@ -124,7 +124,12 @@ function Thread({ id }: { id: string }) {
     if (!user || !text.trim()) return;
     // do not allow sending into system threads
     if (threadMeta?.system) {
-      toast({ title: "Impossible de répondre", description: "Ce message provient du système et n'accepte pas de réponses.", variant: "default" });
+      toast({
+        title: "Impossible de répondre",
+        description:
+          "Ce message provient du système et n'accepte pas de réponses.",
+        variant: "default",
+      });
       setText("");
       return;
     }
@@ -162,7 +167,9 @@ function Thread({ id }: { id: string }) {
         <div ref={bottomRef} />
       </div>
       {threadMeta?.system ? (
-        <div className="mt-2 text-sm text-foreground/60">Message système — les réponses sont désactivées.</div>
+        <div className="mt-2 text-sm text-foreground/60">
+          Message système — les réponses sont désactivées.
+        </div>
       ) : (
         <div className="mt-2 flex items-center gap-2">
           <Input

@@ -1,8 +1,20 @@
-import { ReactNode, createContext, useContext, useEffect, useState } from "react";
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { type Role } from "@/components/RoleBadge";
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
-import { doc, increment, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
+import {
+  doc,
+  increment,
+  onSnapshot,
+  updateDoc,
+  setDoc,
+} from "firebase/firestore";
 
 interface Profile {
   credits: number;
@@ -55,7 +67,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       // If update fails (doc missing), fallback to setDoc merge
       try {
-        await setDoc(ref, { balances: { available: increment(n) } as any }, { merge: true });
+        await setDoc(
+          ref,
+          { balances: { available: increment(n) } as any },
+          { merge: true },
+        );
       } catch (err) {
         console.error("addCredits failed", err);
       }

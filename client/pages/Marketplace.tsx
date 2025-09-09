@@ -77,7 +77,9 @@ export default function Marketplace() {
 
   const products = items
     .filter((p) => p.title.toLowerCase().includes(queryStr.toLowerCase()))
-    .sort((a, b) => (sort === "price" ? (a.price as number) - (b.price as number) : 0));
+    .sort((a, b) =>
+      sort === "price" ? (a.price as number) - (b.price as number) : 0,
+    );
 
   return (
     <div className="container py-10">
@@ -125,12 +127,17 @@ export default function Marketplace() {
       {maintenance ? (
         <div className="mt-6 rounded-xl border border-border/60 bg-card p-6 text-center">
           <div className="text-xl font-semibold">Maintenance</div>
-          <div className="mt-2 text-sm text-foreground/70">Le marketplace est actuellement en maintenance. Merci de revenir plus tard.</div>
+          <div className="mt-2 text-sm text-foreground/70">
+            Le marketplace est actuellement en maintenance. Merci de revenir
+            plus tard.
+          </div>
         </div>
       ) : products.length === 0 ? (
         <div className="mt-6 rounded-xl border border-border/60 bg-card p-6 text-center">
           <div className="text-xl font-semibold">Aucun produit</div>
-          <div className="mt-2 text-sm text-foreground/70">Aucun produit n'est disponible à la vente pour le moment.</div>
+          <div className="mt-2 text-sm text-foreground/70">
+            Aucun produit n'est disponible à la vente pour le moment.
+          </div>
         </div>
       ) : (
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -143,7 +150,11 @@ export default function Marketplace() {
                 price: p.price ?? 0,
                 image: p.imageUrl || p.image,
                 free: (p.price ?? 0) === 0,
-                seller: { id: p.sellerId, name: p.sellerName, role: p.sellerRole },
+                seller: {
+                  id: p.sellerId,
+                  name: p.sellerName,
+                  role: p.sellerRole,
+                },
                 rating: p.rating || 4.5,
               }}
             />
@@ -208,7 +219,10 @@ function AddProduct({
         if (it.kind === "string") {
           it.getAsString((s) => {
             const trimmed = s.trim();
-            if (trimmed.startsWith("data:image/") || /(https?:\/\/.+\.(png|jpe?g|webp|gif))/i.test(trimmed)) {
+            if (
+              trimmed.startsWith("data:image/") ||
+              /(https?:\/\/.+\.(png|jpe?g|webp|gif))/i.test(trimmed)
+            ) {
               setImageUrl(trimmed);
             }
           });
@@ -232,7 +246,9 @@ function AddProduct({
       setPreviewUrl(p);
     } catch {}
     // reuse same logic as onPick
-    const fake = { target: { files: [f] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+    const fake = {
+      target: { files: [f] },
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
     await onPick(fake);
   };
 
@@ -245,7 +261,11 @@ function AddProduct({
     const timer = window.setTimeout(() => {
       timedOut = true;
       setImageUploading(false);
-      toast({ title: "Upload lent", description: "Upload trop long, utilisation d'un fallback local.", variant: "default" });
+      toast({
+        title: "Upload lent",
+        description: "Upload trop long, utilisation d'un fallback local.",
+        variant: "default",
+      });
       try {
         const reader = new FileReader();
         reader.onload = () => {
@@ -270,7 +290,10 @@ function AddProduct({
       const storage = await getStorageClient();
       if (storage) {
         try {
-          const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${f.name}`);
+          const tmpRef = ref(
+            storage,
+            `products/${userId}/${Date.now()}_${f.name}`,
+          );
           await uploadBytes(tmpRef, f);
           // if timed out already, don't override fallback
           if (timedOut) {
@@ -310,7 +333,11 @@ function AddProduct({
       }
     } catch (err) {
       console.error("onPick error", err);
-      toast({ title: "Erreur image", description: "Impossible de traiter l'image.", variant: "destructive" });
+      toast({
+        title: "Erreur image",
+        description: "Impossible de traiter l'image.",
+        variant: "destructive",
+      });
     } finally {
       clearTimeout(timer);
       if (!timedOut) setImageUploading(false);
@@ -325,7 +352,10 @@ function AddProduct({
       if (!finalUrl && file) {
         const storage = await getStorageClient();
         if (storage) {
-          const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${file.name}`);
+          const tmpRef = ref(
+            storage,
+            `products/${userId}/${Date.now()}_${file.name}`,
+          );
           await uploadBytes(tmpRef, file);
           finalUrl = await getDownloadURL(tmpRef);
         } else {
@@ -340,7 +370,8 @@ function AddProduct({
           } catch (err) {
             toast({
               title: "Upload image indisponible",
-              description: "Veuillez saisir une URL d'image ou réessayer plus tard.",
+              description:
+                "Veuillez saisir une URL d'image ou réessayer plus tard.",
               variant: "destructive",
             });
             setSaving(false);
@@ -350,7 +381,8 @@ function AddProduct({
       }
 
       // If still no image URL, use default placeholder image hosted on CDN
-      const placeholder = "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
+      const placeholder =
+        "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
       if (!finalUrl) finalUrl = placeholder;
 
       // If flagged (any reasons), always create as pending — do not publish active even after acceptance
@@ -374,21 +406,24 @@ function AddProduct({
       });
 
       // Mirror to namespaced per-user collection for instant access
-      await setDoc(doc(db, "DataProject", "data1", "users", userId, "products", refDoc.id), {
-        title: title.trim(),
-        imageUrl: finalUrl,
-        price: validPrice,
-        sellerId: userId,
-        sellerName,
-        sellerRole,
-        status,
-        moderation: {
-          flagged: moderationReasons.length > 0,
-          reasons: moderationReasons,
-          accepted: moderationAccepted,
+      await setDoc(
+        doc(db, "DataProject", "data1", "users", userId, "products", refDoc.id),
+        {
+          title: title.trim(),
+          imageUrl: finalUrl,
+          price: validPrice,
+          sellerId: userId,
+          sellerName,
+          sellerRole,
+          status,
+          moderation: {
+            flagged: moderationReasons.length > 0,
+            reasons: moderationReasons,
+            accepted: moderationAccepted,
+          },
+          createdAt: serverTimestamp(),
         },
-        createdAt: serverTimestamp(),
-      });
+      );
 
       // charge only when active
       if (!flagged) await onCharge(-cost);
@@ -403,7 +438,11 @@ function AddProduct({
       setModerationAccepted(false);
     } catch (e) {
       console.error("product:create failed", e);
-      toast({ title: "Erreur", description: "Impossible de publier le produit.", variant: "destructive" });
+      toast({
+        title: "Erreur",
+        description: "Impossible de publier le produit.",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -413,19 +452,32 @@ function AddProduct({
     // validate and show reasons if cannot publish
     const reasons: string[] = [];
     if (!title.trim()) reasons.push("Titre requis");
-    if (!imageUrl) reasons.push("Image requise (collez une URL ou choisissez un fichier)");
-    if (userCredits < cost) reasons.push(`Solde insuffisant (il vous faut ${cost} RC)`);
-    if (!free && (Number(price) || 0) < 3) reasons.push("Prix minimum 3 RC sauf si Gratuit");
+    if (!imageUrl)
+      reasons.push("Image requise (collez une URL ou choisissez un fichier)");
+    if (userCredits < cost)
+      reasons.push(`Solde insuffisant (il vous faut ${cost} RC)`);
+    if (!free && (Number(price) || 0) < 3)
+      reasons.push("Prix minimum 3 RC sauf si Gratuit");
 
     if (reasons.length > 0) {
-      toast({ title: "Impossible de publier", description: reasons.join(" — "), variant: "destructive" });
+      toast({
+        title: "Impossible de publier",
+        description: reasons.join(" — "),
+        variant: "destructive",
+      });
       return;
     }
 
     setSaving(true);
     try {
       // call moderation endpoint
-      const mod = await (await fetch("/api/moderate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: title }) })).json();
+      const mod = await (
+        await fetch("/api/moderate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: title }),
+        })
+      ).json();
       if (mod?.flagged) {
         setModerationReasons(Array.isArray(mod.reasons) ? mod.reasons : []);
         setModerationOpen(true);
@@ -436,39 +488,84 @@ function AddProduct({
       await doCreate();
     } catch (e) {
       console.error("product:create failed", e);
-      toast({ title: "Erreur", description: "Impossible de publier le produit.", variant: "destructive" });
+      toast({
+        title: "Erreur",
+        description: "Impossible de publier le produit.",
+        variant: "destructive",
+      });
       setSaving(false);
     }
   };
 
   return (
     <div className="grid gap-3">
-      <Input placeholder="Titre" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <div className="rounded-md border border-dashed border-border/60 p-3 text-center text-sm" onDragOver={(e) => e.preventDefault()} onDrop={onDrop} onPaste={onPaste}>
+      <Input
+        placeholder="Titre"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <div
+        className="rounded-md border border-dashed border-border/60 p-3 text-center text-sm"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={onDrop}
+        onPaste={onPaste}
+      >
         <div className="flex items-center justify-center gap-2">
-          <input id="file" type="file" accept="image/*" className="hidden" onChange={onPick} />
-          <Button variant="outline" size="sm" onClick={() => document.getElementById("file")?.click()}>
+          <input
+            id="file"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={onPick}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => document.getElementById("file")?.click()}
+          >
             Choisir une image (sera convertie en lien)
           </Button>
           <span className="text-foreground/60">ou collez/glissez une URL</span>
         </div>
         {(imageUrl || previewUrl) && (
           <div className="mt-2">
-            <img src={imageUrl || previewUrl || ""} alt="aperçu" className="mx-auto h-28 w-48 object-cover rounded-md" />
+            <img
+              src={imageUrl || previewUrl || ""}
+              alt="aperçu"
+              className="mx-auto h-28 w-48 object-cover rounded-md"
+            />
           </div>
         )}
         {imageUploading && (
-          <div className="mt-2 text-sm text-foreground/60">Upload image en cours…</div>
+          <div className="mt-2 text-sm text-foreground/60">
+            Upload image en cours…
+          </div>
         )}
       </div>
-      <Input placeholder="URL de l'image (requis)" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+      <Input
+        placeholder="URL de l'image (requis)"
+        value={imageUrl}
+        onChange={(e) => setImageUrl(e.target.value)}
+      />
       <label className="inline-flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={free} onChange={(e) => setFree(e.target.checked)} /> Gratuit
+        <input
+          type="checkbox"
+          checked={free}
+          onChange={(e) => setFree(e.target.checked)}
+        />{" "}
+        Gratuit
       </label>
       {!free && (
-        <Input placeholder="Prix (RC) — min 3" type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+        <Input
+          placeholder="Prix (RC) — min 3"
+          type="number"
+          value={price}
+          onChange={(e) => setPrice(Number(e.target.value))}
+        />
       )}
-      <div className="text-xs text-foreground/70">Frais de publication: {cost} RC (Certifié: 2 RC, sinon 5 RC)</div>
+      <div className="text-xs text-foreground/70">
+        Frais de publication: {cost} RC (Certifié: 2 RC, sinon 5 RC)
+      </div>
       <Button onClick={create} disabled={saving}>
         {saving ? "Publication…" : "Publier"}
       </Button>

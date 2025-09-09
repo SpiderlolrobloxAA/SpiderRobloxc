@@ -4,9 +4,13 @@ import { createSmoothTiltHandlers } from "@/lib/tilt";
 
 export type Role = "founder" | "moderator" | "helper" | "verified" | "user";
 
-export const VERIFIED_IMG = "https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fad5998f22c5a449f88de74ab7b33fdf4?format=webp&width=800";
+export const VERIFIED_IMG =
+  "https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Fad5998f22c5a449f88de74ab7b33fdf4?format=webp&width=800";
 
-const roleMap: Record<Role, { label: string; icon?: string; className: string }> = {
+const roleMap: Record<
+  Role,
+  { label: string; icon?: string; className: string }
+> = {
   founder: {
     label: "Fondateur",
     icon: "/icons/crown.svg",
@@ -34,8 +38,17 @@ const roleMap: Record<Role, { label: string; icon?: string; className: string }>
   },
 };
 
-export function RoleBadge({ role, className, compact }: { role?: Role | string; className?: string; compact?: boolean }) {
-  const key = (typeof role === "string" && role in roleMap) ? (role as Role) : "user";
+export function RoleBadge({
+  role,
+  className,
+  compact,
+}: {
+  role?: Role | string;
+  className?: string;
+  compact?: boolean;
+}) {
+  const key =
+    typeof role === "string" && role in roleMap ? (role as Role) : "user";
   const cfg = roleMap[key];
 
   if (compact) {
@@ -46,13 +59,20 @@ export function RoleBadge({ role, className, compact }: { role?: Role | string; 
           src={VERIFIED_IMG}
           alt="Certifié"
           title="Certifié"
-          className={cn("h-4 w-4 object-contain will-change-transform", className)}
+          className={cn(
+            "h-4 w-4 object-contain will-change-transform",
+            className,
+          )}
           {...handlers}
         />
       );
     }
     return cfg.icon ? (
-      <img src={cfg.icon} alt={cfg.label} className={cn("h-4 w-4 object-contain", className)} />
+      <img
+        src={cfg.icon}
+        alt={cfg.label}
+        className={cn("h-4 w-4 object-contain", className)}
+      />
     ) : null;
   }
 
@@ -63,7 +83,10 @@ export function RoleBadge({ role, className, compact }: { role?: Role | string; 
         src={VERIFIED_IMG}
         alt="Certifié"
         title="Certifié"
-        className={cn("h-4 w-4 object-contain will-change-transform", className)}
+        className={cn(
+          "h-4 w-4 object-contain will-change-transform",
+          className,
+        )}
         {...handlers}
       />
     );
@@ -79,7 +102,11 @@ export function RoleBadge({ role, className, compact }: { role?: Role | string; 
       )}
     >
       {cfg.icon ? (
-        <img src={cfg.icon} alt={cfg.label} className="h-4 w-4 object-contain" />
+        <img
+          src={cfg.icon}
+          alt={cfg.label}
+          className="h-4 w-4 object-contain"
+        />
       ) : null}
       <span className="truncate">{cfg.label}</span>
     </span>

@@ -105,7 +105,11 @@ export default function Register() {
           },
           { merge: true },
         );
-        await setDoc(doc(db, "usernames", uname), { uid: cred.user.uid, createdAt: serverTimestamp() }, { merge: false });
+        await setDoc(
+          doc(db, "usernames", uname),
+          { uid: cred.user.uid, createdAt: serverTimestamp() },
+          { merge: false },
+        );
       } catch (e) {
         console.error("register:setUser failed", e);
         toast({

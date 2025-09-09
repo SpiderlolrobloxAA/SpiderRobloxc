@@ -211,8 +211,16 @@ function Badge({ icon, text }: { icon: React.ReactNode; text: string }) {
 }
 
 function GoldCoin({ size = 48 }: { size?: number }) {
-  const src = "https://cdn.builder.io/api/v1/image/assets%2F7ca6692b844e492da4519bd1be30c27d%2F010980b0e1d0488b82cdd1e39f84e4d5?format=webp&width=800";
-  return <img src={src} alt="RotCoin" style={{ width: size, height: size }} className="object-contain" />;
+  const src =
+    "https://cdn.builder.io/api/v1/image/assets%2F7ca6692b844e492da4519bd1be30c27d%2F010980b0e1d0488b82cdd1e39f84e4d5?format=webp&width=800";
+  return (
+    <img
+      src={src}
+      alt="RotCoin"
+      style={{ width: size, height: size }}
+      className="object-contain"
+    />
+  );
 }
 
 function PayPalLogo() {
