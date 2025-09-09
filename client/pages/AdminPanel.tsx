@@ -238,7 +238,7 @@ export default function AdminPanel() {
 
   if (!ok) return <AdminLogin onOk={() => setOk(true)} />;
 
-  if (role === "user") {
+  if (role === "user" || role === "verified") {
     return (
       <div className="container py-10">
         <h1 className="font-display text-2xl font-bold">Accès refusé</h1>
