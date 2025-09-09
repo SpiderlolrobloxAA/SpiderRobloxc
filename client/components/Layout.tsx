@@ -554,6 +554,7 @@ export default function Layout() {
       <Announcements />
       <MaintenanceOverlay />
       <main className="relative z-10">
+        <TosModal />
         <Outlet />
       </main>
       <Footer />
