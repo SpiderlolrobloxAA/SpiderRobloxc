@@ -273,12 +273,17 @@ function CreditPack({
   amount,
   bonus,
   price,
+  originalPrice,
+  promo,
 }: {
   name: string;
   amount: number;
   bonus: string;
   price: string;
+  originalPrice?: number;
+  promo?: number;
 }) {
+  const hasPromo = Boolean(promo && promo > 0 && originalPrice);
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -302,7 +307,14 @@ function CreditPack({
       </div>
       <div className="mt-4 flex items-center justify-between">
         <div className="text-foreground/80">
-          <span className="text-xl font-extrabold">{price}</span>
+          {hasPromo ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm line-through opacity-70">{originalPrice?.toFixed(2)}€</span>
+              <span className="text-xl font-extrabold">{price}</span>
+            </div>
+          ) : (
+            <span className="text-xl font-extrabold">{price}</span>
+          )}
         </div>
         <Button size="sm" variant="secondary">
           Acheter
