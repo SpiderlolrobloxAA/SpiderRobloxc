@@ -42,8 +42,7 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
     const price = product.price || 0;
     try {
       if (product.free) {
-        // mark product sold and create thread
-        await updateDoc(doc(db, "products", product.id), { status: "sold", soldAt: serverTimestamp(), buyerId: user.uid });
+        // create thread
         const thRef = await addDoc(collection(db, "threads"), {
           participants: [user.uid, sellerId].filter(Boolean),
           title: product.title,
