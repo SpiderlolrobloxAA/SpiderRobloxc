@@ -245,7 +245,7 @@ function AddProduct({
     const timer = window.setTimeout(() => {
       timedOut = true;
       setImageUploading(false);
-      toast({ title: "Upload lent", description: "Upload trop long, utilisation d'un fallback local.", variant: "warning" });
+      toast({ title: "Upload lent", description: "Upload trop long, utilisation d'un fallback local.", variant: "default" });
       try {
         const reader = new FileReader();
         reader.onload = () => {
