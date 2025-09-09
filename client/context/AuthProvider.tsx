@@ -40,9 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await setDoc(
             ref,
             {
+              username: u.displayName || (u.email?.split('@')[0]) || 'user',
               email: u.email || null,
-              displayName: u.displayName || null,
-              createdAt: serverTimestamp(),
+              role: 'user',
+              balances: { available: 0, pending: 0 },
+              quests: { completed: [], progress: {} },
+              stats: { sales: 0, purchases: 0, joinedAt: serverTimestamp() },
+              settings: { notifications: true },
+              lastSeen: serverTimestamp(),
               updatedAt: serverTimestamp(),
             },
             { merge: true },
