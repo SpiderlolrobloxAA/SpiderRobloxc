@@ -29,5 +29,12 @@ export async function createServer() {
     console.warn("Could not load paypal webhook route:", e?.message || e);
   }
 
+  try {
+    const { moderateHandler } = await import("./routes/moderation");
+    app.post("/api/moderate", moderateHandler);
+  } catch (e) {
+    console.warn("Could not load moderation route:", e?.message || e);
+  }
+
   return app;
 }
