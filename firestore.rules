@@ -14,7 +14,27 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && uid == userId();
+
+      // Helper to detect ban changes in the incoming request
+      function isSettingBan() {
+        return (
+          (request.resource.data.keys().hasAny(["banned"]) && request.resource.data.banned == true) ||
+          (request.resource.data.keys().hasAny(["bannedUntil"]) && request.resource.data.bannedUntil > request.time)
+        );
+      }
+
+      // Users can write their own profile, but they must not be able to set their own ban fields.
+      allow create: if isSignedIn() && uid == userId();
+
+      allow update: if isSignedIn() && (
+        // Owner updating their own profile: allowed but cannot set ban fields on self
+        (uid == userId() && !isSettingBan())
+        // Moderators and founders can update other users (and themselves too) but cannot ban themselves
+        || ((hasRole('moderator') || hasRole('founder')) && !(uid == userId() && isSettingBan()))
+      );
+
+      // Deletions only allowed to founders
+      allow delete: if hasRole('founder');
     }
 
     match /products/{id} {
