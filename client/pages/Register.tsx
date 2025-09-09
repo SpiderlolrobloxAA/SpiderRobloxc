@@ -41,7 +41,24 @@ export default function Register() {
     }
 
     try {
-      const cred = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      // retry on network errors
+      let cred: any = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          cred = await createUserWithEmailAndPassword(auth, values.email, values.password);
+          break;
+        } catch (e: any) {
+          const msg = String(e?.code || e?.message || e);
+          if (msg.includes('network') && attempt < 2) {
+            // wait then retry
+            await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+            continue;
+          }
+          throw e;
+        }
+      }
+      if (!cred) throw new Error('createUser failed');
+
       try {
         if (auth.currentUser)
           await updateProfile(auth.currentUser, { displayName: values.username });
