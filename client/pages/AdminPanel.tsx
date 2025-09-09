@@ -16,6 +16,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  addDoc,
 } from "firebase/firestore";
 import { useProfile } from "@/context/ProfileProvider";
 
