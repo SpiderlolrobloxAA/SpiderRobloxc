@@ -56,7 +56,7 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
         });
         if (sellerId) {
           await updateDoc(doc(db, "users", sellerId), {
-            notifications: arrayUnion({ type: "thread", threadId: thRef.id, text: `${user.displayName || user.email || "Un utilisateur"} a acheté votre produit`, createdAt: serverTimestamp(), read: false }),
+            notifications: arrayUnion({ type: "thread", threadId: thRef.id, text: `${user.displayName || user.email || "Un utilisateur"} a acheté votre produit`, createdAt: Timestamp.now(), read: false }),
           }).catch(() => {});
         }
         toast({ title: "Achat confirmé", description: "Le vendeur a été contacté.", variant: "default" });
