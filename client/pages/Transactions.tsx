@@ -7,8 +7,10 @@ import {
   orderBy,
   query,
   where,
+  doc,
 } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { useProfile } from "@/context/ProfileProvider";
 
 export default function Transactions() {
   const { user } = useAuth();
