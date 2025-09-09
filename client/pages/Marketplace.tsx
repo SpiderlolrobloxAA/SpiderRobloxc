@@ -219,15 +219,21 @@ function AddProduct({
     }
   };
 
-  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
-    if (f) setFile(f);
+    if (!f) return;
+    // reuse same logic as onPick
+    const fake = { target: { files: [f] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+    await onPick(fake);
   };
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    setImageUploading(true);
     try {
       // Try to upload immediately to storage and set imageUrl to the returned link
       const storage = await getStorageClient();
@@ -237,6 +243,7 @@ function AddProduct({
         const dl = await getDownloadURL(tmpRef);
         setImageUrl(dl);
         setFile(null);
+        setImageUploading(false);
         return;
       }
     } catch (err) {
@@ -256,6 +263,8 @@ function AddProduct({
     } catch (err) {
       console.warn("file to dataURL failed", err);
       setFile(f);
+    } finally {
+      setImageUploading(false);
     }
   };
 
