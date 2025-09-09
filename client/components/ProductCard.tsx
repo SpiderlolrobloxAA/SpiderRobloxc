@@ -83,30 +83,25 @@ export function ProductCard({ product }: { product: Product }) {
               </DialogTrigger>
 
               {/* If current user is the seller, show delete button */}
-              {(() => {
-                const { user } = useAuth();
-                const { toast } = useToast();
-                // inline component scope helper not ideal but keeps file small
-                return user && product.seller?.id && user.uid === product.seller.id ? (
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const ok = window.confirm("Supprimer ce produit ? Cette action est irréversible.");
-                      if (!ok) return;
-                      try {
-                        await deleteDoc(doc(db, "products", product.id));
-                      } catch (err) {}
-                      try {
-                        if (product.seller.id) await deleteDoc(doc(db, "DataProject", "data1", "users", product.seller.id, "products", product.id));
-                      } catch (err) {}
-                      toast({ title: "Produit supprimé", variant: "default" });
-                    }}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-destructive text-white"
-                  >
-                    Supprimer
-                  </button>
-                ) : null;
-              })()}
+              {user && product.seller?.id && user.uid === product.seller.id ? (
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const ok = window.confirm("Supprimer ce produit ? Cette action est irréversible.");
+                    if (!ok) return;
+                    try {
+                      await deleteDoc(doc(db, "products", product.id));
+                    } catch (err) {}
+                    try {
+                      if (product.seller.id) await deleteDoc(doc(db, "DataProject", "data1", "users", product.seller.id, "products", product.id));
+                    } catch (err) {}
+                    toast({ title: "Produit supprimé", variant: "default" });
+                  }}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-destructive text-white"
+                >
+                  Supprimer
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
