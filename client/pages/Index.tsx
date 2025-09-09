@@ -45,7 +45,7 @@ export default function Index() {
           id: r.id,
           title: r.title,
           price: r.price ?? 0,
-          seller: { name: r.sellerName ?? "—", role: r.sellerRole ?? "user" },
+          seller: { id: (r.sellerId ?? (r.seller && r.seller.id)) || null, name: r.sellerName ?? "—", role: r.sellerRole ?? "user" },
           image: r.imageUrl || r.image || (null as any),
         })),
       );
