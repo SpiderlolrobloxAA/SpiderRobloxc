@@ -217,6 +217,16 @@ export default function AdminPanel() {
         { role: selectedRole, updatedAt: serverTimestamp() },
         { merge: true },
       );
+
+      // add a notification to the user about their new role
+      try {
+        await updateDoc(doc(db, "users", userId), {
+          notifications: arrayUnion({ type: "role", role: selectedRole, text: `Vous avez reçu le rôle ${selectedRole}`, createdAt: Timestamp.now(), read: false }),
+        });
+      } catch (e) {
+        console.error("notify role change failed", e);
+      }
+
       toast({ title: "Rôle sauvegardé", description: `${selectedRole}` });
     } finally {
       setSavingRole(false);
