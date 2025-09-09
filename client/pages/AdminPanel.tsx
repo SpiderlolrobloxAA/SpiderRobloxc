@@ -321,51 +321,57 @@ export default function AdminPanel() {
             )}
           </div>
           {userId && (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-foreground/70">Rôle:</span>
-              {ROLES.map((r) => (
-                <Button
-                  key={r}
-                  size="sm"
-                  variant={selectedRole === r ? "default" : "outline"}
-                  onClick={() => setSelectedRole(r as Role)}
-                >
-                  {r}
-                </Button>
-              ))}
-              <Button
-                size="sm"
-                className="ml-2"
-                onClick={saveRole}
-                disabled={savingRole}
-              >
-                {savingRole ? "Sauvegarde…" : "Sauvegarder"}
-              </Button>
-              <span className="ml-4 text-xs text-foreground/70">Crédits:</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => adjustCredits(100)}
-                disabled={adjusting}
-              >
-                {adjusting ? "…" : "+100"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => adjustCredits(1000)}
-                disabled={adjusting}
-              >
-                {adjusting ? "…" : "+1000"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => adjustCredits(-100)}
-                disabled={adjusting}
-              >
-                {adjusting ? "…" : "-100"}
-              </Button>
+            <div className="mt-4">
+              { (role === 'moderator' || role === 'founder') ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-foreground/70">Rôle:</span>
+                  {ROLES.map((r) => (
+                    <Button
+                      key={r}
+                      size="sm"
+                      variant={selectedRole === r ? "default" : "outline"}
+                      onClick={() => setSelectedRole(r as Role)}
+                    >
+                      {r}
+                    </Button>
+                  ))}
+                  <Button
+                    size="sm"
+                    className="ml-2"
+                    onClick={saveRole}
+                    disabled={savingRole}
+                  >
+                    {savingRole ? "Sauvegarde…" : "Sauvegarder"}
+                  </Button>
+                  <span className="ml-4 text-xs text-foreground/70">Crédits:</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => adjustCredits(100)}
+                    disabled={adjusting}
+                  >
+                    {adjusting ? "…" : "+100"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => adjustCredits(1000)}
+                    disabled={adjusting}
+                  >
+                    {adjusting ? "…" : "+1000"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => adjustCredits(-100)}
+                    disabled={adjusting}
+                  >
+                    {adjusting ? "…" : "-100"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-2 text-sm text-foreground/70">Vous n'avez pas la permission de modifier les rôles ou crédits.</div>
+              )}
             </div>
           )}
         </div>
