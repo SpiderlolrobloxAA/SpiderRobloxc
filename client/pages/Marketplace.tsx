@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
-import { db, storage } from "@/lib/firebase";
+import { db, getStorageClient } from "@/lib/firebase";
 import {
   addDoc,
   collection,
