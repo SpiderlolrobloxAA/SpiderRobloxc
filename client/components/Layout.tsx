@@ -531,6 +531,7 @@ export default function Layout() {
       <Header />
       <BanOverlay />
       <Announcements />
+      <MaintenanceOverlay />
       <main className="relative z-10">
         <Outlet />
       </main>
