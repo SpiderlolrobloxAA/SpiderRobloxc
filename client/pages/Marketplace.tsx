@@ -397,6 +397,9 @@ function AddProduct({
             <img src={imageUrl} alt="aperçu" className="mx-auto h-28 w-48 object-cover rounded-md" />
           </div>
         )}
+        {imageUploading && (
+          <div className="mt-2 text-sm text-foreground/60">Upload image en cours…</div>
+        )}
       </div>
       <Input placeholder="URL de l'image (requis)" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
       <label className="inline-flex items-center gap-2 text-sm">
