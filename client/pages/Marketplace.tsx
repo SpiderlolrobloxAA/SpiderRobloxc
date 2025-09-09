@@ -111,7 +111,7 @@ export default function Marketplace() {
               price: p.price ?? 0,
               image: p.imageUrl || p.image,
               free: (p.price ?? 0) === 0,
-              seller: { name: p.sellerName, role: p.sellerRole },
+              seller: { id: p.sellerId, name: p.sellerName, role: p.sellerRole },
               rating: p.rating || 4.5,
             }}
           />
