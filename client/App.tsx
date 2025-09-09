@@ -22,7 +22,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
 import AdminRoles from "./pages/AdminRoles";
-import RequireAuth from "@/components/RequireAuth";
+import PrivateRoute from "@/components/PrivateRoute";
 import { AuthProvider } from "@/context/AuthProvider";
 import { ProfileProvider } from "@/context/ProfileProvider";
 
