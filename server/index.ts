@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
+import { paypalWebhook } from "./routes/paypal";
 
 export function createServer() {
   const app = express();
