@@ -257,7 +257,7 @@ function AddProduct({
       } catch (e) {
         console.warn("fallback conversion failed after timeout", e);
       }
-    }, 20000);
+    }, 8000);
 
     try {
       // show immediate preview while uploading
