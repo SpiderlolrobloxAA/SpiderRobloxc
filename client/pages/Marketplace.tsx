@@ -139,6 +139,7 @@ function AddProduct({
   const [free, setFree] = useState(false);
   const [price, setPrice] = useState<number>(3);
   const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
   const cost = sellerRole === "verified" ? 2 : 5;
   const validPrice = normalizePrice(price, free);
   const imgOk = Boolean(imageUrl) || Boolean(file);
