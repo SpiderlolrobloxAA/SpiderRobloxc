@@ -166,6 +166,8 @@ function AddProduct({
   const [free, setFree] = useState(false);
   const [price, setPrice] = useState<number>(3);
   const [saving, setSaving] = useState(false);
+  const [moderationOpen, setModerationOpen] = useState(false);
+  const [moderationReasons, setModerationReasons] = useState<string[]>([]);
   const { toast } = useToast();
   const cost = sellerRole === "verified" ? 2 : 5;
   const validPrice = normalizePrice(price, free);
@@ -217,8 +219,8 @@ function AddProduct({
     if (f) setFile(f);
   };
 
-  const create = async () => {
-    if (!can) return;
+  // actual creation logic extracted so it can be called after moderation acceptance
+  const doCreate = async () => {
     setSaving(true);
     try {
       let finalUrl = imageUrl;
@@ -287,6 +289,27 @@ function AddProduct({
     }
   };
 
+  const create = async () => {
+    if (!can) return;
+    setSaving(true);
+    try {
+      // call moderation endpoint
+      const mod = await (await fetch("/api/moderate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: title }) })).json();
+      if (mod?.flagged) {
+        setModerationReasons(Array.isArray(mod.reasons) ? mod.reasons : []);
+        setModerationOpen(true);
+        setSaving(false);
+        return;
+      }
+
+      await doCreate();
+    } catch (e) {
+      console.error("product:create failed", e);
+      toast({ title: "Erreur", description: "Impossible de publier le produit.", variant: "destructive" });
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="grid gap-3">
       <Input placeholder="Titre" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -315,6 +338,17 @@ function AddProduct({
       <Button onClick={create} disabled={!can || saving}>
         {saving ? "Publication…" : "Publier"}
       </Button>
+
+      <ModerationWarning
+        open={moderationOpen}
+        reasons={moderationReasons}
+        text={title}
+        onCancel={() => setModerationOpen(false)}
+        onAccept={async () => {
+          setModerationOpen(false);
+          await doCreate();
+        }}
+      />
     </div>
   );
 }
