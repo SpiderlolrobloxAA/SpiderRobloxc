@@ -156,13 +156,18 @@ function AddProduct({
     setSaving(true);
     try {
       let finalUrl = imageUrl;
-      if (!finalUrl && file && storage) {
-        const tmpRef = ref(
-          storage,
-          `products/${userId}/${Date.now()}_${file.name}`,
-        );
-        await uploadBytes(tmpRef, file);
-        finalUrl = await getDownloadURL(tmpRef);
+      if (!finalUrl && file) {
+        const storage = await getStorageClient();
+        if (storage) {
+          const tmpRef = ref(
+            storage,
+            `products/${userId}/${Date.now()}_${file.name}`,
+          );
+          await uploadBytes(tmpRef, file);
+          finalUrl = await getDownloadURL(tmpRef);
+        } else {
+          console.warn('Storage not available; skipping upload');
+        }
       }
       const refDoc = await addDoc(collection(db, "products"), {
         title: title.trim(),
