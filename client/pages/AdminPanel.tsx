@@ -494,6 +494,61 @@ export default function AdminPanel() {
             </div>
             <div className="rounded-xl border border-border/60 bg-card p-4">
               <h3 className="font-semibold">Chat</h3>
+              {role === 'founder' && (
+                <div className="mt-4">
+                  <h4 className="font-medium">Envoyer un message global (système)</h4>
+                  <div className="mt-2 grid gap-2">
+                    <Input placeholder="Titre (optionnel)" id="broadcast-title" />
+                    <Input placeholder="Message système" id="broadcast-text" />
+                    <div className="flex items-center gap-2">
+                      <Button id="broadcast-send" onClick={async () => {
+                        const titleEl = document.getElementById('broadcast-title') as HTMLInputElement | null;
+                        const textEl = document.getElementById('broadcast-text') as HTMLInputElement | null;
+                        const msg = textEl?.value?.trim();
+                        const title = titleEl?.value?.trim() || 'Message système';
+                        if (!msg) {
+                          toast({ title: 'Message vide', description: 'Entrez le texte du message', variant: 'destructive' });
+                          return;
+                        }
+                        try {
+                          // fetch all users
+                          const usersSnap = await getDocs(query(collection(db, 'users')));
+                          for (const d of usersSnap.docs) {
+                            const u = { id: d.id, ...(d.data() as any) };
+                            const threadId = `system_${u.id}`;
+                            // create or update thread doc
+                            await setDoc(doc(db, 'threads', threadId), {
+                              participants: [u.id],
+                              title,
+                              system: true,
+                              lastMessage: { text: msg, senderId: 'system' },
+                              updatedAt: serverTimestamp(),
+                            }, { merge: true });
+                            // add the system message
+                            await addDoc(collection(db, 'threads', threadId, 'messages'), {
+                              senderId: 'system',
+                              text: msg,
+                              createdAt: serverTimestamp(),
+                            });
+                            // notify user
+                            try {
+                              await updateDoc(doc(db, 'users', u.id), {
+                                notifications: arrayUnion({ type: 'thread', threadId, text: msg, createdAt: Timestamp.now(), system: true }),
+                              });
+                            } catch (e) {}
+                          }
+                          toast({ title: 'Message envoyé' });
+                          if (textEl) textEl.value = '';
+                          if (titleEl) titleEl.value = '';
+                        } catch (e) {
+                          console.error('broadcast failed', e);
+                          toast({ title: 'Erreur', description: 'Impossible d\'envoyer le message global', variant: 'destructive' });
+                        }
+                      }}>Envoyer globalement</Button>
+                    </div>
+                  </div>
+                </div>
+              )}
               {activeTicket ? (
                 <div className="flex h-[60vh] flex-col">
                   <div className="flex-1 space-y-2 overflow-auto">
