@@ -288,25 +288,27 @@ function Announcements() {
 }
 
 function MaintenanceOverlay() {
-  const [state, setState] = useState<{ on: boolean; message?: string } | null>(
-    null,
-  );
+  const [state, setState] = useState<{ on: boolean; message?: string; scope?: string } | null>(null);
+  const location = useLocation();
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "settings", "app"), (d) => {
       const data = d.data() as any;
-      if (data)
-        setState({ on: Boolean(data.maintenance), message: data.message });
+      if (data) setState({ on: Boolean(data.maintenance), message: data.message, scope: data.scope });
     });
     return () => unsub();
   }, []);
   if (!state?.on) return null;
+
+  // determine page key from location
+  const path = location.pathname || "/";
+  const pageKey = path.startsWith("/tickets") ? "tickets" : path.startsWith("/shop") ? "shop" : path === "/" || path.startsWith("/marketplace") ? "marketplace" : "other";
+  if (state.scope !== "global" && state.scope !== pageKey) return null;
+
   return (
     <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur flex items-center justify-center">
       <div className="rounded-xl border border-border/60 bg-card p-6 max-w-md text-center">
         <h3 className="font-semibold text-lg">Maintenance en cours</h3>
-        <p className="mt-2 text-sm text-foreground/70">
-          {state.message || "Le site est temporairement indisponible."}
-        </p>
+        <p className="mt-2 text-sm text-foreground/70">{state.message || "Le site est temporairement indisponible."}</p>
       </div>
     </div>
   );
