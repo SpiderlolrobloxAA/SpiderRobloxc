@@ -27,6 +27,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { canPublish, normalizePrice } from "@/lib/marketplace";
 
 export default function Marketplace() {
   const [queryStr, setQueryStr] = useState("");
@@ -135,10 +136,9 @@ function AddProduct({
   const [price, setPrice] = useState<number>(3);
   const [saving, setSaving] = useState(false);
   const cost = sellerRole === "verified" ? 2 : 5;
-  const validPrice = free ? 0 : Math.max(3, Number(price) || 0);
+  const validPrice = normalizePrice(price, free);
   const imgOk = Boolean(imageUrl) || Boolean(file);
-  const can =
-    userCredits >= cost && title && imgOk && (free || validPrice >= 3);
+  const can = canPublish({ title, hasImage: imgOk, price, free, balance: userCredits, cost });
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
