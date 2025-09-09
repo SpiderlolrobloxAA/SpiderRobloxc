@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
 const schema = z.object({
-  email: z.string().email("Email invalide"),
   username: z.string().min(3, "Minimum 3 caractères"),
   password: z.string().min(6, "Minimum 6 caractères"),
 });
@@ -22,7 +21,7 @@ const schema = z.object({
 export default function Register() {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", username: "", password: "" },
+    defaultValues: { username: "", password: "" },
   });
   const { toast } = useToast();
 
@@ -30,6 +29,13 @@ export default function Register() {
     const { createUserWithEmailAndPassword, updateProfile } = await import(
       "firebase/auth"
     );
+    const { doc, setDoc, serverTimestamp, getDoc } = await import(
+      "firebase/firestore"
+    );
+    const { usernameToEmail, normalizeUsername } = await import(
+      "@/lib/usernameAuth"
+    );
+    const { db } = await import("@/lib/firebase");
     const mod = await import("@/lib/firebase");
     const auth = mod.auth;
     if (!auth) {
@@ -41,13 +47,26 @@ export default function Register() {
     }
 
     try {
+      const uname = normalizeUsername(values.username);
+      // Check username availability
+      const unameDoc = await getDoc(doc(db, "usernames", uname));
+      if (unameDoc.exists()) {
+        toast({
+          title: "Pseudo indisponible",
+          description: "Choisissez un autre pseudo.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const pseudoEmail = usernameToEmail(uname);
       // retry on network errors
       let cred: any = null;
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           cred = await createUserWithEmailAndPassword(
             auth,
-            values.email,
+            pseudoEmail,
             values.password,
           );
           break;
@@ -66,22 +85,18 @@ export default function Register() {
       try {
         if (auth.currentUser)
           await updateProfile(auth.currentUser, {
-            displayName: values.username,
+            displayName: uname,
           });
       } catch (e) {
         console.warn("updateProfile failed", e);
       }
 
       try {
-        const { doc, setDoc, serverTimestamp } = await import(
-          "firebase/firestore"
-        );
-        const { db } = await import("@/lib/firebase");
         await setDoc(
           doc(db, "users", cred.user.uid),
           {
-            email: values.email,
-            username: values.username,
+            email: pseudoEmail,
+            username: uname,
             role: "user",
             balances: { available: 0, pending: 0 },
             quests: { completed: [], progress: {} },
@@ -90,6 +105,7 @@ export default function Register() {
           },
           { merge: true },
         );
+        await setDoc(doc(db, "usernames", uname), { uid: cred.user.uid, createdAt: serverTimestamp() }, { merge: false });
       } catch (e) {
         console.error("register:setUser failed", e);
         toast({
@@ -100,7 +116,7 @@ export default function Register() {
         return;
       }
 
-      toast({ title: `Bienvenue ${values.username} 🎉` });
+      toast({ title: `Bienvenue ${uname} 🎉` });
     } catch (err: any) {
       console.error("createUser failed", err);
       const code = err?.code || err?.message || "";
@@ -138,23 +154,6 @@ export default function Register() {
       <div className="mt-6 rounded-xl border border-border/60 bg-card p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="vous@exemple.com"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="username"
