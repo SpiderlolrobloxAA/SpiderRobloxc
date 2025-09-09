@@ -220,11 +220,17 @@ function AddProduct({
   };
 
   const [imageUploading, setImageUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
     if (!f) return;
+    // show immediate preview while processing
+    try {
+      const p = URL.createObjectURL(f);
+      setPreviewUrl(p);
+    } catch {}
     // reuse same logic as onPick
     const fake = { target: { files: [f] } } as unknown as React.ChangeEvent<HTMLInputElement>;
     await onPick(fake);
@@ -235,34 +241,48 @@ function AddProduct({
     if (!f) return;
     setImageUploading(true);
     try {
+      // show immediate preview while uploading
+      try {
+        const p = URL.createObjectURL(f);
+        setPreviewUrl(p);
+      } catch {}
+
       // Try to upload immediately to storage and set imageUrl to the returned link
       const storage = await getStorageClient();
       if (storage) {
-        const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${f.name}`);
-        await uploadBytes(tmpRef, f);
-        const dl = await getDownloadURL(tmpRef);
-        setImageUrl(dl);
+        try {
+          const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${f.name}`);
+          await uploadBytes(tmpRef, f);
+          const dl = await getDownloadURL(tmpRef);
+          setImageUrl(dl);
+          setFile(null);
+          setPreviewUrl(null);
+          return;
+        } catch (uploadErr) {
+          console.warn("upload immediate failed", uploadErr);
+          // continue to fallback to data URL
+        }
+      }
+
+      // Fallback: convert to data URL and set it as imageUrl
+      try {
+        const data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(f);
+        });
+        setImageUrl(data);
         setFile(null);
-        setImageUploading(false);
+        setPreviewUrl(null);
         return;
+      } catch (err) {
+        console.warn("file to dataURL failed", err);
+        setFile(f);
       }
     } catch (err) {
-      console.warn("upload immediate failed", err);
-    }
-
-    // Fallback: convert to data URL and set it as imageUrl
-    try {
-      const data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(f);
-      });
-      setImageUrl(data);
-      setFile(null);
-    } catch (err) {
-      console.warn("file to dataURL failed", err);
-      setFile(f);
+      console.error("onPick error", err);
+      toast({ title: "Erreur image", description: "Impossible de traiter l'image.", variant: "destructive" });
     } finally {
       setImageUploading(false);
     }
