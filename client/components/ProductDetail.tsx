@@ -83,13 +83,13 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
         credits: -price,
         status: "completed",
         productId: product.id,
-        sellerId,
+        sellerId: sellerId ?? null,
         createdAt: serverTimestamp(),
       });
 
       // Create seller pending transaction
       await addDoc(collection(db, "transactions"), {
-        uid: sellerId || null,
+        uid: sellerId ?? null,
         type: "salePending",
         credits: price,
         status: "pending",
