@@ -363,6 +363,7 @@ function AddProduct({
         text={title}
         onCancel={() => setModerationOpen(false)}
         onAccept={async () => {
+          setModerationAccepted(true);
           setModerationOpen(false);
           await doCreate();
         }}
