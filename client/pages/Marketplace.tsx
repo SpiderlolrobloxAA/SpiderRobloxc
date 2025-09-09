@@ -216,9 +216,38 @@ function AddProduct({
     if (f) setFile(f);
   };
 
-  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) setFile(f);
+    if (!f) return;
+    try {
+      // Try to upload immediately to storage and set imageUrl to the returned link
+      const storage = await getStorageClient();
+      if (storage) {
+        const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${f.name}`);
+        await uploadBytes(tmpRef, f);
+        const dl = await getDownloadURL(tmpRef);
+        setImageUrl(dl);
+        setFile(null);
+        return;
+      }
+    } catch (err) {
+      console.warn("upload immediate failed", err);
+    }
+
+    // Fallback: convert to data URL and set it as imageUrl
+    try {
+      const data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(f);
+      });
+      setImageUrl(data);
+      setFile(null);
+    } catch (err) {
+      console.warn("file to dataURL failed", err);
+      setFile(f);
+    }
   };
 
   // actual creation logic extracted so it can be called after moderation acceptance
