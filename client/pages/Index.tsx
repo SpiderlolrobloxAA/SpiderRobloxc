@@ -53,6 +53,15 @@ export default function Index() {
     return () => unsub();
   }, []);
 
+  // fetch packs promotion so homepage shows promo prices
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "promotions", "packs"), (d) => {
+      const data = d.data() as any;
+      setPackPromo(Number(data?.all || 0));
+    });
+    return () => unsub();
+  }, []);
+
   useEffect(() => {
     const q = query(collection(db, "users"));
     const unsub = onSnapshot(q, (snap) => {
