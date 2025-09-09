@@ -116,16 +116,18 @@ function TicketsPage() {
 
   const send = async () => {
     if (!user || !active || !text.trim()) return;
-    try {
-      await addDoc(collection(db, "tickets", active, "messages"), {
-        senderId: user.uid,
-        text: text.trim(),
-        createdAt: serverTimestamp(),
-      });
-    } catch (e) {
-      console.error("ticket:send failed", e);
-    }
-    setText("");
+    await runWithModeration(text.trim(), async () => {
+      try {
+        await addDoc(collection(db, "tickets", active, "messages"), {
+          senderId: user.uid,
+          text: text.trim(),
+          createdAt: serverTimestamp(),
+        });
+      } catch (e) {
+        console.error("ticket:send failed", e);
+      }
+      setText("");
+    });
   };
 
   return (
