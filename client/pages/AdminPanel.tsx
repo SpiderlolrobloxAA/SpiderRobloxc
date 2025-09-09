@@ -117,17 +117,26 @@ export default function AdminPanel() {
       });
     })();
 
+    const scopeSelect = document.getElementById("maintenance-scope") as HTMLSelectElement | null;
     const toggle = document.getElementById("maintenance-toggle") as HTMLInputElement | null;
     const onChange = async () => {
       if (!toggle) return;
       try {
-        await setDoc(metaRef, { maintenance: toggle.checked }, { merge: true });
+        const scope = scopeSelect?.value || "global";
+        // write to settings/app to be consistent with Layout.MaintenanceOverlay
+        const settingsRef = doc(db, "settings", "app");
+        await setDoc(
+          settingsRef,
+          { maintenance: toggle.checked, scope, message: toggle.checked ? (document.getElementById("maintenance-message") as HTMLInputElement)?.value || "" : "" },
+          { merge: true },
+        );
         toast({ title: `Maintenance ${toggle.checked ? "activée" : "désactivée"}` });
       } catch (e) {
         console.error("set maintenance failed", e);
       }
     };
     toggle?.addEventListener("change", onChange);
+    scopeSelect?.addEventListener("change", onChange);
 
     return () => {
       unsubMeta();
