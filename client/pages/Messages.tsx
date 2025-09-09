@@ -84,6 +84,8 @@ function Thread({ id }: { id: string }) {
   const [msgs, setMsgs] = useState<any[]>([]);
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [threadMeta, setThreadMeta] = useState<any>(null);
+
   useEffect(() => {
     const q = query(
       collection(db, "threads", id, "messages"),
@@ -92,6 +94,15 @@ function Thread({ id }: { id: string }) {
     const unsub = onSnapshot(q, (snap) =>
       setMsgs(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
     );
+    return () => unsub();
+  }, [id]);
+
+  // subscribe to thread meta to know if it's a system thread
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "threads", id), (d) => {
+      if (d.exists()) setThreadMeta(d.data());
+      else setThreadMeta(null);
+    });
     return () => unsub();
   }, [id]);
   useEffect(() => {
