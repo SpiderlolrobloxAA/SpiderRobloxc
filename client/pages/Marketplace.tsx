@@ -25,9 +25,12 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
+  doc,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { canPublish, normalizePrice } from "@/lib/marketplace";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Marketplace() {
   const [queryStr, setQueryStr] = useState("");
@@ -35,6 +38,7 @@ export default function Marketplace() {
   const [items, setItems] = useState<Product[]>([]);
   const { user } = useAuth();
   const { role, credits, addCredits } = useProfile();
+  const { toast } = useToast();
 
   useEffect(() => {
     const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
@@ -166,7 +170,9 @@ function AddProduct({
           await uploadBytes(tmpRef, file);
           finalUrl = await getDownloadURL(tmpRef);
         } else {
-          console.warn('Storage not available; skipping upload');
+          toast({ title: 'Upload image indisponible', description: "Veuillez saisir une URL d'image ou réessayer plus tard.", variant: 'destructive' });
+          setSaving(false);
+          return;
         }
       }
       const refDoc = await addDoc(collection(db, "products"), {
@@ -176,6 +182,18 @@ function AddProduct({
         sellerId: userId,
         sellerName,
         sellerRole,
+        status: 'active',
+        createdAt: serverTimestamp(),
+      });
+      // Mirror to namespaced per-user collection for instant access
+      await setDoc(doc(db, 'DataProject', 'data1', 'users', userId, 'products', refDoc.id), {
+        title: title.trim(),
+        imageUrl: finalUrl,
+        price: validPrice,
+        sellerId: userId,
+        sellerName,
+        sellerRole,
+        status: 'active',
         createdAt: serverTimestamp(),
       });
       await onCharge(-cost);
