@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
 import { doc, collection, onSnapshot, orderBy, limit, query } from "firebase/firestore";
 import { packs } from "@/lib/packs";
+import { useEffect as useEffect2 } from "react";
 
 export default function Index() {
   const { user, loading } = useAuth();
