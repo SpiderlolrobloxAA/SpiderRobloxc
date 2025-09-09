@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import {
   getAuth,
   setPersistence,
@@ -18,7 +18,7 @@ const firebaseConfig = {
   measurementId: "G-PML2TD3Z35",
 };
 
-export const app = initializeApp(firebaseConfig);
+export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize Firestore only on the client. Initializing Firestore on the server
 // during the dev server middleware can cause the SDK to attempt streaming
@@ -26,19 +26,15 @@ export const app = initializeApp(firebaseConfig);
 // errors like "ReadableStreamDefaultReader constructor can only accept
 // readable streams that are not yet locked to a reader". Guarding ensures
 // Firestore is only created in the browser runtime.
-export const db =
-  typeof window !== "undefined"
-    ? initializeFirestore(app, {
-        useFetchStreams: false,
-        experimentalForceLongPolling: true,
-      } as any)
-    : (null as any);
+export const db = initializeFirestore(app, {
+  useFetchStreams: false,
+  experimentalAutoDetectLongPolling: true,
+} as any);
 
 // Auth is browser-only: guard initialization so server builds don't initialize auth components
-export let auth: ReturnType<typeof getAuth> | null = null;
+export const auth = getAuth(app);
+// Optional: keep persistence if desired
 if (typeof window !== "undefined") {
-  auth = getAuth(app);
-  // set persistence only in browser
   setPersistence(auth, browserLocalPersistence).catch(() => {});
 }
 
@@ -54,13 +50,4 @@ export async function initAnalytics() {
   return null;
 }
 
-export const storage =
-  typeof window !== "undefined" ? getStorage(app) : (null as any);
-
-export function ensureDb() {
-  if (!db)
-    throw new Error(
-      "Firestore is not available on the server. Use this function only in the browser.",
-    );
-  return db;
-}
+export const storage = typeof window !== "undefined" ? getStorage(app) : undefined;
