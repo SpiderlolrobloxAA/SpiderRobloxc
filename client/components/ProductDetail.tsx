@@ -190,6 +190,8 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
     } catch (e) {
       console.error("purchase failed", e);
       toast({ title: "Erreur", description: "Impossible d'effectuer l'achat.", variant: "destructive" });
+    } finally {
+      setIsPurchasing(false);
     }
   };
 
