@@ -253,6 +253,9 @@ function AddProduct({
         }
       }
 
+      const isFlagged = moderationReasons.length > 0 && !moderationAccepted;
+      const status = isFlagged ? "pending" : "active";
+
       const refDoc = await addDoc(collection(db, "products"), {
         title: title.trim(),
         imageUrl: finalUrl,
@@ -260,7 +263,12 @@ function AddProduct({
         sellerId: userId,
         sellerName,
         sellerRole,
-        status: "active",
+        status,
+        moderation: {
+          flagged: moderationReasons.length > 0,
+          reasons: moderationReasons,
+          accepted: moderationAccepted,
+        },
         createdAt: serverTimestamp(),
       });
 
@@ -272,7 +280,12 @@ function AddProduct({
         sellerId: userId,
         sellerName,
         sellerRole,
-        status: "active",
+        status,
+        moderation: {
+          flagged: moderationReasons.length > 0,
+          reasons: moderationReasons,
+          accepted: moderationAccepted,
+        },
         createdAt: serverTimestamp(),
       });
 
@@ -283,6 +296,9 @@ function AddProduct({
       setFile(null);
       setPrice(3);
       setFree(false);
+      // reset moderation state after creation
+      setModerationReasons([]);
+      setModerationAccepted(false);
     } catch (e) {
       console.error("product:create failed", e);
       toast({ title: "Erreur", description: "Impossible de publier le produit.", variant: "destructive" });
