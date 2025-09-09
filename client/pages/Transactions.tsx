@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 export default function Transactions() {
   const { user } = useAuth();
   const [rows, setRows] = useState<any[]>([]);
+  const { toast } = useToast();
+
   useEffect(() => {
     if (!user) return;
     const q = query(
@@ -20,7 +22,6 @@ export default function Transactions() {
       where("uid", "==", user.uid),
       orderBy("createdAt", "desc"),
     );
-    const { toast } = useToast();
     const unsub = onSnapshot(
       q,
       (snap) => setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
@@ -31,7 +32,7 @@ export default function Transactions() {
       },
     );
     return () => unsub();
-  }, [user]);
+  }, [user, toast]);
   if (!user) return <div className="container py-10">Connectez-vous.</div>;
   return (
     <div className="container py-10">
