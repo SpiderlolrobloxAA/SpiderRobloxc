@@ -39,27 +39,50 @@ export default function Register() {
       });
       return;
     }
-    const cred = await createUserWithEmailAndPassword(auth, values.email, values.password);
-    if (auth.currentUser)
-      await updateProfile(auth.currentUser, { displayName: values.username });
+
     try {
-      const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
-      const { db } = await import("@/lib/firebase");
-      await setDoc(
-        doc(db, "users", cred.user.uid),
-        {
-          email: values.email,
-          username: values.username,
-          role: "user",
-          balances: { available: 0, pending: 0 },
-          quests: { completed: [], progress: {} },
-          stats: { sales: 0, purchases: 0, joinedAt: serverTimestamp() },
-          lastSeen: serverTimestamp(),
-        },
-        { merge: true },
-      );
-    } catch (e) { console.error('register:setUser failed', e); }
-    toast({ title: `Bienvenue ${values.username} 🎉` });
+      const cred = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      try {
+        if (auth.currentUser)
+          await updateProfile(auth.currentUser, { displayName: values.username });
+      } catch (e) {
+        console.warn('updateProfile failed', e);
+      }
+
+      try {
+        const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+        await setDoc(
+          doc(db, "users", cred.user.uid),
+          {
+            email: values.email,
+            username: values.username,
+            role: "user",
+            balances: { available: 0, pending: 0 },
+            quests: { completed: [], progress: {} },
+            stats: { sales: 0, purchases: 0, joinedAt: serverTimestamp() },
+            lastSeen: serverTimestamp(),
+          },
+          { merge: true },
+        );
+      } catch (e) {
+        console.error('register:setUser failed', e);
+        toast({ title: 'Erreur enregistreur', description: 'Impossible de créer le profil. Réessayez.', variant: 'destructive' });
+        return;
+      }
+
+      toast({ title: `Bienvenue ${values.username} 🎉` });
+    } catch (err: any) {
+      console.error('createUser failed', err);
+      const code = err?.code || err?.message || '';
+      if (code.includes('network') || code.includes('auth/network-request-failed')) {
+        toast({ title: 'Erreur réseau', description: 'Vérifiez votre connexion internet et réessayez.', variant: 'destructive' });
+      } else if (code.includes('auth/email-already-in-use')) {
+        toast({ title: 'Email déjà utilisé', description: 'Utilisez un autre email ou connectez-vous.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Erreur', description: 'Impossible de créer le compte. Réessayez plus tard.', variant: 'destructive' });
+      }
+    }
   }
 
   return (
