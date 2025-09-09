@@ -190,8 +190,15 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
       if (sellerId) {
         await updateDoc(doc(db, "users", sellerId), {
           notifications: arrayUnion({ type: "thread", threadId: thRef.id, text: `${user.displayName || user.email || "Un utilisateur"} a acheté votre produit`, createdAt: Timestamp.now(), read: false }),
+          "stats.sales": increment(1),
+          sales: increment(1),
         }).catch(() => {});
       }
+
+      // increment buyer purchases
+      try {
+        await updateDoc(doc(db, "users", user.uid), { "stats.purchases": increment(1), purchases: increment(1) });
+      } catch {}
 
       toast({ title: "Achat confirmé", description: "Conversation ouverte avec le vendeur.", variant: "default" });
       onClose?.();
