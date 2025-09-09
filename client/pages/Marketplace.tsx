@@ -240,6 +240,25 @@ function AddProduct({
     const f = e.target.files?.[0];
     if (!f) return;
     setImageUploading(true);
+    let timedOut = false;
+    // start a timeout: if upload doesn't finish in 20s, fallback to data URL
+    const timer = window.setTimeout(() => {
+      timedOut = true;
+      setImageUploading(false);
+      toast({ title: "Upload lent", description: "Upload trop long, utilisation d'un fallback local.", variant: "warning" });
+      try {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setImageUrl(String(reader.result || ""));
+          setFile(null);
+          setPreviewUrl(null);
+        };
+        reader.readAsDataURL(f);
+      } catch (e) {
+        console.warn("fallback conversion failed after timeout", e);
+      }
+    }, 20000);
+
     try {
       // show immediate preview while uploading
       try {
@@ -253,10 +272,17 @@ function AddProduct({
         try {
           const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${f.name}`);
           await uploadBytes(tmpRef, f);
+          // if timed out already, don't override fallback
+          if (timedOut) {
+            clearTimeout(timer);
+            return;
+          }
           const dl = await getDownloadURL(tmpRef);
+          clearTimeout(timer);
           setImageUrl(dl);
           setFile(null);
           setPreviewUrl(null);
+          setImageUploading(false);
           return;
         } catch (uploadErr) {
           console.warn("upload immediate failed", uploadErr);
@@ -272,9 +298,11 @@ function AddProduct({
           reader.onerror = (err) => reject(err);
           reader.readAsDataURL(f);
         });
+        clearTimeout(timer);
         setImageUrl(data);
         setFile(null);
         setPreviewUrl(null);
+        setImageUploading(false);
         return;
       } catch (err) {
         console.warn("file to dataURL failed", err);
@@ -284,7 +312,8 @@ function AddProduct({
       console.error("onPick error", err);
       toast({ title: "Erreur image", description: "Impossible de traiter l'image.", variant: "destructive" });
     } finally {
-      setImageUploading(false);
+      clearTimeout(timer);
+      if (!timedOut) setImageUploading(false);
     }
   };
 
