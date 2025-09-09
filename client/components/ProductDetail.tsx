@@ -200,7 +200,7 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
           <img src={product.image || "/placeholder.svg"} alt={product.title} className="w-full rounded-md object-cover" />
         </div>
         <div className="space-y-3">
-          <div className="text-sm">Vendeur: {product.seller.name}</div>
+          <div className="text-sm">Vendeur: {product.seller.name && product.seller.name.includes("@") ? emailToUsername(product.seller.name) : product.seller.name}</div>
           <div className="text-lg font-bold">{product.free ? "GRATUIT" : `${product.price} RC`}</div>
           <div className="text-sm text-foreground/70">Description non fournie.</div>
           <div className="pt-2">
