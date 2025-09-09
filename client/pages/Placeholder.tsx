@@ -35,6 +35,7 @@ export default function Placeholder({ title }: { title: string }) {
 
 function TicketsPage() {
   const { user } = useAuth();
+  const { role } = useProfile();
   const [title, setTitle] = useState("");
   const [msg, setMsg] = useState("");
   const [tickets, setTickets] = useState<any[]>([]);
