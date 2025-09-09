@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -43,19 +43,23 @@ export default function Marketplace() {
 
   useEffect(() => {
     const metaRef = doc(db, "meta", "site");
-    const unsubMeta = onSnapshot(metaRef, (d) => {
-      const data = d.data() as any | undefined;
-      setMaintenance(Boolean(data?.maintenance));
-    }, () => {});
+    const unsubMeta = onSnapshot(
+      metaRef,
+      (d) => {
+        const data = d.data() as any | undefined;
+        setMaintenance(Boolean(data?.maintenance));
+      },
+      () => {},
+    );
 
     const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
-    // only active products
     const unsub = onSnapshot(q, (snap) => {
       const rows = snap.docs
         .map((d) => ({ id: d.id, ...(d.data() as any) }))
         .filter((r) => r.status === "active");
       setItems(rows as any);
     });
+
     return () => {
       unsub();
       unsubMeta();
@@ -64,9 +68,7 @@ export default function Marketplace() {
 
   const products = items
     .filter((p) => p.title.toLowerCase().includes(queryStr.toLowerCase()))
-    .sort((a, b) =>
-      sort === "price" ? (a.price as number) - (b.price as number) : 0,
-    );
+    .sort((a, b) => (sort === "price" ? (a.price as number) - (b.price as number) : 0));
 
   return (
     <div className="container py-10">
@@ -111,22 +113,34 @@ export default function Marketplace() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {products.map((p: any) => (
-          <ProductCard
-            key={p.id}
-            product={{
-              id: p.id,
-              title: p.title,
-              price: p.price ?? 0,
-              image: p.imageUrl || p.image,
-              free: (p.price ?? 0) === 0,
-              seller: { id: p.sellerId, name: p.sellerName, role: p.sellerRole },
-              rating: p.rating || 4.5,
-            }}
-          />
-        ))}
-      </div>
+      {maintenance ? (
+        <div className="mt-6 rounded-xl border border-border/60 bg-card p-6 text-center">
+          <div className="text-xl font-semibold">Maintenance</div>
+          <div className="mt-2 text-sm text-foreground/70">Le marketplace est actuellement en maintenance. Merci de revenir plus tard.</div>
+        </div>
+      ) : products.length === 0 ? (
+        <div className="mt-6 rounded-xl border border-border/60 bg-card p-6 text-center">
+          <div className="text-xl font-semibold">Aucun produit</div>
+          <div className="mt-2 text-sm text-foreground/70">Aucun produit n'est disponible à la vente pour le moment.</div>
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {products.map((p: any) => (
+            <ProductCard
+              key={p.id}
+              product={{
+                id: p.id,
+                title: p.title,
+                price: p.price ?? 0,
+                image: p.imageUrl || p.image,
+                free: (p.price ?? 0) === 0,
+                seller: { id: p.sellerId, name: p.sellerName, role: p.sellerRole },
+                rating: p.rating || 4.5,
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -184,10 +198,7 @@ function AddProduct({
       if (!finalUrl && file) {
         const storage = await getStorageClient();
         if (storage) {
-          const tmpRef = ref(
-            storage,
-            `products/${userId}/${Date.now()}_${file.name}`,
-          );
+          const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${file.name}`);
           await uploadBytes(tmpRef, file);
           finalUrl = await getDownloadURL(tmpRef);
         } else {
@@ -202,8 +213,7 @@ function AddProduct({
           } catch (err) {
             toast({
               title: "Upload image indisponible",
-              description:
-                "Veuillez saisir une URL d'image ou réessayer plus tard.",
+              description: "Veuillez saisir une URL d'image ou réessayer plus tard.",
               variant: "destructive",
             });
             setSaving(false);
@@ -211,6 +221,7 @@ function AddProduct({
           }
         }
       }
+
       const refDoc = await addDoc(collection(db, "products"), {
         title: title.trim(),
         imageUrl: finalUrl,
@@ -221,20 +232,19 @@ function AddProduct({
         status: "active",
         createdAt: serverTimestamp(),
       });
+
       // Mirror to namespaced per-user collection for instant access
-      await setDoc(
-        doc(db, "DataProject", "data1", "users", userId, "products", refDoc.id),
-        {
-          title: title.trim(),
-          imageUrl: finalUrl,
-          price: validPrice,
-          sellerId: userId,
-          sellerName,
-          sellerRole,
-          status: "active",
-          createdAt: serverTimestamp(),
-        },
-      );
+      await setDoc(doc(db, "DataProject", "data1", "users", userId, "products", refDoc.id), {
+        title: title.trim(),
+        imageUrl: finalUrl,
+        price: validPrice,
+        sellerId: userId,
+        sellerName,
+        sellerRole,
+        status: "active",
+        createdAt: serverTimestamp(),
+      });
+
       await onCharge(-cost);
       onCreated();
       setTitle("");
@@ -244,6 +254,7 @@ function AddProduct({
       setFree(false);
     } catch (e) {
       console.error("product:create failed", e);
+      toast({ title: "Erreur", description: "Impossible de publier le produit.", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -251,69 +262,29 @@ function AddProduct({
 
   return (
     <div className="grid gap-3">
-      <Input
-        placeholder="Titre"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <div
-        className="rounded-md border border-dashed border-border/60 p-3 text-center text-sm"
-        onDragOver={(e) => {
-          e.preventDefault();
-        }}
-        onDrop={onDrop}
-      >
+      <Input placeholder="Titre" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <div className="rounded-md border border-dashed border-border/60 p-3 text-center text-sm" onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
         <div className="flex items-center justify-center gap-2">
-          <input
-            id="file"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={onPick}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => document.getElementById("file")?.click()}
-          >
+          <input id="file" type="file" accept="image/*" className="hidden" onChange={onPick} />
+          <Button variant="outline" size="sm" onClick={() => document.getElementById("file")?.click()}>
             Choisir une image
           </Button>
           <span className="text-foreground/60">ou glissez-déposez</span>
         </div>
         {(file || imageUrl) && (
           <div className="mt-2">
-            <img
-              src={file ? URL.createObjectURL(file) : imageUrl}
-              alt="aperçu"
-              className="mx-auto h-28 w-48 object-cover rounded-md"
-            />
+            <img src={file ? URL.createObjectURL(file) : imageUrl} alt="aperçu" className="mx-auto h-28 w-48 object-cover rounded-md" />
           </div>
         )}
       </div>
-      <Input
-        placeholder="…ou URL de l'image"
-        value={imageUrl}
-        onChange={(e) => setImageUrl(e.target.value)}
-      />
+      <Input placeholder="…ou URL de l'image" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
       <label className="inline-flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={free}
-          onChange={(e) => setFree(e.target.checked)}
-        />{" "}
-        Gratuit
+        <input type="checkbox" checked={free} onChange={(e) => setFree(e.target.checked)} /> Gratuit
       </label>
       {!free && (
-        <Input
-          placeholder="Prix (RC) — min 3"
-          type="number"
-          value={price}
-          onChange={(e) => setPrice(Number(e.target.value))}
-        />
+        <Input placeholder="Prix (RC) — min 3" type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
       )}
-      <div className="text-xs text-foreground/70">
-        Frais de publication: {cost} RC (Certifié: 2 RC, sinon 5 RC)
-      </div>
+      <div className="text-xs text-foreground/70">Frais de publication: {cost} RC (Certifié: 2 RC, sinon 5 RC)</div>
       <Button onClick={create} disabled={!can || saving}>
         {saving ? "Publication…" : "Publier"}
       </Button>
