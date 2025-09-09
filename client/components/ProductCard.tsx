@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { RoleBadge, type Role } from "./RoleBadge";
 import { motion } from "framer-motion";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
-import { Button } from "./ui/button";
 import { Dialog, DialogTrigger, DialogContent } from "./ui/dialog";
 import { ProductDetailContent } from "./ProductDetail";
 
