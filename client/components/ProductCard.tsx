@@ -16,23 +16,8 @@ export interface Product {
 }
 
 function MiniCoin() {
-  return (
-    <svg
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="12" cy="12" r="10" fill="#F9D84A" />
-      <circle cx="12" cy="12" r="7" fill="#FFC928" />
-      <path
-        d="M9 12h6M12 9v6"
-        stroke="#8B5E00"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
+  const src = "https://cdn.builder.io/api/v1/image/assets%2F7ca6692b844e492da4519bd1be30c27d%2F010980b0e1d0488b82cdd1e39f84e4d5?format=webp&width=800";
+  return <img src={src} alt="RC" className="h-4 w-4 object-contain" />;
 }
 
 export function ProductCard({ product }: { product: Product }) {
