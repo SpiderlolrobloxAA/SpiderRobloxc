@@ -423,9 +423,9 @@ function AddProduct({
           </Button>
           <span className="text-foreground/60">ou collez/glissez une URL</span>
         </div>
-        {imageUrl && (
+        {(imageUrl || previewUrl) && (
           <div className="mt-2">
-            <img src={imageUrl} alt="aperçu" className="mx-auto h-28 w-48 object-cover rounded-md" />
+            <img src={imageUrl || previewUrl || ""} alt="aperçu" className="mx-auto h-28 w-48 object-cover rounded-md" />
           </div>
         )}
         {imageUploading && (
