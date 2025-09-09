@@ -211,6 +211,21 @@ function TicketsPage() {
           )}
         </div>
       </div>
+
+      <ModerationWarning
+        open={moderationOpen}
+        reasons={moderationReasons}
+        onCancel={() => {
+          setModerationOpen(false);
+          setPendingAction(null);
+        }}
+        onAccept={async () => {
+          setModerationOpen(false);
+          const act = pendingAction;
+          setPendingAction(null);
+          if (act) await act();
+        }}
+      />
     </div>
   );
 }
