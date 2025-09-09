@@ -409,7 +409,7 @@ function AddProduct({
         <Input placeholder="Prix (RC) — min 3" type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
       )}
       <div className="text-xs text-foreground/70">Frais de publication: {cost} RC (Certifié: 2 RC, sinon 5 RC)</div>
-      <Button onClick={create} disabled={!can || saving}>
+      <Button onClick={create} disabled={saving}>
         {saving ? "Publication…" : "Publier"}
       </Button>
 
