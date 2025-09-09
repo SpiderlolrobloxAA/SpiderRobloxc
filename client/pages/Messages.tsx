@@ -15,12 +15,13 @@ import {
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSearchParams } from "react-router-dom";
 
 export default function Messages() {
   const { user } = useAuth();
   const [threads, setThreads] = useState<any[]>([]);
   const [active, setActive] = useState<string | null>(null);
-  const [searchParams, setSearchParams] = require('react-router-dom').useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     if (!user) return;
@@ -54,7 +55,7 @@ export default function Messages() {
             >
               <div className="text-sm">{t.title || "Conversation"}</div>
               <div className="text-xs text-foreground/60">
-                {t.lastMessage?.text || "—"}
+                {t.lastMessage?.text || "���"}
               </div>
             </button>
           ))}
