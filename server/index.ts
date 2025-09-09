@@ -18,6 +18,7 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+  app.post("/api/webhooks/paypal", paypalWebhook);
 
   return app;
 }
