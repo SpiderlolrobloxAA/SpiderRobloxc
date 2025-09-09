@@ -42,8 +42,11 @@ export default function Marketplace() {
 
   useEffect(() => {
     const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
+    // only active products
     const unsub = onSnapshot(q, (snap) => {
-      const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      const rows = snap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as any) }))
+        .filter((r) => r.status === "active");
       setItems(rows as any);
     });
     return () => unsub();
