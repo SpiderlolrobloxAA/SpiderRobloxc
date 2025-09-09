@@ -14,6 +14,7 @@ import {
   arrayUnion,
   increment,
   Timestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
