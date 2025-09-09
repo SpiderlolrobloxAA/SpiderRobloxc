@@ -369,17 +369,17 @@ function AddProduct({
         <div className="flex items-center justify-center gap-2">
           <input id="file" type="file" accept="image/*" className="hidden" onChange={onPick} />
           <Button variant="outline" size="sm" onClick={() => document.getElementById("file")?.click()}>
-            Choisir une image
+            Choisir une image (sera convertie en lien)
           </Button>
-          <span className="text-foreground/60">ou glissez-déposez</span>
+          <span className="text-foreground/60">ou collez/glissez une URL</span>
         </div>
-        {(file || imageUrl) && (
+        {imageUrl && (
           <div className="mt-2">
-            <img src={file ? URL.createObjectURL(file) : imageUrl} alt="aperçu" className="mx-auto h-28 w-48 object-cover rounded-md" />
+            <img src={imageUrl} alt="aperçu" className="mx-auto h-28 w-48 object-cover rounded-md" />
           </div>
         )}
       </div>
-      <Input placeholder="…ou URL de l'image" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+      <Input placeholder="URL de l'image (requis)" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
       <label className="inline-flex items-center gap-2 text-sm">
         <input type="checkbox" checked={free} onChange={(e) => setFree(e.target.checked)} /> Gratuit
       </label>
