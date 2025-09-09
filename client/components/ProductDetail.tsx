@@ -72,10 +72,56 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
       const ok = window.confirm(`Confirmer l'achat de ${product.title} pour ${price} RC ?`);
       if (!ok) return;
 
-      // Deduct buyer credits
-      await updateDoc(doc(db, "users", user.uid), { "balances.available": (window as any).firebaseIncrement ? (window as any).firebaseIncrement(-price) : undefined }, { });
-      // The above uses a fallback; instead perform atomic decrement via server update using FieldValue is not available on client here.
-      // Use updateDoc with increment from firebase/firestore
+      // Deduct buyer credits atomically
+      await updateDoc(doc(db, "users", user.uid), { "balances.available": increment(-price) } as any);
+
+      // Create buyer transaction (record purchase)
+      await addDoc(collection(db, "transactions"), {
+        uid: user.uid,
+        type: "purchase",
+        credits: -price,
+        status: "completed",
+        productId: product.id,
+        sellerId,
+        createdAt: serverTimestamp(),
+      });
+
+      // Create seller pending transaction
+      await addDoc(collection(db, "transactions"), {
+        uid: sellerId || null,
+        type: "salePending",
+        credits: price,
+        status: "pending",
+        productId: product.id,
+        buyerId: user.uid,
+        createdAt: serverTimestamp(),
+      });
+
+      // mark product sold
+      await updateDoc(doc(db, "products", product.id), { status: "sold", soldAt: serverTimestamp(), buyerId: user.uid });
+
+      // create a thread between buyer and seller
+      const thRef = await addDoc(collection(db, "threads"), {
+        participants: [user.uid, sellerId].filter(Boolean),
+        title: product.title,
+        productId: product.id,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      await addDoc(collection(db, "threads", thRef.id, "messages"), {
+        senderId: user.uid,
+        text: `Achat confirmé : ${product.title}`,
+        createdAt: serverTimestamp(),
+      });
+
+      if (sellerId) {
+        await updateDoc(doc(db, "users", sellerId), {
+          notifications: arrayUnion({ type: "thread", threadId: thRef.id, text: `${user.displayName || user.email || "Un utilisateur"} a acheté votre produit`, createdAt: serverTimestamp(), read: false }),
+        }).catch(() => {});
+      }
+
+      toast({ title: "Achat confirmé", description: "Conversation ouverte avec le vendeur.", variant: "default" });
+      onClose?.();
     } catch (e) {
       console.error("purchase failed", e);
       toast({ title: "Erreur", description: "Impossible d'effectuer l'achat.", variant: "destructive" });
