@@ -229,7 +229,9 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
           <div className="text-lg font-bold">{product.free ? "GRATUIT" : `${product.price} RC`}</div>
           <div className="text-sm text-foreground/70">Description non fournie.</div>
           <div className="pt-2">
-            {!product.free ? (
+            {isSeller ? (
+              <div className="text-sm text-foreground/60">Vous êtes le vendeur — achat désactivé.</div>
+            ) : !product.free ? (
               <>
                 {!confirmOpen ? (
                   <Button onClick={() => setConfirmOpen(true)} className="w-full" disabled={isPurchasing}>
@@ -247,8 +249,8 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
                 )}
               </>
             ) : (
-              <Button onClick={() => purchase(true)} className="w-full">
-                Acheter
+              <Button onClick={() => purchase(true)} className="w-full" disabled={isPurchasing}>
+                {isPurchasing ? "Traitement…" : "Acheter"}
               </Button>
             )}
           </div>
