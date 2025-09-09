@@ -173,7 +173,8 @@ function AddProduct({
   const { toast } = useToast();
   const cost = sellerRole === "verified" ? 2 : 5;
   const validPrice = normalizePrice(price, free);
-  const imgOk = Boolean(imageUrl) || Boolean(file);
+  // require an actual URL (imageUrl) to consider image present; files are converted on pick to imageUrl
+  const imgOk = Boolean(imageUrl);
   const can = canPublish({
     title,
     hasImage: imgOk,
