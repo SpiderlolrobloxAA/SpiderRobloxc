@@ -39,82 +39,30 @@ const App = () => (
             <Routes>
               <Route element={<Layout />}>
                 <Route path="/" element={<Index />} />
-                <Route
-                  path="/marketplace"
-                  element={
-                    <RequireAuth>
-                      <Marketplace />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/shop"
-                  element={
-                    <RequireAuth>
-                      <Shop />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/rotcoins"
-                  element={
-                    <RequireAuth>
-                      <Shop />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/quests"
-                  element={
-                    <RequireAuth>
-                      <Quests />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/quetes"
-                  element={
-                    <RequireAuth>
-                      <Quests />
-                    </RequireAuth>
-                  }
-                />
+                <Route element={<PrivateRoute />}>
+                  <Route path="/marketplace" element={<Marketplace />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/rotcoins" element={<Shop />} />
+                  <Route path="/quests" element={<Quests />} />
+                  <Route path="/quetes" element={<Quests />} />
+                </Route>
                 <Route path="/profile" element={<Profile />} />
-                <Route
-                  path="/transactions"
-                  element={
-                    <RequireAuth>
-                      <Transactions />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/tickets"
-                  element={
-                    <RequireAuth>
-                      <Placeholder title="Tickets support" />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/messages"
-                  element={
-                    <RequireAuth>
-                      <Messages />
-                    </RequireAuth>
-                  }
-                />
-                <Route path="/admin" element={<RequireAuth><AdminPanel /></RequireAuth>} />
-                <Route path="/admin-roles" element={<RequireAuth><AdminRoles /></RequireAuth>} />
-                <Route
-                  path="/sell"
-                  element={
-                    <RequireAuth>
-                      <Placeholder title="Commencer à vendre" />
-                    </RequireAuth>
-                  }
-                />
+                <Route element={<PrivateRoute />}>
+                  <Route path="/transactions" element={<Transactions />} />
+                  <Route path="/tickets" element={<Placeholder title="Tickets support" />} />
+                  <Route path="/messages" element={<Messages />} />
+                </Route>
+                <Route path="/admin" element={<PrivateRoute />}>
+                  <Route index element={<AdminPanel />} />
+                </Route>
+                <Route path="/admin-roles" element={<PrivateRoute />}>
+                  <Route index element={<AdminRoles />} />
+                </Route>
+                <Route element={<PrivateRoute />}>
+                  <Route path="/sell" element={<Placeholder title="Commencer à vendre" />} />
+                </Route>
                 <Route path="/login" element={<Login />} />
+                <Route path="/auth/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
