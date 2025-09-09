@@ -57,6 +57,7 @@ export const paypalWebhook: RequestHandler = async (req, res) => {
 
     const db = await getAdminDb();
     // Dynamically import FieldValue to avoid requiring firebase-admin at dev startup
+    // @ts-ignore - optional dependency
     const { FieldValue } = await import("firebase-admin/firestore");
     const batch = db.batch();
     const payRef = db.collection("payments").doc(paymentId);
