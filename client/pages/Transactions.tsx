@@ -60,7 +60,15 @@ export default function Transactions() {
                     ? new Date(t.createdAt.toDate()).toLocaleString()
                     : ""}
                 </div>
-                <div>{t.type}</div>
+                <div>
+                  <div className="capitalize">{t.type}</div>
+                  {t.adminName && (
+                    <div className="text-xs text-foreground/60">par {t.adminName}</div>
+                  )}
+                  {t.status === "pending" && (
+                    <div className="text-xs text-amber-400 font-semibold">En attente</div>
+                  )}
+                </div>
                 <div>{t.orderId || t.note || "—"}</div>
                 <div>
                   {t.credits
