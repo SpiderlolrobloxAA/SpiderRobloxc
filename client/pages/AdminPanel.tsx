@@ -219,6 +219,7 @@ export default function AdminPanel() {
         text: reply.trim(),
         senderId: currentUser?.uid || "admin",
         senderName: currentUser?.displayName || currentUser?.email || "admin",
+        senderRole: role || "admin",
         createdAt: serverTimestamp(),
       });
       await updateDoc(doc(db, "tickets", activeTicket), {
