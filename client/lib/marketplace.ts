@@ -8,7 +8,6 @@ export function canPublish({ title, hasImage, price, free, balance, cost }: { ti
   if (!title.trim()) return false;
   if (!hasImage) return false;
   if (balance < cost) return false;
-  const normalized = normalizePrice(price, free);
-  if (!free && normalized < 3) return false;
+  if (!free && (Number(price) || 0) < 3) return false;
   return true;
 }
