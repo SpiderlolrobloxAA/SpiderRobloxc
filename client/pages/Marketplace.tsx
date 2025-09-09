@@ -181,14 +181,24 @@ function AddProduct({
           await uploadBytes(tmpRef, file);
           finalUrl = await getDownloadURL(tmpRef);
         } else {
-          toast({
-            title: "Upload image indisponible",
-            description:
-              "Veuillez saisir une URL d'image ou réessayer plus tard.",
-            variant: "destructive",
-          });
-          setSaving(false);
-          return;
+          // Fallback: convert file to data URL and store in Firestore so it can be displayed
+          try {
+            finalUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result || ""));
+              reader.onerror = (err) => reject(err);
+              reader.readAsDataURL(file);
+            });
+          } catch (err) {
+            toast({
+              title: "Upload image indisponible",
+              description:
+                "Veuillez saisir une URL d'image ou réessayer plus tard.",
+              variant: "destructive",
+            });
+            setSaving(false);
+            return;
+          }
         }
       }
       const refDoc = await addDoc(collection(db, "products"), {
