@@ -290,7 +290,7 @@ function AddProduct({
   return (
     <div className="grid gap-3">
       <Input placeholder="Titre" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <div className="rounded-md border border-dashed border-border/60 p-3 text-center text-sm" onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
+      <div className="rounded-md border border-dashed border-border/60 p-3 text-center text-sm" onDragOver={(e) => e.preventDefault()} onDrop={onDrop} onPaste={onPaste}>
         <div className="flex items-center justify-center gap-2">
           <input id="file" type="file" accept="image/*" className="hidden" onChange={onPick} />
           <Button variant="outline" size="sm" onClick={() => document.getElementById("file")?.click()}>
