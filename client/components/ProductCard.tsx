@@ -25,6 +25,9 @@ function MiniCoin() {
 }
 
 export function ProductCard({ product }: { product: Product }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
   return (
     <Dialog>
       <motion.div
