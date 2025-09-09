@@ -341,7 +341,8 @@ function AddProduct({
         createdAt: serverTimestamp(),
       });
 
-      await onCharge(-cost);
+      // charge only when active
+      if (!flagged) await onCharge(-cost);
       onCreated();
       setTitle("");
       setImageUrl("");
