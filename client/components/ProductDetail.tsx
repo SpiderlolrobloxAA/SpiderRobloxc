@@ -62,6 +62,8 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
         }
         toast({ title: "Achat confirmé", description: "Le vendeur a été contacté.", variant: "default" });
         onClose?.();
+        // redirect buyer to the created thread
+        navigate(`/messages?thread=${thRef.id}`);
         return;
       }
 
