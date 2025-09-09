@@ -300,12 +300,13 @@ function AddProduct({
         }
       }
 
-      const isFlagged = moderationReasons.length > 0 && !moderationAccepted;
-      const status = isFlagged ? "pending" : "active";
-
       // If still no image URL, use default placeholder image hosted on CDN
       const placeholder = "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
       if (!finalUrl) finalUrl = placeholder;
+
+      // If flagged (any reasons), always create as pending — do not publish active even after acceptance
+      const flagged = moderationReasons.length > 0;
+      const status = flagged ? "pending" : "active";
 
       const refDoc = await addDoc(collection(db, "products"), {
         title: title.trim(),
