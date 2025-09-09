@@ -118,6 +118,8 @@ function Thread({ id }: { id: string }) {
     }).catch(() => {});
   }, [id, user]);
 
+  const { toast } = useToast();
+
   const send = async () => {
     if (!user || !text.trim()) return;
     // do not allow sending into system threads
