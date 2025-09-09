@@ -53,7 +53,9 @@ service cloud.firestore {
     match /tickets/{ticketId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (hasRole('helper') || hasRole('moderator') || hasRole('founder') || request.resource.data.userId == userId());
+      // Updates allowed for helpers+ and owner; deletes only for moderator/founder
+      allow update: if isSignedIn() && (hasRole('helper') || hasRole('moderator') || hasRole('founder') || resource.data.uid == userId());
+      allow delete: if isSignedIn() && (hasRole('moderator') || hasRole('founder'));
       match /messages/{msgId} { allow read, create: if isSignedIn(); allow update, delete: if false; }
     }
 
