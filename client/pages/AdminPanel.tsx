@@ -219,11 +219,13 @@ export default function AdminPanel() {
 
   if (!ok) return <AdminLogin onOk={() => setOk(true)} />;
 
-  if (role === 'user') {
+  if (role === "user") {
     return (
       <div className="container py-10">
         <h1 className="font-display text-2xl font-bold">Accès refusé</h1>
-        <p className="text-sm text-foreground/70">Vous n'avez pas les permissions pour accéder à l'Admin Panel.</p>
+        <p className="text-sm text-foreground/70">
+          Vous n'avez pas les permissions pour accéder à l'Admin Panel.
+        </p>
       </div>
     );
   }

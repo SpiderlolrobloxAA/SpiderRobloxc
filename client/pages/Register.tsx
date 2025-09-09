@@ -45,11 +45,15 @@ export default function Register() {
       let cred: any = null;
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          cred = await createUserWithEmailAndPassword(auth, values.email, values.password);
+          cred = await createUserWithEmailAndPassword(
+            auth,
+            values.email,
+            values.password,
+          );
           break;
         } catch (e: any) {
           const msg = String(e?.code || e?.message || e);
-          if (msg.includes('network') && attempt < 2) {
+          if (msg.includes("network") && attempt < 2) {
             // wait then retry
             await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
             continue;
@@ -57,17 +61,21 @@ export default function Register() {
           throw e;
         }
       }
-      if (!cred) throw new Error('createUser failed');
+      if (!cred) throw new Error("createUser failed");
 
       try {
         if (auth.currentUser)
-          await updateProfile(auth.currentUser, { displayName: values.username });
+          await updateProfile(auth.currentUser, {
+            displayName: values.username,
+          });
       } catch (e) {
-        console.warn('updateProfile failed', e);
+        console.warn("updateProfile failed", e);
       }
 
       try {
-        const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
+        const { doc, setDoc, serverTimestamp } = await import(
+          "firebase/firestore"
+        );
         const { db } = await import("@/lib/firebase");
         await setDoc(
           doc(db, "users", cred.user.uid),
@@ -83,21 +91,40 @@ export default function Register() {
           { merge: true },
         );
       } catch (e) {
-        console.error('register:setUser failed', e);
-        toast({ title: 'Erreur enregistreur', description: 'Impossible de créer le profil. Réessayez.', variant: 'destructive' });
+        console.error("register:setUser failed", e);
+        toast({
+          title: "Erreur enregistreur",
+          description: "Impossible de créer le profil. Réessayez.",
+          variant: "destructive",
+        });
         return;
       }
 
       toast({ title: `Bienvenue ${values.username} 🎉` });
     } catch (err: any) {
-      console.error('createUser failed', err);
-      const code = err?.code || err?.message || '';
-      if (code.includes('network') || code.includes('auth/network-request-failed')) {
-        toast({ title: 'Erreur réseau', description: 'Vérifiez votre connexion internet et réessayez.', variant: 'destructive' });
-      } else if (code.includes('auth/email-already-in-use')) {
-        toast({ title: 'Email déjà utilisé', description: 'Utilisez un autre email ou connectez-vous.', variant: 'destructive' });
+      console.error("createUser failed", err);
+      const code = err?.code || err?.message || "";
+      if (
+        code.includes("network") ||
+        code.includes("auth/network-request-failed")
+      ) {
+        toast({
+          title: "Erreur réseau",
+          description: "Vérifiez votre connexion internet et réessayez.",
+          variant: "destructive",
+        });
+      } else if (code.includes("auth/email-already-in-use")) {
+        toast({
+          title: "Email déjà utilisé",
+          description: "Utilisez un autre email ou connectez-vous.",
+          variant: "destructive",
+        });
       } else {
-        toast({ title: 'Erreur', description: 'Impossible de créer le compte. Réessayez plus tard.', variant: 'destructive' });
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer le compte. Réessayez plus tard.",
+          variant: "destructive",
+        });
       }
     }
   }

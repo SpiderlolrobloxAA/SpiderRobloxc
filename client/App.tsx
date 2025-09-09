@@ -49,7 +49,10 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route element={<PrivateRoute />}>
                   <Route path="/transactions" element={<Transactions />} />
-                  <Route path="/tickets" element={<Placeholder title="Tickets support" />} />
+                  <Route
+                    path="/tickets"
+                    element={<Placeholder title="Tickets support" />}
+                  />
                   <Route path="/messages" element={<Messages />} />
                 </Route>
                 <Route path="/admin" element={<PrivateRoute />}>
@@ -59,7 +62,10 @@ const App = () => (
                   <Route index element={<AdminRoles />} />
                 </Route>
                 <Route element={<PrivateRoute />}>
-                  <Route path="/sell" element={<Placeholder title="Commencer à vendre" />} />
+                  <Route
+                    path="/sell"
+                    element={<Placeholder title="Commencer à vendre" />}
+                  />
                 </Route>
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth/login" element={<Login />} />

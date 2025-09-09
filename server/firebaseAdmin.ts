@@ -1,5 +1,10 @@
-import { initializeApp, cert, getApps, applicationDefault } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import {
+  initializeApp,
+  cert,
+  getApps,
+  applicationDefault,
+} from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
 let db: ReturnType<typeof getFirestore> | null = null;
 

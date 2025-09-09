@@ -57,7 +57,7 @@ export async function getStorageClient() {
   } catch (e) {
     // Storage not available in this environment or failed to load
     // eslint-disable-next-line no-console
-    console.error('getStorageClient failed', e);
+    console.error("getStorageClient failed", e);
     return undefined;
   }
 }

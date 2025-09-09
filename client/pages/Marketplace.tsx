@@ -142,7 +142,14 @@ function AddProduct({
   const cost = sellerRole === "verified" ? 2 : 5;
   const validPrice = normalizePrice(price, free);
   const imgOk = Boolean(imageUrl) || Boolean(file);
-  const can = canPublish({ title, hasImage: imgOk, price, free, balance: userCredits, cost });
+  const can = canPublish({
+    title,
+    hasImage: imgOk,
+    price,
+    free,
+    balance: userCredits,
+    cost,
+  });
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -170,7 +177,12 @@ function AddProduct({
           await uploadBytes(tmpRef, file);
           finalUrl = await getDownloadURL(tmpRef);
         } else {
-          toast({ title: 'Upload image indisponible', description: "Veuillez saisir une URL d'image ou réessayer plus tard.", variant: 'destructive' });
+          toast({
+            title: "Upload image indisponible",
+            description:
+              "Veuillez saisir une URL d'image ou réessayer plus tard.",
+            variant: "destructive",
+          });
           setSaving(false);
           return;
         }
@@ -182,20 +194,23 @@ function AddProduct({
         sellerId: userId,
         sellerName,
         sellerRole,
-        status: 'active',
+        status: "active",
         createdAt: serverTimestamp(),
       });
       // Mirror to namespaced per-user collection for instant access
-      await setDoc(doc(db, 'DataProject', 'data1', 'users', userId, 'products', refDoc.id), {
-        title: title.trim(),
-        imageUrl: finalUrl,
-        price: validPrice,
-        sellerId: userId,
-        sellerName,
-        sellerRole,
-        status: 'active',
-        createdAt: serverTimestamp(),
-      });
+      await setDoc(
+        doc(db, "DataProject", "data1", "users", userId, "products", refDoc.id),
+        {
+          title: title.trim(),
+          imageUrl: finalUrl,
+          price: validPrice,
+          sellerId: userId,
+          sellerName,
+          sellerRole,
+          status: "active",
+          createdAt: serverTimestamp(),
+        },
+      );
       await onCharge(-cost);
       onCreated();
       setTitle("");

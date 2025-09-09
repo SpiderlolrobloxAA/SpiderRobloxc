@@ -4,7 +4,21 @@ export function normalizePrice(input: number, free: boolean): number {
   return Math.max(3, n);
 }
 
-export function canPublish({ title, hasImage, price, free, balance, cost }: { title: string; hasImage: boolean; price: number; free: boolean; balance: number; cost: number; }): boolean {
+export function canPublish({
+  title,
+  hasImage,
+  price,
+  free,
+  balance,
+  cost,
+}: {
+  title: string;
+  hasImage: boolean;
+  price: number;
+  free: boolean;
+  balance: number;
+  cost: number;
+}): boolean {
   if (!title.trim()) return false;
   if (!hasImage) return false;
   if (balance < cost) return false;

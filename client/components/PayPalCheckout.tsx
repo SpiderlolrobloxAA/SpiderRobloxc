@@ -33,7 +33,9 @@ export default function PayPalCheckout({
 
     // If an existing PayPal script points to a different client or params, remove it
     if (existing && existing.src !== src) {
-      try { existing.remove(); } catch {}
+      try {
+        existing.remove();
+      } catch {}
       existing = null;
     }
 
@@ -45,8 +47,10 @@ export default function PayPalCheckout({
       });
 
     // Attach metadata for easier debugging
-    try { script.setAttribute('data-paypal-client-id', clientId); } catch {}
-    script.crossOrigin = 'anonymous';
+    try {
+      script.setAttribute("data-paypal-client-id", clientId);
+    } catch {}
+    script.crossOrigin = "anonymous";
 
     if (!existing) document.body.appendChild(script);
 
@@ -54,21 +58,28 @@ export default function PayPalCheckout({
       // ensure SDK available
       if ((window as any).paypal) setReady(true);
       else {
-        console.error('PayPal script loaded but window.paypal is missing', { src, clientId });
+        console.error("PayPal script loaded but window.paypal is missing", {
+          src,
+          clientId,
+        });
         setReady(false);
       }
     };
 
     const onError = (ev: Event) => {
       // Provide richer info in logs
-      console.error('PayPal script failed to load', { src: script.src, event: ev, clientId });
+      console.error("PayPal script failed to load", {
+        src: script.src,
+        event: ev,
+        clientId,
+      });
       setReady(false);
     };
 
     // Timeout fallback
     const timeout = setTimeout(() => {
-      if (!((window as any).paypal)) {
-        console.error('PayPal SDK load timed out', { src, clientId });
+      if (!(window as any).paypal) {
+        console.error("PayPal SDK load timed out", { src, clientId });
         setReady(false);
       }
     }, 12000);
@@ -78,8 +89,12 @@ export default function PayPalCheckout({
 
     return () => {
       clearTimeout(timeout);
-      try { script.removeEventListener("load", onLoad); } catch {}
-      try { script.removeEventListener("error", onError); } catch {}
+      try {
+        script.removeEventListener("load", onLoad);
+      } catch {}
+      try {
+        script.removeEventListener("error", onError);
+      } catch {}
     };
   }, [clientId, currency]);
 
