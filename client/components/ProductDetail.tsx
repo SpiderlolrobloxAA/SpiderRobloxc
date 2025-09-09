@@ -204,9 +204,28 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
           <div className="text-lg font-bold">{product.free ? "GRATUIT" : `${product.price} RC`}</div>
           <div className="text-sm text-foreground/70">Description non fournie.</div>
           <div className="pt-2">
-            <Button onClick={purchase} className="w-full">
-              Acheter
-            </Button>
+            {!product.free ? (
+              <>
+                {!confirmOpen ? (
+                  <Button onClick={() => setConfirmOpen(true)} className="w-full">
+                    Acheter
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button variant="destructive" onClick={() => { setConfirmOpen(false); }} className="flex-1">
+                      Refuser
+                    </Button>
+                    <Button onClick={() => purchase(true)} className="flex-1">
+                      Accepter
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <Button onClick={() => purchase(true)} className="w-full">
+                Acheter
+              </Button>
+            )}
           </div>
         </div>
       </div>
