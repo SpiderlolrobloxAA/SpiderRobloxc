@@ -112,13 +112,6 @@ export default function Index() {
     );
   }
   // Products now come from Firestore (latest 4)
-  const sellers = [
-    { id: "s1", name: "Aetherius", sales: 1021 },
-    { id: "s2", name: "NovaByte", sales: 856 },
-    { id: "s3", name: "VortexZ", sales: 791 },
-    { id: "s4", name: "Kairox", sales: 745 },
-    { id: "s5", name: "Zenku", sales: 699 },
-  ];
 
   return (
     <div>
