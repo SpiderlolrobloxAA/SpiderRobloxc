@@ -35,7 +35,7 @@ export const createUserProfile = functions.auth
   });
 
 // Process salePending transactions: mark seller pending, then after delay redistribute 70/30
-export const processSalePending = require("firebase-functions").firestore
+export const processSalePending = functions.firestore
   .document("transactions/{txId}")
   .onCreate(async (snap, ctx) => {
     const data = snap.data();
