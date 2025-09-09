@@ -52,7 +52,7 @@ export function ProductCard({ product }: { product: Product }) {
               <div className="mt-1 text-xs text-foreground/70 flex items-center gap-1">
                 <img src={DEFAULT_AVATAR_IMG} alt="avatar" className="h-4 w-4 rounded-full object-cover" />
                 <span title={product.seller.name} className="font-medium mr-2">
-                  {product.seller.name}
+                  {product.seller.name && product.seller.name.includes("@") ? emailToUsername(product.seller.name) : product.seller.name}
                 </span>
                 {/* compact role icon (no bubble) */}
                 <RoleBadge role={product.seller.role} compact className="ml-0" />
