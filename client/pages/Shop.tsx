@@ -14,20 +14,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-const packs = [
-  { id: "starter", name: "Starter", coins: 500, price: 4.99, bonus: 5 },
-  {
-    id: "gamer",
-    name: "Gamer",
-    coins: 1200,
-    price: 9.99,
-    bonus: 12,
-    popular: true,
-  },
-  { id: "elite", name: "Elite", coins: 3500, price: 24.99, bonus: 18 },
-  { id: "pro", name: "Pro", coins: 8000, price: 49.99, bonus: 25, best: true },
-  { id: "legend", name: "Legend", coins: 15000, price: 89.99, bonus: 32 },
-];
+import { packs } from "@/lib/packs";
 
 export default function Shop() {
   const { toast } = useToast();
