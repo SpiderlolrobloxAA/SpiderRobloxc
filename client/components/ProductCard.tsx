@@ -104,7 +104,7 @@ export function ProductCard({ product }: { product: Product }) {
                     } catch (err) {}
                     toast({ title: "Produit supprimé", variant: "default" });
                   }}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-destructive text-white"
+                  className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium h-8 px-2 bg-destructive text-white"
                 >
                   Supprimer
                 </button>
