@@ -77,14 +77,14 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
           <div className="mt-3 flex items-center justify-between gap-2">
             <DialogTrigger asChild>
-              <Button size="sm" variant="ghost" className="text-foreground/80 hover:text-foreground underline-offset-4 hover:underline">
+              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-transparent text-foreground/80 hover:text-foreground underline-offset-4 hover:underline">
                 Détails
-              </Button>
+              </button>
             </DialogTrigger>
             <DialogTrigger asChild>
-              <Button size="sm" className="bg-gradient-to-r from-primary to-secondary">
+              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-gradient-to-r from-primary to-secondary text-white">
                 Acheter
-              </Button>
+              </button>
             </DialogTrigger>
           </div>
         </div>
