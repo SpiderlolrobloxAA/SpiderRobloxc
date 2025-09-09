@@ -8,6 +8,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Transactions() {
   const { user } = useAuth();
@@ -19,8 +20,15 @@ export default function Transactions() {
       where("uid", "==", user.uid),
       orderBy("createdAt", "desc"),
     );
-    const unsub = onSnapshot(q, (snap) =>
-      setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    const { toast } = useToast();
+    const unsub = onSnapshot(
+      q,
+      (snap) => setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (err) => {
+        console.error("transactions:onSnapshot error", err);
+        const msg = String(err?.message || err);
+        toast({ title: "Erreur de données", description: msg, variant: "destructive" });
+      },
     );
     return () => unsub();
   }, [user]);
