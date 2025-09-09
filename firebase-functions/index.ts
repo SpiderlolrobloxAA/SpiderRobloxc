@@ -57,8 +57,8 @@ export const processSalePending = functions.firestore
         { merge: true },
       );
 
-      // schedule redistribution after ~90 seconds
-      const delayMs = 90 * 1000;
+      // schedule redistribution after ~60 seconds
+      const delayMs = 60 * 1000;
       setTimeout(async () => {
         try {
           const sellerShare = Math.floor((credits * 70) / 100);
