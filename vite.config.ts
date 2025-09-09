@@ -29,8 +29,8 @@ function expressPlugin(): Plugin {
     name: "express-plugin",
     apply: "serve", // Only apply during development (serve mode)
     async configureServer(server) {
-      const mod = await import('./server');
-      const app = await (typeof mod.createServer === 'function' ? mod.createServer() : mod.default);
+      const mod: any = await import('./server');
+      const app = await mod.createServer();
 
       // Add Express app as middleware to Vite dev server
       server.middlewares.use(app);
