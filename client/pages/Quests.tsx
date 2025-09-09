@@ -29,19 +29,19 @@ const QUESTS: QuestDef[] = [
   {
     id: "profile_complete",
     title: "Compléter votre profil",
-    reward: 50,
+    reward: 2,
     eligible: ({ hasProfile }) => hasProfile,
   },
   {
     id: "first_purchase",
     title: "Acheter des RotCoins",
-    reward: 100,
+    reward: 2,
     eligible: ({ hasPurchase }) => hasPurchase,
   },
   {
     id: "open_ticket",
     title: "Créer un ticket",
-    reward: 30,
+    reward: 2,
     eligible: ({ hasTicket }) => hasTicket,
   },
 ];

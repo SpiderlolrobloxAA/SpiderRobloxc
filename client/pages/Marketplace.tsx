@@ -39,8 +39,15 @@ export default function Marketplace() {
   const { user } = useAuth();
   const { role, credits, addCredits } = useProfile();
   const { toast } = useToast();
+  const [maintenance, setMaintenance] = useState(false);
 
   useEffect(() => {
+    const metaRef = doc(db, "meta", "site");
+    const unsubMeta = onSnapshot(metaRef, (d) => {
+      const data = d.data() as any | undefined;
+      setMaintenance(Boolean(data?.maintenance));
+    }, () => {});
+
     const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
     // only active products
     const unsub = onSnapshot(q, (snap) => {
@@ -49,7 +56,10 @@ export default function Marketplace() {
         .filter((r) => r.status === "active");
       setItems(rows as any);
     });
-    return () => unsub();
+    return () => {
+      unsub();
+      unsubMeta();
+    };
   }, []);
 
   const products = items

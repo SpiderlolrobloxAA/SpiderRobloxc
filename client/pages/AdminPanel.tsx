@@ -92,6 +92,50 @@ export default function AdminPanel() {
     return () => unsub();
   }, []);
 
+  // load product count and maintenance flag for founder
+  useEffect(() => {
+    let unsubProducts: any = () => {};
+    const metaRef = doc(db, "meta", "site");
+    const unsubMeta = onSnapshot(metaRef, (d) => {
+      const data = d.data() as any | undefined;
+      const toggle = document.getElementById("maintenance-toggle") as HTMLInputElement | null;
+      if (toggle) toggle.checked = Boolean(data?.maintenance);
+    });
+
+    (async () => {
+      const snap = await getDocs(query(collection(db, "products")));
+      const count = snap.size;
+      const el = document.getElementById("product-count");
+      if (el) el.textContent = `${count} produit(s) actifs`;
+
+      // subscribe to products to update count live
+      const q = query(collection(db, "products"));
+      unsubProducts = onSnapshot(q, (s) => {
+        const c = s.docs.filter((d) => (d.data() as any).status === "active").length;
+        const el2 = document.getElementById("product-count");
+        if (el2) el2.textContent = `${c} produit(s) actifs`;
+      });
+    })();
+
+    const toggle = document.getElementById("maintenance-toggle") as HTMLInputElement | null;
+    const onChange = async () => {
+      if (!toggle) return;
+      try {
+        await setDoc(metaRef, { maintenance: toggle.checked }, { merge: true });
+        toast({ title: `Maintenance ${toggle.checked ? "activée" : "désactivée"}` });
+      } catch (e) {
+        console.error("set maintenance failed", e);
+      }
+    };
+    toggle?.addEventListener("change", onChange);
+
+    return () => {
+      unsubMeta();
+      unsubProducts && unsubProducts();
+      toggle?.removeEventListener("change", onChange);
+    };
+  }, [toast]);
+
   useEffect(() => {
     if (!userId) return;
     const unsub = onSnapshot(doc(db, "users", userId), (d) => {
@@ -602,7 +646,23 @@ export default function AdminPanel() {
           <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
             <h3 className="font-semibold">Fondateur</h3>
             <div>
+              <div className="text-sm font-semibold">Etat Marketplace</div>
+              <div className="mt-2 text-sm text-foreground/70">
+                <span id="product-count">Chargement…</span>
+              </div>
+              <div className="mt-2">
+                <label className="inline-flex items-center gap-2">
+                  <input id="maintenance-toggle" type="checkbox" className="rounded" /> Activer le mode maintenance
+                </label>
+              </div>
+            </div>
+            <div>
               <div className="text-sm font-semibold">Annonce globale</div>
+              <Input
+                placeholder="Message à afficher"
+                value={announcement}
+                onChange={(e) => setAnnouncement(e.target.value)}
+              />
               <Input
                 placeholder="Message à afficher"
                 value={announcement}
