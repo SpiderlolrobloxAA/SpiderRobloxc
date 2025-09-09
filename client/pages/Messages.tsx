@@ -20,6 +20,8 @@ export default function Messages() {
   const { user } = useAuth();
   const [threads, setThreads] = useState<any[]>([]);
   const [active, setActive] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = require('react-router-dom').useSearchParams();
+
   useEffect(() => {
     if (!user) return;
     const q = query(
@@ -33,6 +35,12 @@ export default function Messages() {
     return () => unsub();
   }, [user]);
 
+  // sync active thread from URL ?thread=
+  useEffect(() => {
+    const param = searchParams.get("thread");
+    if (param) setActive(param);
+  }, [searchParams]);
+
   return (
     <div className="container py-10 grid gap-4 md:grid-cols-[260px,1fr]">
       <div className="rounded-xl border border-border/60 bg-card p-3">
@@ -41,7 +49,7 @@ export default function Messages() {
           {threads.map((t) => (
             <button
               key={t.id}
-              onClick={() => setActive(t.id)}
+              onClick={() => setSearchParams({ thread: t.id })}
               className={`w-full text-left px-2 py-2 hover:bg-muted ${active === t.id ? "bg-muted" : ""}`}
             >
               <div className="text-sm">{t.title || "Conversation"}</div>
