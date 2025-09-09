@@ -149,9 +149,7 @@ export default function Index() {
             </div>
             <p className="mt-4 text-foreground/80 max-w-prose">
               Achetez et vendez des Brain Rots, gagnez des{" "}
-              <strong>RotCoins</strong> et profitez d'une expérience inspirée de
-              G2G/Eldorado. Paiements PayPal, vendeurs certifiés, redistribution
-              automatique.
+              <strong>RotCoins</strong>. Paiements PayPal, vendeurs certifiés. , Et Revente 
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild variant="outline">
