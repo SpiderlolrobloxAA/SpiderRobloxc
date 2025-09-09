@@ -199,14 +199,7 @@ function UserInfo() {
         className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-xs whitespace-nowrap"
         title="Crédits disponibles"
       >
-        <svg
-          className="h-3.5 w-3.5"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="12" cy="12" r="10" fill="#F9D84A" />
-          <circle cx="12" cy="12" r="7" fill="#FFC928" />
-        </svg>
+        <img src="https://cdn.builder.io/api/v1/image/assets%2F7ca6692b844e492da4519bd1be30c27d%2F010980b0e1d0488b82cdd1e39f84e4d5?format=webp&width=800" alt="RC" className="h-3.5 w-3.5 object-contain" />
         {credits.toLocaleString()} RC
       </span>
       <TooltipProvider delayDuration={0}>
