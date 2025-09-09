@@ -34,9 +34,11 @@ const roleMap: Record<Role, { label: string; icon?: string; className: string }>
   },
 };
 
-export function RoleBadge({ role, className }: { role: Role; className?: string }) {
-  const cfg = roleMap[role];
-  if (role === "verified") {
+export function RoleBadge({ role, className }: { role?: Role | string; className?: string }) {
+  const key = (typeof role === "string" && role in roleMap) ? (role as Role) : "user";
+  const cfg = roleMap[key];
+
+  if (key === "verified") {
     const handlers = createSmoothTiltHandlers(10, 1.08);
     return (
       <img
@@ -48,12 +50,13 @@ export function RoleBadge({ role, className }: { role: Role; className?: string 
       />
     );
   }
+
   return (
     <span
       className={cn(
         "inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[12px] font-semibold leading-none",
         "min-h-[28px]",
-        cfg.className,
+        cfg.className || "",
         className,
       )}
     >
