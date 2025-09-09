@@ -56,6 +56,24 @@ export function ProductDetailContent({ product, onClose }: { product: Product; o
           text: `Produit acheté : ${product.title}`,
           createdAt: serverTimestamp(),
         });
+
+        // add system message to the thread
+        await addDoc(collection(db, "threads", thRef.id, "messages"), {
+          senderId: "system",
+          text: `Message Système: Le produit '${product.title}' a été acheté. Vous êtes désormais en relation entre le client et le vendeur.`,
+          createdAt: serverTimestamp(),
+        });
+
+        // remove product for everyone (delete main doc and user mirror)
+        try {
+          await deleteDoc(doc(db, "products", product.id));
+        } catch (e) {}
+        try {
+          if (sellerId) {
+            await deleteDoc(doc(db, "DataProject", "data1", "users", sellerId, "products", product.id));
+          }
+        } catch (e) {}
+
         if (sellerId) {
           await updateDoc(doc(db, "users", sellerId), {
             notifications: arrayUnion({ type: "thread", threadId: thRef.id, text: `${user.displayName || user.email || "Un utilisateur"} a acheté votre produit`, createdAt: Timestamp.now(), read: false }),
