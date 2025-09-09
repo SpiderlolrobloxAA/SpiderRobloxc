@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
 import { db } from "@/lib/firebase";
+import { emailToUsername } from "@/lib/usernameAuth";
 import {
   addDoc,
   collection,
