@@ -137,6 +137,7 @@ function UserInfo() {
   const { credits, role } = useProfile();
   return (
     <div className="hidden md:flex items-center justify-end gap-4">
+      <Notifications />
       <Dialog>
         <DialogTrigger asChild>
           <button className="flex items-center gap-2 min-w-0 hover:bg-muted/60 px-2 py-1 rounded-md">
