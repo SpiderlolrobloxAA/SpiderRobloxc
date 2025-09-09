@@ -55,29 +55,52 @@ function TicketsPage() {
     return () => unsub();
   }, [user, active]);
 
+  const [moderationOpen, setModerationOpen] = useState(false);
+  const [moderationReasons, setModerationReasons] = useState<string[]>([]);
+  const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
+
+  const runWithModeration = async (textToCheck: string, action: () => Promise<void>) => {
+    try {
+      const res = await fetch("/api/moderate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: textToCheck }) });
+      const j = await res.json();
+      if (j?.flagged) {
+        setModerationReasons(Array.isArray(j.reasons) ? j.reasons : []);
+        setPendingAction(() => action);
+        setModerationOpen(true);
+        return;
+      }
+      await action();
+    } catch (e) {
+      console.error("moderation failed", e);
+      await action();
+    }
+  };
+
   const create = async () => {
     if (!user || !title) return;
-    try {
-      const ref = await addDoc(collection(db, "tickets"), {
-        uid: user.uid,
-        email: user.email,
-        title,
-        status: "open",
-        createdAt: serverTimestamp(),
-      });
-      await addDoc(collection(db, "tickets", ref.id, "messages"), {
-        senderId: user.uid,
-        senderName: user.displayName || user.email || "Utilisateur",
-        senderRole: role || "user",
-        text: msg || "Ticket créé",
-        createdAt: serverTimestamp(),
-      });
-      setTitle("");
-      setMsg("");
-      setActive(ref.id);
-    } catch (e) {
-      console.error("ticket:create failed", e);
-    }
+    await runWithModeration(title, async () => {
+      try {
+        const ref = await addDoc(collection(db, "tickets"), {
+          uid: user.uid,
+          email: user.email,
+          title,
+          status: "open",
+          createdAt: serverTimestamp(),
+        });
+        await addDoc(collection(db, "tickets", ref.id, "messages"), {
+          senderId: user.uid,
+          senderName: user.displayName || user.email || "Utilisateur",
+          senderRole: role || "user",
+          text: msg || "Ticket créé",
+          createdAt: serverTimestamp(),
+        });
+        setTitle("");
+        setMsg("");
+        setActive(ref.id);
+      } catch (e) {
+        console.error("ticket:create failed", e);
+      }
+    });
   };
 
   useEffect(() => {
