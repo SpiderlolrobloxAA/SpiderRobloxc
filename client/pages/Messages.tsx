@@ -158,17 +158,21 @@ function Thread({ id }: { id: string }) {
         ))}
         <div ref={bottomRef} />
       </div>
-      <div className="mt-2 flex items-center gap-2">
-        <Input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Votre message…"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") send();
-          }}
-        />
-        <Button onClick={send}>Envoyer</Button>
-      </div>
+      {threadMeta?.system ? (
+        <div className="mt-2 text-sm text-foreground/60">Message système — les réponses sont désactivées.</div>
+      ) : (
+        <div className="mt-2 flex items-center gap-2">
+          <Input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Votre message…"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") send();
+            }}
+          />
+          <Button onClick={send}>Envoyer</Button>
+        </div>
+      )}
     </div>
   );
 }
