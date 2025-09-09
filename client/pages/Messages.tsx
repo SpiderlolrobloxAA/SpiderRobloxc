@@ -15,11 +15,15 @@ import {
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSearchParams } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Messages() {
   const { user } = useAuth();
   const [threads, setThreads] = useState<any[]>([]);
   const [active, setActive] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
   useEffect(() => {
     if (!user) return;
     const q = query(
@@ -33,6 +37,12 @@ export default function Messages() {
     return () => unsub();
   }, [user]);
 
+  // sync active thread from URL ?thread=
+  useEffect(() => {
+    const param = searchParams.get("thread");
+    if (param) setActive(param);
+  }, [searchParams]);
+
   return (
     <div className="container py-10 grid gap-4 md:grid-cols-[260px,1fr]">
       <div className="rounded-xl border border-border/60 bg-card p-3">
@@ -41,12 +51,12 @@ export default function Messages() {
           {threads.map((t) => (
             <button
               key={t.id}
-              onClick={() => setActive(t.id)}
+              onClick={() => setSearchParams({ thread: t.id })}
               className={`w-full text-left px-2 py-2 hover:bg-muted ${active === t.id ? "bg-muted" : ""}`}
             >
               <div className="text-sm">{t.title || "Conversation"}</div>
               <div className="text-xs text-foreground/60">
-                {t.lastMessage?.text || "—"}
+                {t.lastMessage?.text || "���"}
               </div>
             </button>
           ))}
@@ -75,6 +85,8 @@ function Thread({ id }: { id: string }) {
   const [msgs, setMsgs] = useState<any[]>([]);
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [threadMeta, setThreadMeta] = useState<any>(null);
+
   useEffect(() => {
     const q = query(
       collection(db, "threads", id, "messages"),
@@ -83,6 +95,15 @@ function Thread({ id }: { id: string }) {
     const unsub = onSnapshot(q, (snap) =>
       setMsgs(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
     );
+    return () => unsub();
+  }, [id]);
+
+  // subscribe to thread meta to know if it's a system thread
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "threads", id), (d) => {
+      if (d.exists()) setThreadMeta(d.data());
+      else setThreadMeta(null);
+    });
     return () => unsub();
   }, [id]);
   useEffect(() => {
@@ -97,8 +118,21 @@ function Thread({ id }: { id: string }) {
     }).catch(() => {});
   }, [id, user]);
 
+  const { toast } = useToast();
+
   const send = async () => {
     if (!user || !text.trim()) return;
+    // do not allow sending into system threads
+    if (threadMeta?.system) {
+      toast({
+        title: "Impossible de répondre",
+        description:
+          "Ce message provient du système et n'accepte pas de réponses.",
+        variant: "default",
+      });
+      setText("");
+      return;
+    }
     try {
       await addDoc(collection(db, "threads", id, "messages"), {
         senderId: user.uid,
@@ -132,17 +166,23 @@ function Thread({ id }: { id: string }) {
         ))}
         <div ref={bottomRef} />
       </div>
-      <div className="mt-2 flex items-center gap-2">
-        <Input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Votre message…"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") send();
-          }}
-        />
-        <Button onClick={send}>Envoyer</Button>
-      </div>
+      {threadMeta?.system ? (
+        <div className="mt-2 text-sm text-foreground/60">
+          Message système — les réponses sont désactivées.
+        </div>
+      ) : (
+        <div className="mt-2 flex items-center gap-2">
+          <Input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Votre message…"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") send();
+            }}
+          />
+          <Button onClick={send}>Envoyer</Button>
+        </div>
+      )}
     </div>
   );
 }

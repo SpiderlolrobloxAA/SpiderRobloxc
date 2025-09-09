@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -31,6 +31,7 @@ import {
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { canPublish, normalizePrice } from "@/lib/marketplace";
 import { useToast } from "@/hooks/use-toast";
+import ModerationWarning from "@/components/ModerationWarning";
 
 export default function Marketplace() {
   const [queryStr, setQueryStr] = useState("");
@@ -39,14 +40,39 @@ export default function Marketplace() {
   const { user } = useAuth();
   const { role, credits, addCredits } = useProfile();
   const { toast } = useToast();
+  const [maintenance, setMaintenance] = useState(false);
 
   useEffect(() => {
+    const settingsRef = doc(db, "settings", "app");
+    const unsubMeta = onSnapshot(
+      settingsRef,
+      (d) => {
+        const data = d.data() as any | undefined;
+        // Show maintenance only if scope is global or marketplace
+        const isOn = Boolean(data?.maintenance);
+        const scope = data?.scope || "global";
+        if (!isOn) {
+          setMaintenance(false);
+          return;
+        }
+        if (scope === "global" || scope === "marketplace") setMaintenance(true);
+        else setMaintenance(false);
+      },
+      () => {},
+    );
+
     const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
-      const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      const rows = snap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as any) }))
+        .filter((r) => r.status === "active");
       setItems(rows as any);
     });
-    return () => unsub();
+
+    return () => {
+      unsub();
+      unsubMeta();
+    };
   }, []);
 
   const products = items
@@ -98,22 +124,43 @@ export default function Marketplace() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {products.map((p: any) => (
-          <ProductCard
-            key={p.id}
-            product={{
-              id: p.id,
-              title: p.title,
-              price: p.price ?? 0,
-              image: p.imageUrl || p.image,
-              free: (p.price ?? 0) === 0,
-              seller: { name: p.sellerName, role: p.sellerRole },
-              rating: p.rating || 4.5,
-            }}
-          />
-        ))}
-      </div>
+      {maintenance ? (
+        <div className="mt-6 rounded-xl border border-border/60 bg-card p-6 text-center">
+          <div className="text-xl font-semibold">Maintenance</div>
+          <div className="mt-2 text-sm text-foreground/70">
+            Le marketplace est actuellement en maintenance. Merci de revenir
+            plus tard.
+          </div>
+        </div>
+      ) : products.length === 0 ? (
+        <div className="mt-6 rounded-xl border border-border/60 bg-card p-6 text-center">
+          <div className="text-xl font-semibold">Aucun produit</div>
+          <div className="mt-2 text-sm text-foreground/70">
+            Aucun produit n'est disponible à la vente pour le moment.
+          </div>
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {products.map((p: any) => (
+            <ProductCard
+              key={p.id}
+              product={{
+                id: p.id,
+                title: p.title,
+                price: p.price ?? 0,
+                image: p.imageUrl || p.image,
+                free: (p.price ?? 0) === 0,
+                seller: {
+                  id: p.sellerId,
+                  name: p.sellerName,
+                  role: p.sellerRole,
+                },
+                rating: p.rating || 4.5,
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -139,9 +186,14 @@ function AddProduct({
   const [free, setFree] = useState(false);
   const [price, setPrice] = useState<number>(3);
   const [saving, setSaving] = useState(false);
+  const [moderationOpen, setModerationOpen] = useState(false);
+  const [moderationReasons, setModerationReasons] = useState<string[]>([]);
+  const [moderationAccepted, setModerationAccepted] = useState(false);
+  const { toast } = useToast();
   const cost = sellerRole === "verified" ? 2 : 5;
   const validPrice = normalizePrice(price, free);
-  const imgOk = Boolean(imageUrl) || Boolean(file);
+  // require an actual URL (imageUrl) to consider image present; files are converted on pick to imageUrl
+  const imgOk = Boolean(imageUrl);
   const can = canPublish({
     title,
     hasImage: imgOk,
@@ -151,19 +203,149 @@ function AddProduct({
     cost,
   });
 
-  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const onPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    try {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        if (it.kind === "file" && it.type.startsWith("image/")) {
+          const f = it.getAsFile();
+          if (f) {
+            setFile(f);
+            return;
+          }
+        }
+        if (it.kind === "string") {
+          it.getAsString((s) => {
+            const trimmed = s.trim();
+            if (
+              trimmed.startsWith("data:image/") ||
+              /(https?:\/\/.+\.(png|jpe?g|webp|gif))/i.test(trimmed)
+            ) {
+              setImageUrl(trimmed);
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("paste handling failed", err);
+    }
+  };
+
+  const [imageUploading, setImageUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
-    if (f) setFile(f);
+    if (!f) return;
+    // show immediate preview while processing
+    try {
+      const p = URL.createObjectURL(f);
+      setPreviewUrl(p);
+    } catch {}
+    // reuse same logic as onPick
+    const fake = {
+      target: { files: [f] },
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
+    await onPick(fake);
   };
 
-  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) setFile(f);
+    if (!f) return;
+    setImageUploading(true);
+    let timedOut = false;
+    // start a timeout: if upload doesn't finish in 20s, fallback to data URL
+    const timer = window.setTimeout(() => {
+      timedOut = true;
+      setImageUploading(false);
+      toast({
+        title: "Upload lent",
+        description: "Upload trop long, utilisation d'un fallback local.",
+        variant: "default",
+      });
+      try {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setImageUrl(String(reader.result || ""));
+          setFile(null);
+          setPreviewUrl(null);
+        };
+        reader.readAsDataURL(f);
+      } catch (e) {
+        console.warn("fallback conversion failed after timeout", e);
+      }
+    }, 8000);
+
+    try {
+      // show immediate preview while uploading
+      try {
+        const p = URL.createObjectURL(f);
+        setPreviewUrl(p);
+      } catch {}
+
+      // Try to upload immediately to storage and set imageUrl to the returned link
+      const storage = await getStorageClient();
+      if (storage) {
+        try {
+          const tmpRef = ref(
+            storage,
+            `products/${userId}/${Date.now()}_${f.name}`,
+          );
+          await uploadBytes(tmpRef, f);
+          // if timed out already, don't override fallback
+          if (timedOut) {
+            clearTimeout(timer);
+            return;
+          }
+          const dl = await getDownloadURL(tmpRef);
+          clearTimeout(timer);
+          setImageUrl(dl);
+          setFile(null);
+          setPreviewUrl(null);
+          setImageUploading(false);
+          return;
+        } catch (uploadErr) {
+          console.warn("upload immediate failed", uploadErr);
+          // continue to fallback to data URL
+        }
+      }
+
+      // Fallback: convert to data URL and set it as imageUrl
+      try {
+        const data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(f);
+        });
+        clearTimeout(timer);
+        setImageUrl(data);
+        setFile(null);
+        setPreviewUrl(null);
+        setImageUploading(false);
+        return;
+      } catch (err) {
+        console.warn("file to dataURL failed", err);
+        setFile(f);
+      }
+    } catch (err) {
+      console.error("onPick error", err);
+      toast({
+        title: "Erreur image",
+        description: "Impossible de traiter l'image.",
+        variant: "destructive",
+      });
+    } finally {
+      clearTimeout(timer);
+      if (!timedOut) setImageUploading(false);
+    }
   };
 
-  const create = async () => {
-    if (!can) return;
+  // actual creation logic extracted so it can be called after moderation acceptance
+  const doCreate = async () => {
     setSaving(true);
     try {
       let finalUrl = imageUrl;
@@ -177,16 +359,36 @@ function AddProduct({
           await uploadBytes(tmpRef, file);
           finalUrl = await getDownloadURL(tmpRef);
         } else {
-          toast({
-            title: "Upload image indisponible",
-            description:
-              "Veuillez saisir une URL d'image ou réessayer plus tard.",
-            variant: "destructive",
-          });
-          setSaving(false);
-          return;
+          // Fallback: convert file to data URL and store in Firestore so it can be displayed
+          try {
+            finalUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result || ""));
+              reader.onerror = (err) => reject(err);
+              reader.readAsDataURL(file);
+            });
+          } catch (err) {
+            toast({
+              title: "Upload image indisponible",
+              description:
+                "Veuillez saisir une URL d'image ou réessayer plus tard.",
+              variant: "destructive",
+            });
+            setSaving(false);
+            return;
+          }
         }
       }
+
+      // If still no image URL, use default placeholder image hosted on CDN
+      const placeholder =
+        "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
+      if (!finalUrl) finalUrl = placeholder;
+
+      // If flagged (any reasons), always create as pending — do not publish active even after acceptance
+      const flagged = moderationReasons.length > 0;
+      const status = flagged ? "pending" : "active";
+
       const refDoc = await addDoc(collection(db, "products"), {
         title: title.trim(),
         imageUrl: finalUrl,
@@ -194,9 +396,15 @@ function AddProduct({
         sellerId: userId,
         sellerName,
         sellerRole,
-        status: "active",
+        status,
+        moderation: {
+          flagged: moderationReasons.length > 0,
+          reasons: moderationReasons,
+          accepted: moderationAccepted,
+        },
         createdAt: serverTimestamp(),
       });
+
       // Mirror to namespaced per-user collection for instant access
       await setDoc(
         doc(db, "DataProject", "data1", "users", userId, "products", refDoc.id),
@@ -207,20 +415,84 @@ function AddProduct({
           sellerId: userId,
           sellerName,
           sellerRole,
-          status: "active",
+          status,
+          moderation: {
+            flagged: moderationReasons.length > 0,
+            reasons: moderationReasons,
+            accepted: moderationAccepted,
+          },
           createdAt: serverTimestamp(),
         },
       );
-      await onCharge(-cost);
+
+      // charge only when active
+      if (!flagged) await onCharge(-cost);
       onCreated();
       setTitle("");
       setImageUrl("");
       setFile(null);
       setPrice(3);
       setFree(false);
+      // reset moderation state after creation
+      setModerationReasons([]);
+      setModerationAccepted(false);
     } catch (e) {
       console.error("product:create failed", e);
+      toast({
+        title: "Erreur",
+        description: "Impossible de publier le produit.",
+        variant: "destructive",
+      });
     } finally {
+      setSaving(false);
+    }
+  };
+
+  const create = async () => {
+    // validate and show reasons if cannot publish
+    const reasons: string[] = [];
+    if (!title.trim()) reasons.push("Titre requis");
+    if (!imageUrl)
+      reasons.push("Image requise (collez une URL ou choisissez un fichier)");
+    if (userCredits < cost)
+      reasons.push(`Solde insuffisant (il vous faut ${cost} RC)`);
+    if (!free && (Number(price) || 0) < 3)
+      reasons.push("Prix minimum 3 RC sauf si Gratuit");
+
+    if (reasons.length > 0) {
+      toast({
+        title: "Impossible de publier",
+        description: reasons.join(" — "),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // call moderation endpoint
+      const mod = await (
+        await fetch("/api/moderate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: title }),
+        })
+      ).json();
+      if (mod?.flagged) {
+        setModerationReasons(Array.isArray(mod.reasons) ? mod.reasons : []);
+        setModerationOpen(true);
+        setSaving(false);
+        return;
+      }
+
+      await doCreate();
+    } catch (e) {
+      console.error("product:create failed", e);
+      toast({
+        title: "Erreur",
+        description: "Impossible de publier le produit.",
+        variant: "destructive",
+      });
       setSaving(false);
     }
   };
@@ -234,10 +506,9 @@ function AddProduct({
       />
       <div
         className="rounded-md border border-dashed border-border/60 p-3 text-center text-sm"
-        onDragOver={(e) => {
-          e.preventDefault();
-        }}
+        onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
+        onPaste={onPaste}
       >
         <div className="flex items-center justify-center gap-2">
           <input
@@ -252,22 +523,27 @@ function AddProduct({
             size="sm"
             onClick={() => document.getElementById("file")?.click()}
           >
-            Choisir une image
+            Choisir une image (sera convertie en lien)
           </Button>
-          <span className="text-foreground/60">ou glissez-déposez</span>
+          <span className="text-foreground/60">ou collez/glissez une URL</span>
         </div>
-        {(file || imageUrl) && (
+        {(imageUrl || previewUrl) && (
           <div className="mt-2">
             <img
-              src={file ? URL.createObjectURL(file) : imageUrl}
+              src={imageUrl || previewUrl || ""}
               alt="aperçu"
               className="mx-auto h-28 w-48 object-cover rounded-md"
             />
           </div>
         )}
+        {imageUploading && (
+          <div className="mt-2 text-sm text-foreground/60">
+            Upload image en cours…
+          </div>
+        )}
       </div>
       <Input
-        placeholder="…ou URL de l'image"
+        placeholder="URL de l'image (requis)"
         value={imageUrl}
         onChange={(e) => setImageUrl(e.target.value)}
       />
@@ -290,9 +566,21 @@ function AddProduct({
       <div className="text-xs text-foreground/70">
         Frais de publication: {cost} RC (Certifié: 2 RC, sinon 5 RC)
       </div>
-      <Button onClick={create} disabled={!can || saving}>
+      <Button onClick={create} disabled={saving}>
         {saving ? "Publication…" : "Publier"}
       </Button>
+
+      <ModerationWarning
+        open={moderationOpen}
+        reasons={moderationReasons}
+        text={title}
+        onCancel={() => setModerationOpen(false)}
+        onAccept={async () => {
+          // Accepting acknowledges the warning but product will remain pending review (not published)
+          setModerationOpen(false);
+          await doCreate();
+        }}
+      />
     </div>
   );
 }

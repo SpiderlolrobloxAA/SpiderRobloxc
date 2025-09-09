@@ -1,7 +1,5 @@
 import type { RequestHandler } from "express";
-import fetch from "node-fetch";
 import { getAdminDb } from "../firebaseAdmin";
-import { FieldValue } from "firebase-admin/firestore";
 
 const PAYPAL_API = "https://api-m.paypal.com";
 
@@ -56,7 +54,10 @@ export const paypalWebhook: RequestHandler = async (req, res) => {
       null;
     const uid = event?.resource?.payer?.payer_id || null;
 
-    const db = getAdminDb();
+    const db = await getAdminDb();
+    // Dynamically import FieldValue to avoid requiring firebase-admin at dev startup
+    // @ts-ignore - optional dependency
+    const { FieldValue } = await import("firebase-admin/firestore");
     const batch = db.batch();
     const payRef = db.collection("payments").doc(paymentId);
     batch.set(

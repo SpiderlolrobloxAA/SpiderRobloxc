@@ -8,7 +8,13 @@ import {
 import { type Role } from "@/components/RoleBadge";
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
-import { doc, increment, onSnapshot, setDoc } from "firebase/firestore";
+import {
+  doc,
+  increment,
+  onSnapshot,
+  updateDoc,
+  setDoc,
+} from "firebase/firestore";
 
 interface Profile {
   credits: number;
@@ -20,7 +26,6 @@ interface ProfileCtx extends Profile {
 }
 
 const defaultProfile: Profile = { credits: 0, role: "user" };
-const KEY = "brm_profile";
 
 const Ctx = createContext<ProfileCtx>({
   ...defaultProfile,
@@ -30,47 +35,49 @@ const Ctx = createContext<ProfileCtx>({
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile>(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) return JSON.parse(raw) as Profile;
-    } catch {}
-    return defaultProfile;
-  });
+  const [profile, setProfile] = useState<Profile>(defaultProfile);
 
   useEffect(() => {
     if (!user) {
       setProfile(defaultProfile);
       return;
     }
+
     const ref = doc(db, "users", user.uid);
-    const unsub = onSnapshot(ref, (snap) => {
-      const data = snap.data() as any | undefined;
-      if (data) {
-        const credits = data.balances?.available ?? data.credits ?? 0;
-        setProfile({
-          credits: Number(credits),
-          role: (data.role ?? "user") as Role,
-        });
-      }
-    });
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        const data = snap.data() as any | undefined;
+        const credits = Number(data?.balances?.available ?? data?.credits ?? 0);
+        const role = (data?.role ?? "user") as Role;
+        setProfile({ credits, role });
+      },
+      (err) => {
+        console.error("profile:onSnapshot failed", err);
+      },
+    );
     return () => unsub();
   }, [user]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(profile));
-    } catch {}
-  }, [profile]);
-
   const addCredits = async (n: number) => {
     if (!user) return;
-    await setDoc(
-      doc(db, "users", user.uid),
-      { balances: { available: increment(n) } as any },
-      { merge: true },
-    );
+    const ref = doc(db, "users", user.uid);
+    try {
+      await updateDoc(ref, { "balances.available": increment(n) } as any);
+    } catch (e) {
+      // If update fails (doc missing), fallback to setDoc merge
+      try {
+        await setDoc(
+          ref,
+          { balances: { available: increment(n) } as any },
+          { merge: true },
+        );
+      } catch (err) {
+        console.error("addCredits failed", err);
+      }
+    }
   };
+
   const setRole = async (r: Role) => {
     if (!user) return;
     await setDoc(doc(db, "users", user.uid), { role: r }, { merge: true });

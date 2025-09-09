@@ -19,12 +19,14 @@ import { createSmoothTiltHandlers } from "@/lib/tilt";
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
 import {
+  doc,
   collection,
   onSnapshot,
   orderBy,
   limit,
   query,
 } from "firebase/firestore";
+import { packs } from "@/lib/packs";
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -32,6 +34,7 @@ export default function Index() {
   const [sellers, setSellers] = useState<
     { id: string; name: string; sales: number }[]
   >([]);
+  const [packPromo, setPackPromo] = useState<number>(0);
 
   useEffect(() => {
     const q = query(
@@ -49,10 +52,23 @@ export default function Index() {
           id: r.id,
           title: r.title,
           price: r.price ?? 0,
-          seller: { name: r.sellerName ?? "—", role: r.sellerRole ?? "user" },
+          seller: {
+            id: (r.sellerId ?? (r.seller && r.seller.id)) || null,
+            name: r.sellerName ?? "—",
+            role: r.sellerRole ?? "user",
+          },
           image: r.imageUrl || r.image || (null as any),
         })),
       );
+    });
+    return () => unsub();
+  }, []);
+
+  // fetch packs promotion so homepage shows promo prices
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "promotions", "packs"), (d) => {
+      const data = d.data() as any;
+      setPackPromo(Number(data?.all || 0));
     });
     return () => unsub();
   }, []);
@@ -203,15 +219,23 @@ export default function Index() {
           </Link>
         </div>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <CreditPack name="Starter" amount={500} bonus={"+5%"} price="4,99€" />
-          <CreditPack name="Gamer" amount={1200} bonus={"+12%"} price="9,99€" />
-          <CreditPack
-            name="Elite"
-            amount={3500}
-            bonus={"+18%"}
-            price="24,99€"
-          />
-          <CreditPack name="Pro" amount={8000} bonus={"+25%"} price="49,99€" />
+          {packs.slice(0, 4).map((p) => {
+            const promo = packPromo ?? 0;
+            const hasPromo = promo > 0;
+            const discounted = (p.price * (1 - promo / 100)).toFixed(2) + "€";
+            const priceStr = hasPromo ? discounted : p.price.toFixed(2) + "€";
+            return (
+              <CreditPack
+                key={p.id}
+                name={p.name}
+                amount={p.coins}
+                bonus={`+${p.bonus}%`}
+                price={priceStr}
+                originalPrice={p.price}
+                promo={promo}
+              />
+            );
+          })}
         </div>
       </section>
 
@@ -269,12 +293,17 @@ function CreditPack({
   amount,
   bonus,
   price,
+  originalPrice,
+  promo,
 }: {
   name: string;
   amount: number;
   bonus: string;
   price: string;
+  originalPrice?: number;
+  promo?: number;
 }) {
+  const hasPromo = Boolean(promo && promo > 0 && originalPrice);
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -298,7 +327,16 @@ function CreditPack({
       </div>
       <div className="mt-4 flex items-center justify-between">
         <div className="text-foreground/80">
-          <span className="text-xl font-extrabold">{price}</span>
+          {hasPromo ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm line-through opacity-70">
+                {originalPrice?.toFixed(2)}€
+              </span>
+              <span className="text-xl font-extrabold">{price}</span>
+            </div>
+          ) : (
+            <span className="text-xl font-extrabold">{price}</span>
+          )}
         </div>
         <Button size="sm" variant="secondary">
           Acheter

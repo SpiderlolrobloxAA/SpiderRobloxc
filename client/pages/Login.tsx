@@ -14,19 +14,20 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
 const schema = z.object({
-  email: z.string().email("Email invalide"),
+  username: z.string().min(3, "Minimum 3 caractères"),
   password: z.string().min(6, "Minimum 6 caractères"),
 });
 
 export default function Login() {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { username: "", password: "" },
   });
   const { toast } = useToast();
 
   async function onSubmit(values: z.infer<typeof schema>) {
     const { signInWithEmailAndPassword } = await import("firebase/auth");
+    const { usernameToEmail } = await import("@/lib/usernameAuth");
     const mod = await import("@/lib/firebase");
     const auth = mod.auth;
     if (!auth) {
@@ -36,8 +37,9 @@ export default function Login() {
       });
       return;
     }
-    await signInWithEmailAndPassword(auth, values.email, values.password);
-    toast({ title: `Connexion réussie`, description: values.email });
+    const email = usernameToEmail(values.username);
+    await signInWithEmailAndPassword(auth, email, values.password);
+    toast({ title: `Connexion réussie`, description: values.username });
   }
 
   return (
@@ -51,16 +53,12 @@ export default function Login() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="email"
+              name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Pseudo</FormLabel>
                   <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="vous@exemple.com"
-                      {...field}
-                    />
+                    <Input placeholder="Votre pseudo" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

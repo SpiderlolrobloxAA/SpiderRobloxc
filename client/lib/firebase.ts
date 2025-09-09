@@ -8,13 +8,13 @@ import { getAnalytics, isSupported } from "firebase/analytics";
 import { initializeFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDMsFeXMVm61NlmN8QBk7UmH1ngPFW8TWo",
-  authDomain: "keysystem-d0b86.firebaseapp.com",
-  projectId: "keysystem-d0b86",
-  storageBucket: "keysystem-d0b86.appspot.com",
-  messagingSenderId: "1012783086146",
-  appId: "1:1012783086146:web:6ae932b13a9e9c992a4bdb",
-  measurementId: "G-PML2TD3Z35",
+  apiKey: "AIzaSyD7KlxN05OoSCGHwjXhiiYyKF5bOXianLY",
+  authDomain: "keysystem-d0b86-8df89.firebaseapp.com",
+  projectId: "keysystem-d0b86-8df89",
+  storageBucket: "keysystem-d0b86-8df89.appspot.com",
+  messagingSenderId: "1048409565735",
+  appId: "1:1048409565735:web:65b368e2b20a74df0dfc02",
+  measurementId: "G-N1P4V34PE5",
 };
 
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);

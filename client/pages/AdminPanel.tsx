@@ -16,8 +16,13 @@ import {
   setDoc,
   updateDoc,
   where,
+  addDoc,
+  deleteDoc,
+  arrayUnion,
+  Timestamp,
 } from "firebase/firestore";
 import { useProfile } from "@/context/ProfileProvider";
+import { useAuth } from "@/context/AuthProvider";
 
 const ROLES = ["user", "verified", "helper", "moderator", "founder"] as const;
 
@@ -89,6 +94,84 @@ export default function AdminPanel() {
     return () => unsub();
   }, []);
 
+  // load product count and maintenance flag for founder
+  useEffect(() => {
+    let unsubProducts: any = () => {};
+    const maintRef = doc(db, "maintenance", "global");
+    const unsubMeta = onSnapshot(maintRef, (d) => {
+      const data = d.data() as any | undefined;
+      const toggle = document.getElementById(
+        "maintenance-toggle",
+      ) as HTMLInputElement | null;
+      const scope = document.getElementById(
+        "maintenance-scope",
+      ) as HTMLSelectElement | null;
+      const msg = document.getElementById(
+        "maintenance-message",
+      ) as HTMLInputElement | null;
+      if (toggle) toggle.checked = Boolean(data?.on);
+      if (scope && data?.scope) scope.value = data.scope;
+      if (msg && data?.message) msg.value = data.message;
+    });
+
+    (async () => {
+      const snap = await getDocs(query(collection(db, "products")));
+      const count = snap.size;
+      const el = document.getElementById("product-count");
+      if (el) el.textContent = `${count} produit(s) actifs`;
+
+      // subscribe to products to update count live
+      const q = query(collection(db, "products"));
+      unsubProducts = onSnapshot(q, (s) => {
+        const c = s.docs.filter(
+          (d) => (d.data() as any).status === "active",
+        ).length;
+        const el2 = document.getElementById("product-count");
+        if (el2) el2.textContent = `${c} produit(s) actifs`;
+      });
+    })();
+
+    const scopeSelect = document.getElementById(
+      "maintenance-scope",
+    ) as HTMLSelectElement | null;
+    const toggle = document.getElementById(
+      "maintenance-toggle",
+    ) as HTMLInputElement | null;
+    const onChange = async () => {
+      if (!toggle) return;
+      try {
+        const scope = scopeSelect?.value || "global";
+        const message = toggle.checked
+          ? (document.getElementById("maintenance-message") as HTMLInputElement)
+              ?.value || ""
+          : "";
+        // write to maintenance/global for a clear global maintenance document
+        const maintRef2 = doc(db, "maintenance", "global");
+        await setDoc(
+          maintRef2,
+          { on: toggle.checked, scope, message },
+          { merge: true },
+        );
+        toast({
+          title: `Maintenance ${toggle.checked ? "activée" : "désactivée"}`,
+        });
+      } catch (e) {
+        console.error("set maintenance failed", e);
+      }
+    };
+    toggle?.addEventListener("change", onChange);
+    scopeSelect?.addEventListener("change", onChange);
+
+    return () => {
+      unsubMeta();
+      unsubProducts && unsubProducts();
+      toggle?.removeEventListener("change", onChange);
+      scopeSelect?.removeEventListener("change", onChange);
+    };
+  }, [toast]);
+
+  // Users overview table for easier management
+
   useEffect(() => {
     if (!userId) return;
     const unsub = onSnapshot(doc(db, "users", userId), (d) => {
@@ -159,21 +242,56 @@ export default function AdminPanel() {
         { role: selectedRole, updatedAt: serverTimestamp() },
         { merge: true },
       );
+
+      // add a notification to the user about their new role
+      try {
+        await updateDoc(doc(db, "users", userId), {
+          notifications: arrayUnion({
+            type: "role",
+            role: selectedRole,
+            text: `Vous avez reçu le rôle ${selectedRole}`,
+            createdAt: Timestamp.now(),
+            read: false,
+          }),
+        });
+      } catch (e) {
+        console.error("notify role change failed", e);
+      }
+
       toast({ title: "Rôle sauvegardé", description: `${selectedRole}` });
     } finally {
       setSavingRole(false);
     }
   };
 
+  const { user: currentUser } = useAuth();
+
   const adjustCredits = async (amount: number) => {
     if (!userId) return;
     try {
       setAdjusting(true);
-      await setDoc(
-        doc(db, "users", userId),
-        { credits: increment(amount), updatedAt: serverTimestamp() },
-        { merge: true },
-      );
+
+      // Atomically increment balances.available on user doc
+      await updateDoc(doc(db, "users", userId), {
+        "balances.available": increment(amount),
+      } as any);
+
+      // Create a transaction record to keep history and show admin as giver
+      try {
+        await addDoc(collection(db, "transactions"), {
+          uid: userId,
+          type: "admin_grant",
+          credits: amount,
+          adminId: currentUser?.uid || "admin",
+          adminName: currentUser?.displayName || currentUser?.email || "admin",
+          note: `Grant by admin ${currentUser?.displayName || currentUser?.email || "admin"}`,
+          status: "completed",
+          createdAt: serverTimestamp(),
+        });
+      } catch (e) {
+        console.error("admin:create transaction failed", e);
+      }
+
       toast({
         title: "Crédits modifiés",
         description: `${amount > 0 ? "+" : ""}${amount} RC`,
@@ -197,7 +315,9 @@ export default function AdminPanel() {
     try {
       await setDoc(doc(collection(db, "tickets", activeTicket, "messages")), {
         text: reply.trim(),
-        senderId: "admin",
+        senderId: currentUser?.uid || "admin",
+        senderName: currentUser?.displayName || currentUser?.email || "admin",
+        senderRole: role || "admin",
         createdAt: serverTimestamp(),
       });
       await updateDoc(doc(db, "tickets", activeTicket), {
@@ -209,20 +329,37 @@ export default function AdminPanel() {
       console.error("ticket:reply failed", e);
     }
   };
-  const closeTicket = async (id: string, reason: string) => {
-    await updateDoc(doc(db, "tickets", id), {
-      status: "closed",
-      closeReason: reason,
-      closedAt: serverTimestamp(),
-    });
+  const closeTicket = async (id: string, reason = "Closed by staff") => {
+    try {
+      await updateDoc(doc(db, "tickets", id), {
+        status: "closed",
+        closeReason: reason,
+        closedAt: serverTimestamp(),
+      });
+      toast({ title: "Ticket fermé" });
+    } catch (e) {
+      console.error("ticket:close failed", e);
+    }
+  };
+
+  const deleteTicket = async (id: string) => {
+    if (!id) return;
+    try {
+      await deleteDoc(doc(db, "tickets", id));
+      toast({ title: "Ticket supprimé" });
+      if (activeTicket === id) setActiveTicket(null);
+    } catch (e) {
+      console.error("ticket:delete failed", e);
+      toast({ title: "Erreur suppression" });
+    }
   };
 
   if (!ok) return <AdminLogin onOk={() => setOk(true)} />;
 
-  if (role === "user") {
+  if (role === "user" || role === "verified") {
     return (
       <div className="container py-10">
-        <h1 className="font-display text-2xl font-bold">Accès refusé</h1>
+        <h1 className="font-display text-2xl font-bold">Accès refus��</h1>
         <p className="text-sm text-foreground/70">
           Vous n'avez pas les permissions pour accéder à l'Admin Panel.
         </p>
@@ -236,6 +373,57 @@ export default function AdminPanel() {
       <p className="text-sm text-foreground/70">
         CTRL + F1 pour ouvrir rapidement cet écran.
       </p>
+
+      {/* Users overview - big table */}
+      <div className="mt-6 rounded-xl border border-border/60 bg-card p-4">
+        <h2 className="font-semibold mb-3">Utilisateurs (aperçu)</h2>
+        <div className="overflow-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-foreground/60">
+                <th className="p-2">Email / Nom</th>
+                <th className="p-2">Rôle</th>
+                <th className="p-2">Crédits</th>
+                <th className="p-2">Ventes</th>
+                <th className="p-2">Achats</th>
+                <th className="p-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id} className="border-t border-border/50">
+                  <td className="p-2">{u.displayName || u.email || u.id}</td>
+                  <td className="p-2">{u.role}</td>
+                  <td className="p-2">
+                    {(u.balances?.available || 0).toLocaleString()} RC
+                  </td>
+                  <td className="p-2">
+                    {Number(u.sales || u.stats?.sales || 0)}
+                  </td>
+                  <td className="p-2">
+                    {Number(u.purchases || u.stats?.purchases || 0)}
+                  </td>
+                  <td className="p-2">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setUserId(u.id);
+                          setUserInfo(u);
+                          setSelectedRole((u.role ?? "user") as any);
+                          window.scrollTo({ top: 400, behavior: "smooth" });
+                        }}
+                      >
+                        Gérer
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-border/60 bg-card p-3 md:col-span-1">
@@ -302,51 +490,62 @@ export default function AdminPanel() {
             )}
           </div>
           {userId && (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-foreground/70">Rôle:</span>
-              {ROLES.map((r) => (
-                <Button
-                  key={r}
-                  size="sm"
-                  variant={selectedRole === r ? "default" : "outline"}
-                  onClick={() => setSelectedRole(r as Role)}
-                >
-                  {r}
-                </Button>
-              ))}
-              <Button
-                size="sm"
-                className="ml-2"
-                onClick={saveRole}
-                disabled={savingRole}
-              >
-                {savingRole ? "Sauvegarde…" : "Sauvegarder"}
-              </Button>
-              <span className="ml-4 text-xs text-foreground/70">Crédits:</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => adjustCredits(100)}
-                disabled={adjusting}
-              >
-                {adjusting ? "…" : "+100"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => adjustCredits(1000)}
-                disabled={adjusting}
-              >
-                {adjusting ? "…" : "+1000"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => adjustCredits(-100)}
-                disabled={adjusting}
-              >
-                {adjusting ? "…" : "-100"}
-              </Button>
+            <div className="mt-4">
+              {role === "moderator" || role === "founder" ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-foreground/70">Rôle:</span>
+                  {ROLES.map((r) => (
+                    <Button
+                      key={r}
+                      size="sm"
+                      variant={selectedRole === r ? "default" : "outline"}
+                      onClick={() => setSelectedRole(r as Role)}
+                    >
+                      {r}
+                    </Button>
+                  ))}
+                  <Button
+                    size="sm"
+                    className="ml-2"
+                    onClick={saveRole}
+                    disabled={savingRole}
+                  >
+                    {savingRole ? "Sauvegarde…" : "Sauvegarder"}
+                  </Button>
+                  <span className="ml-4 text-xs text-foreground/70">
+                    Crédits:
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => adjustCredits(100)}
+                    disabled={adjusting}
+                  >
+                    {adjusting ? "…" : "+100"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => adjustCredits(1000)}
+                    disabled={adjusting}
+                  >
+                    {adjusting ? "…" : "+1000"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => adjustCredits(-100)}
+                    disabled={adjusting}
+                  >
+                    {adjusting ? "…" : "-100"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-2 text-sm text-foreground/70">
+                  Vous n'avez pas la permission de modifier les rôles ou
+                  crédits.
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -396,18 +595,129 @@ export default function AdminPanel() {
             </div>
             <div className="rounded-xl border border-border/60 bg-card p-4">
               <h3 className="font-semibold">Chat</h3>
+              {role === "founder" && (
+                <div className="mt-4">
+                  <h4 className="font-medium">
+                    Envoyer un message global (système)
+                  </h4>
+                  <div className="mt-2 grid gap-2">
+                    <Input
+                      placeholder="Titre (optionnel)"
+                      id="broadcast-title"
+                    />
+                    <Input placeholder="Message système" id="broadcast-text" />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        id="broadcast-send"
+                        onClick={async () => {
+                          const titleEl = document.getElementById(
+                            "broadcast-title",
+                          ) as HTMLInputElement | null;
+                          const textEl = document.getElementById(
+                            "broadcast-text",
+                          ) as HTMLInputElement | null;
+                          const msg = textEl?.value?.trim();
+                          const title =
+                            titleEl?.value?.trim() || "Message système";
+                          if (!msg) {
+                            toast({
+                              title: "Message vide",
+                              description: "Entrez le texte du message",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          try {
+                            // fetch all users
+                            const usersSnap = await getDocs(
+                              query(collection(db, "users")),
+                            );
+                            for (const d of usersSnap.docs) {
+                              const u = { id: d.id, ...(d.data() as any) };
+                              const threadId = `system_${u.id}`;
+                              // create or update thread doc
+                              await setDoc(
+                                doc(db, "threads", threadId),
+                                {
+                                  participants: [u.id],
+                                  title,
+                                  system: true,
+                                  lastMessage: {
+                                    text: msg,
+                                    senderId: "system",
+                                  },
+                                  updatedAt: serverTimestamp(),
+                                },
+                                { merge: true },
+                              );
+                              // add the system message
+                              await addDoc(
+                                collection(db, "threads", threadId, "messages"),
+                                {
+                                  senderId: "system",
+                                  text: msg,
+                                  createdAt: serverTimestamp(),
+                                },
+                              );
+                              // notify user
+                              try {
+                                await updateDoc(doc(db, "users", u.id), {
+                                  notifications: arrayUnion({
+                                    type: "thread",
+                                    threadId,
+                                    text: msg,
+                                    createdAt: Timestamp.now(),
+                                    system: true,
+                                  }),
+                                });
+                              } catch (e) {}
+                            }
+                            toast({ title: "Message envoyé" });
+                            if (textEl) textEl.value = "";
+                            if (titleEl) titleEl.value = "";
+                          } catch (e) {
+                            console.error("broadcast failed", e);
+                            toast({
+                              title: "Erreur",
+                              description:
+                                "Impossible d'envoyer le message global",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        Envoyer globalement
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
               {activeTicket ? (
                 <div className="flex h-[60vh] flex-col">
                   <div className="flex-1 space-y-2 overflow-auto">
                     {ticketMsgs.map((m) => (
                       <div
                         key={m.id}
-                        className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === "admin" ? "ml-auto bg-secondary/20" : "bg-muted"}`}
+                        className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === currentUser?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
                       >
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="text-xs text-foreground/60">
+                            {m.senderName ||
+                              (m.senderId === "admin"
+                                ? "Admin"
+                                : "Utilisateur")}
+                          </div>
+                          {m.senderRole && m.senderRole !== "user" && (
+                            <div className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">
+                              {m.senderRole}
+                            </div>
+                          )}
+                        </div>
                         {m.text}
                       </div>
                     ))}
                   </div>
+
                   <div className="mt-2 flex items-center gap-2">
                     <Input
                       value={reply}
@@ -420,6 +730,28 @@ export default function AdminPanel() {
                     <Button size="sm" onClick={sendReply}>
                       Envoyer
                     </Button>
+                    {/* Close allowed for helpers+ */}
+                    {(role === "helper" ||
+                      role === "moderator" ||
+                      role === "founder") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => closeTicket(activeTicket)}
+                      >
+                        Fermer
+                      </Button>
+                    )}
+                    {/* Delete only for moderator/founder */}
+                    {(role === "moderator" || role === "founder") && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteTicket(activeTicket)}
+                      >
+                        Supprimer
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -456,7 +788,16 @@ export default function AdminPanel() {
                   <Button
                     size="sm"
                     variant="destructive"
+                    disabled={userId === currentUser?.uid}
                     onClick={async () => {
+                      if (userId === currentUser?.uid) {
+                        toast({
+                          title: "Action interdite",
+                          description: "Vous ne pouvez pas vous auto-bannir.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
                       const ms = (banDays * 24 + banHours) * 60 * 60 * 1000;
                       const until = new Date(Date.now() + ms);
                       await setDoc(
@@ -472,7 +813,16 @@ export default function AdminPanel() {
                   <Button
                     size="sm"
                     variant="destructive"
+                    disabled={userId === currentUser?.uid}
                     onClick={async () => {
+                      if (userId === currentUser?.uid) {
+                        toast({
+                          title: "Action interdite",
+                          description: "Vous ne pouvez pas vous auto-bannir.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
                       await setDoc(
                         doc(db, "users", userId),
                         { banned: true, bannedAt: serverTimestamp() },
@@ -486,7 +836,17 @@ export default function AdminPanel() {
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={userId === currentUser?.uid}
                     onClick={async () => {
+                      if (userId === currentUser?.uid) {
+                        toast({
+                          title: "Action interdite",
+                          description:
+                            "Vous ne pouvez pas lever votre propre ban via cet écran.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
                       await setDoc(
                         doc(db, "users", userId),
                         { banned: false, bannedUntil: null },
@@ -526,7 +886,46 @@ export default function AdminPanel() {
           <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
             <h3 className="font-semibold">Fondateur</h3>
             <div>
+              <div className="text-sm font-semibold">Etat Marketplace</div>
+              <div className="mt-2 text-sm text-foreground/70">
+                <span id="product-count">Chargement…</span>
+              </div>
+              <div className="mt-2">
+                <div className="space-y-2">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      id="maintenance-toggle"
+                      type="checkbox"
+                      className="rounded"
+                    />{" "}
+                    Activer le mode maintenance
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      id="maintenance-scope"
+                      className="rounded-md bg-background px-2 py-1 border border-border/60"
+                    >
+                      <option value="global">Global (tout le site)</option>
+                      <option value="marketplace">Marketplace</option>
+                      <option value="shop">Boutique</option>
+                      <option value="tickets">Tickets</option>
+                    </select>
+                    <input
+                      id="maintenance-message"
+                      className="flex-1 rounded-md bg-background px-3 py-2 border border-border/60"
+                      placeholder="Message affiché pendant la maintenance"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
               <div className="text-sm font-semibold">Annonce globale</div>
+              <Input
+                placeholder="Message à afficher"
+                value={announcement}
+                onChange={(e) => setAnnouncement(e.target.value)}
+              />
               <Input
                 placeholder="Message à afficher"
                 value={announcement}

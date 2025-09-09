@@ -1,15 +1,17 @@
-import {
-  initializeApp,
-  cert,
-  getApps,
-  applicationDefault,
-} from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+let db: any = null;
 
-let db: ReturnType<typeof getFirestore> | null = null;
-
-export function getAdminDb() {
+export async function getAdminDb() {
   if (db) return db;
+
+  // Dynamically import firebase-admin only when needed to avoid loading it during Vite config time
+  // @ts-ignore - optional dependency, only required on server with creds
+  const adminApp = await import("firebase-admin/app");
+  // @ts-ignore - optional dependency, only required on server with creds
+  const firestoreModule = await import("firebase-admin/firestore");
+
+  const { initializeApp, cert, getApps, applicationDefault } = adminApp;
+  const { getFirestore } = firestoreModule;
+
   if (!getApps().length) {
     const svcJson = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (svcJson) {
@@ -19,6 +21,7 @@ export function getAdminDb() {
       initializeApp({ credential: applicationDefault() });
     }
   }
+
   db = getFirestore();
   return db;
 }

@@ -110,7 +110,11 @@ export default function PayPalCheckout({
       createOrder: (_: any, actions: any) =>
         actions.order.create({
           intent: "CAPTURE",
-          application_context: { brand_name: "BrainrotMarket" },
+          application_context: {
+            brand_name:
+              (import.meta.env.VITE_PAYPAL_APP_NAME as string) ||
+              "BrainrotMarket",
+          },
           purchase_units: [{ amount: { value: amount } }],
         }),
       onApprove: async (_: any, actions: any) => {

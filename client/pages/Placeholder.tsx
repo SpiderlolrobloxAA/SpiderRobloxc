@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import ModerationWarning from "@/components/ModerationWarning";
 
 import { useAuth } from "@/context/AuthProvider";
+import { useProfile } from "@/context/ProfileProvider";
 import { db } from "@/lib/firebase";
 import {
   addDoc,
@@ -34,6 +36,7 @@ export default function Placeholder({ title }: { title: string }) {
 
 function TicketsPage() {
   const { user } = useAuth();
+  const { role } = useProfile();
   const [title, setTitle] = useState("");
   const [msg, setMsg] = useState("");
   const [tickets, setTickets] = useState<any[]>([]);
@@ -52,27 +55,61 @@ function TicketsPage() {
     return () => unsub();
   }, [user, active]);
 
+  const [moderationOpen, setModerationOpen] = useState(false);
+  const [moderationReasons, setModerationReasons] = useState<string[]>([]);
+  const [pendingAction, setPendingAction] = useState<
+    (() => Promise<void>) | null
+  >(null);
+
+  const runWithModeration = async (
+    textToCheck: string,
+    action: () => Promise<void>,
+  ) => {
+    try {
+      const res = await fetch("/api/moderate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: textToCheck }),
+      });
+      const j = await res.json();
+      if (j?.flagged) {
+        setModerationReasons(Array.isArray(j.reasons) ? j.reasons : []);
+        setPendingAction(() => action);
+        setModerationOpen(true);
+        return;
+      }
+      await action();
+    } catch (e) {
+      console.error("moderation failed", e);
+      await action();
+    }
+  };
+
   const create = async () => {
     if (!user || !title) return;
-    try {
-      const ref = await addDoc(collection(db, "tickets"), {
-        uid: user.uid,
-        email: user.email,
-        title,
-        status: "open",
-        createdAt: serverTimestamp(),
-      });
-      await addDoc(collection(db, "tickets", ref.id, "messages"), {
-        senderId: user.uid,
-        text: msg || "Ticket créé",
-        createdAt: serverTimestamp(),
-      });
-      setTitle("");
-      setMsg("");
-      setActive(ref.id);
-    } catch (e) {
-      console.error("ticket:create failed", e);
-    }
+    await runWithModeration(title, async () => {
+      try {
+        const ref = await addDoc(collection(db, "tickets"), {
+          uid: user.uid,
+          email: user.email,
+          title,
+          status: "open",
+          createdAt: serverTimestamp(),
+        });
+        await addDoc(collection(db, "tickets", ref.id, "messages"), {
+          senderId: user.uid,
+          senderName: user.displayName || user.email || "Utilisateur",
+          senderRole: role || "user",
+          text: msg || "Ticket créé",
+          createdAt: serverTimestamp(),
+        });
+        setTitle("");
+        setMsg("");
+        setActive(ref.id);
+      } catch (e) {
+        console.error("ticket:create failed", e);
+      }
+    });
   };
 
   useEffect(() => {
@@ -88,16 +125,18 @@ function TicketsPage() {
 
   const send = async () => {
     if (!user || !active || !text.trim()) return;
-    try {
-      await addDoc(collection(db, "tickets", active, "messages"), {
-        senderId: user.uid,
-        text: text.trim(),
-        createdAt: serverTimestamp(),
-      });
-    } catch (e) {
-      console.error("ticket:send failed", e);
-    }
-    setText("");
+    await runWithModeration(text.trim(), async () => {
+      try {
+        await addDoc(collection(db, "tickets", active, "messages"), {
+          senderId: user.uid,
+          text: text.trim(),
+          createdAt: serverTimestamp(),
+        });
+      } catch (e) {
+        console.error("ticket:send failed", e);
+      }
+      setText("");
+    });
   };
 
   return (
@@ -151,6 +190,17 @@ function TicketsPage() {
                     key={m.id}
                     className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === user?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
                   >
+                    <div className="text-xs text-foreground/60 mb-1 flex items-center gap-2">
+                      <div>
+                        {m.senderName ||
+                          (m.senderId === "admin" ? "Admin" : "Utilisateur")}
+                      </div>
+                      {m.senderRole && m.senderRole !== "user" && (
+                        <div className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">
+                          {m.senderRole}
+                        </div>
+                      )}
+                    </div>
                     {m.text}
                   </div>
                 ))}
@@ -175,6 +225,21 @@ function TicketsPage() {
           )}
         </div>
       </div>
+
+      <ModerationWarning
+        open={moderationOpen}
+        reasons={moderationReasons}
+        onCancel={() => {
+          setModerationOpen(false);
+          setPendingAction(null);
+        }}
+        onAccept={async () => {
+          setModerationOpen(false);
+          const act = pendingAction;
+          setPendingAction(null);
+          if (act) await act();
+        }}
+      />
     </div>
   );
 }

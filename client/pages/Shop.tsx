@@ -14,20 +14,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-const packs = [
-  { id: "starter", name: "Starter", coins: 500, price: 4.99, bonus: 5 },
-  {
-    id: "gamer",
-    name: "Gamer",
-    coins: 1200,
-    price: 9.99,
-    bonus: 12,
-    popular: true,
-  },
-  { id: "elite", name: "Elite", coins: 3500, price: 24.99, bonus: 18 },
-  { id: "pro", name: "Pro", coins: 8000, price: 49.99, bonus: 25, best: true },
-  { id: "legend", name: "Legend", coins: 15000, price: 89.99, bonus: 32 },
-];
+import { packs } from "@/lib/packs";
 
 export default function Shop() {
   const { toast } = useToast();
@@ -89,7 +76,7 @@ export default function Shop() {
         {packs.map((p) => (
           <div
             key={p.id}
-            className="relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+            className="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-[0_10px_30px_rgba(0,0,0,0.25)] transform transition-transform duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:shadow-2xl"
           >
             {p.popular && (
               <span className="absolute left-0 top-3 rounded-r-md bg-secondary px-2 py-1 text-[10px] font-semibold">
@@ -113,7 +100,9 @@ export default function Shop() {
                   Bonus +{p.bonus}%
                 </div>
               </div>
-              <GoldCoin size={52} />
+              <div className="transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                <GoldCoin size={52} />
+              </div>
             </div>
             <div className="mt-4 flex items-center justify-between">
               <div className="text-foreground/80">
@@ -222,23 +211,15 @@ function Badge({ icon, text }: { icon: React.ReactNode; text: string }) {
 }
 
 function GoldCoin({ size = 48 }: { size?: number }) {
+  const src =
+    "https://cdn.builder.io/api/v1/image/assets%2F7ca6692b844e492da4519bd1be30c27d%2F010980b0e1d0488b82cdd1e39f84e4d5?format=webp&width=800";
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="32" cy="32" r="28" fill="#F9D84A" />
-      <circle cx="32" cy="32" r="22" fill="#FFC928" />
-      <path
-        d="M24 32h16M32 24v16"
-        stroke="#8B5E00"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-    </svg>
+    <img
+      src={src}
+      alt="RotCoin"
+      style={{ width: size, height: size }}
+      className="object-contain"
+    />
   );
 }
 

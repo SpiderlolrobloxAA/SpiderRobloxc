@@ -30,6 +30,8 @@ import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { VERIFIED_IMG } from "@/components/RoleBadge";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
+import TosModal from "@/components/TosModal";
+import Notifications from "@/components/Notifications";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
@@ -136,6 +138,7 @@ function UserInfo() {
   const { credits, role } = useProfile();
   return (
     <div className="hidden md:flex items-center justify-end gap-4">
+      <Notifications />
       <Dialog>
         <DialogTrigger asChild>
           <button className="flex items-center gap-2 min-w-0 hover:bg-muted/60 px-2 py-1 rounded-md">
@@ -199,14 +202,11 @@ function UserInfo() {
         className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-xs whitespace-nowrap"
         title="Crédits disponibles"
       >
-        <svg
-          className="h-3.5 w-3.5"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="12" cy="12" r="10" fill="#F9D84A" />
-          <circle cx="12" cy="12" r="7" fill="#FFC928" />
-        </svg>
+        <img
+          src="https://cdn.builder.io/api/v1/image/assets%2F7ca6692b844e492da4519bd1be30c27d%2F010980b0e1d0488b82cdd1e39f84e4d5?format=webp&width=800"
+          alt="RC"
+          className="h-3.5 w-3.5 object-contain"
+        />
         {credits.toLocaleString()} RC
       </span>
       <TooltipProvider delayDuration={0}>
@@ -295,18 +295,37 @@ function Announcements() {
 }
 
 function MaintenanceOverlay() {
-  const [state, setState] = useState<{ on: boolean; message?: string } | null>(
-    null,
-  );
+  const [state, setState] = useState<{
+    on: boolean;
+    message?: string;
+    scope?: string;
+  } | null>(null);
+  const location = useLocation();
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "settings", "app"), (d) => {
+    const unsub = onSnapshot(doc(db, "maintenance", "global"), (d) => {
       const data = d.data() as any;
       if (data)
-        setState({ on: Boolean(data.maintenance), message: data.message });
+        setState({
+          on: Boolean(data.on),
+          message: data.message,
+          scope: data.scope,
+        });
     });
     return () => unsub();
   }, []);
   if (!state?.on) return null;
+
+  // determine page key from location
+  const path = location.pathname || "/";
+  const pageKey = path.startsWith("/tickets")
+    ? "tickets"
+    : path.startsWith("/shop")
+      ? "shop"
+      : path === "/" || path.startsWith("/marketplace")
+        ? "marketplace"
+        : "other";
+  if (state.scope !== "global" && state.scope !== pageKey) return null;
+
   return (
     <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur flex items-center justify-center">
       <div className="rounded-xl border border-border/60 bg-card p-6 max-w-md text-center">
@@ -558,6 +577,7 @@ export default function Layout() {
       <Announcements />
       <MaintenanceOverlay />
       <main className="relative z-10">
+        <TosModal />
         <Outlet />
       </main>
       <Footer />
