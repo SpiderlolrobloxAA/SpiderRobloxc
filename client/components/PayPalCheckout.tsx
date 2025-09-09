@@ -26,27 +26,60 @@ export default function PayPalCheckout({
       currency,
     }).toString();
     const src = `https://www.paypal.com/sdk/js?${qs}`;
-    const existing = document.querySelector(
+
+    let existing = document.querySelector(
       `script[src^="https://www.paypal.com/sdk/js"]`,
     ) as HTMLScriptElement | null;
+
+    // If an existing PayPal script points to a different client or params, remove it
+    if (existing && existing.src !== src) {
+      try { existing.remove(); } catch {}
+      existing = null;
+    }
+
     const script =
       existing ??
       Object.assign(document.createElement("script"), {
         src,
         async: true,
-        crossOrigin: "anonymous" as any,
       });
+
+    // Attach metadata for easier debugging
+    try { script.setAttribute('data-paypal-client-id', clientId); } catch {}
+    script.crossOrigin = 'anonymous';
+
     if (!existing) document.body.appendChild(script);
-    const onLoad = () => setReady(true);
-    const onError = (e: any) => {
-      console.error("PayPal script failed to load", e);
+
+    const onLoad = () => {
+      // ensure SDK available
+      if ((window as any).paypal) setReady(true);
+      else {
+        console.error('PayPal script loaded but window.paypal is missing', { src, clientId });
+        setReady(false);
+      }
+    };
+
+    const onError = (ev: Event) => {
+      // Provide richer info in logs
+      console.error('PayPal script failed to load', { src: script.src, event: ev, clientId });
       setReady(false);
     };
+
+    // Timeout fallback
+    const timeout = setTimeout(() => {
+      if (!((window as any).paypal)) {
+        console.error('PayPal SDK load timed out', { src, clientId });
+        setReady(false);
+      }
+    }, 12000);
+
     script.addEventListener("load", onLoad);
     script.addEventListener("error", onError);
+
     return () => {
-      script.removeEventListener("load", onLoad);
-      script.removeEventListener("error", onError);
+      clearTimeout(timeout);
+      try { script.removeEventListener("load", onLoad); } catch {}
+      try { script.removeEventListener("error", onError); } catch {}
     };
   }, [clientId, currency]);
 
