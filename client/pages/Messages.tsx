@@ -119,6 +119,12 @@ function Thread({ id }: { id: string }) {
 
   const send = async () => {
     if (!user || !text.trim()) return;
+    // do not allow sending into system threads
+    if (threadMeta?.system) {
+      toast({ title: "Impossible de répondre", description: "Ce message provient du système et n'accepte pas de réponses.", variant: "default" });
+      setText("");
+      return;
+    }
     try {
       await addDoc(collection(db, "threads", id, "messages"), {
         senderId: user.uid,
