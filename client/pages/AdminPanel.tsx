@@ -97,11 +97,15 @@ export default function AdminPanel() {
   // load product count and maintenance flag for founder
   useEffect(() => {
     let unsubProducts: any = () => {};
-    const metaRef = doc(db, "meta", "site");
-    const unsubMeta = onSnapshot(metaRef, (d) => {
+    const maintRef = doc(db, "maintenance", "global");
+    const unsubMeta = onSnapshot(maintRef, (d) => {
       const data = d.data() as any | undefined;
       const toggle = document.getElementById("maintenance-toggle") as HTMLInputElement | null;
-      if (toggle) toggle.checked = Boolean(data?.maintenance);
+      const scope = document.getElementById("maintenance-scope") as HTMLSelectElement | null;
+      const msg = document.getElementById("maintenance-message") as HTMLInputElement | null;
+      if (toggle) toggle.checked = Boolean(data?.on);
+      if (scope && data?.scope) scope.value = data.scope;
+      if (msg && data?.message) msg.value = data.message;
     });
 
     (async () => {
@@ -125,11 +129,12 @@ export default function AdminPanel() {
       if (!toggle) return;
       try {
         const scope = scopeSelect?.value || "global";
-        // write to settings/app to be consistent with Layout.MaintenanceOverlay
-        const settingsRef = doc(db, "settings", "app");
+        const message = toggle.checked ? (document.getElementById("maintenance-message") as HTMLInputElement)?.value || "" : "";
+        // write to maintenance/global for a clear global maintenance document
+        const maintRef2 = doc(db, "maintenance", "global");
         await setDoc(
-          settingsRef,
-          { maintenance: toggle.checked, scope, message: toggle.checked ? (document.getElementById("maintenance-message") as HTMLInputElement)?.value || "" : "" },
+          maintRef2,
+          { on: toggle.checked, scope, message },
           { merge: true },
         );
         toast({ title: `Maintenance ${toggle.checked ? "activée" : "désactivée"}` });
@@ -144,8 +149,11 @@ export default function AdminPanel() {
       unsubMeta();
       unsubProducts && unsubProducts();
       toggle?.removeEventListener("change", onChange);
+      scopeSelect?.removeEventListener("change", onChange);
     };
   }, [toast]);
+
+  // Users overview table for easier management
 
   useEffect(() => {
     if (!userId) return;
