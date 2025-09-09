@@ -100,7 +100,9 @@ export default function Shop() {
                   Bonus +{p.bonus}%
                 </div>
               </div>
-              <GoldCoin size={52} />
+              <div className="transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                <GoldCoin size={52} />
+              </div>
             </div>
             <div className="mt-4 flex items-center justify-between">
               <div className="text-foreground/80">
