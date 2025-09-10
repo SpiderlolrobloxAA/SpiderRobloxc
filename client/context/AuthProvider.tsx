@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 username: u.displayName || u.email?.split("@")[0] || "user",
                 email: u.email || null,
                 role: "user",
-                balances: { available: 0, pending: 0 },
+                balances: { available: 5, pending: 0 },
                 quests: { completed: [], progress: {} },
                 stats: { sales: 0, purchases: 0, joinedAt: serverTimestamp() },
                 settings: { notifications: true },

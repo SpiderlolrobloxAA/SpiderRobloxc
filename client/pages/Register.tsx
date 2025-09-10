@@ -31,7 +31,7 @@ export default function Register() {
     const { createUserWithEmailAndPassword, updateProfile } = await import(
       "firebase/auth"
     );
-    const { doc, setDoc, serverTimestamp, getDoc } = await import(
+    const { doc, setDoc, serverTimestamp, getDoc, addDoc, collection } = await import(
       "firebase/firestore"
     );
     const { usernameToEmail, normalizeUsername } = await import(
@@ -100,7 +100,7 @@ export default function Register() {
             email: pseudoEmail,
             username: uname,
             role: "user",
-            balances: { available: 0, pending: 0 },
+            balances: { available: 5, pending: 0 },
             quests: { completed: [], progress: {} },
             stats: { sales: 0, purchases: 0, joinedAt: serverTimestamp() },
             lastSeen: serverTimestamp(),
@@ -112,6 +112,17 @@ export default function Register() {
           { uid: cred.user.uid, createdAt: serverTimestamp() },
           { merge: false },
         );
+        try {
+          await addDoc(collection(db, "transactions"), {
+            uid: cred.user.uid,
+            type: "signup_bonus",
+            credits: 5,
+            status: "completed",
+            createdAt: serverTimestamp(),
+          });
+        } catch (e) {
+          console.error("register:bonus tx failed", e);
+        }
       } catch (e) {
         console.error("register:setUser failed", e);
         toast({

@@ -83,6 +83,9 @@ export default function AdminPanel() {
   const [ticketMsgs, setTicketMsgs] = useState<any[]>([]);
   const [reply, setReply] = useState("");
   const [promo, setPromo] = useState<number>(0);
+  const [promoStart, setPromoStart] = useState<string>("");
+  const [promoEnd, setPromoEnd] = useState<string>("");
+  const [promoRole, setPromoRole] = useState<string>("all");
   const [announcement, setAnnouncement] = useState("");
   const [banDays, setBanDays] = useState<number>(0);
   const [banHours, setBanHours] = useState<number>(0);
@@ -746,7 +749,7 @@ export default function AdminPanel() {
                     {ticketMsgs.map((m) => (
                       <div
                         key={m.id}
-                        className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === currentUser?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
+                        className={`max-w-[70%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${m.senderId === currentUser?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <div className="text-xs text-foreground/60">
@@ -990,30 +993,61 @@ export default function AdminPanel() {
               </Button>
             </div>
             <div>
-              <div className="text-sm font-semibold">
-                Promotions RotCoins (%)
+              <div className="text-sm font-semibold">Promotions RotCoins (%)</div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Input
+                  type="number"
+                  placeholder="% global"
+                  value={promo}
+                  onChange={(e) => setPromo(Number(e.target.value))}
+                  className="w-28"
+                />
+                <input
+                  type="datetime-local"
+                  value={promoStart}
+                  onChange={(e) => setPromoStart(e.target.value)}
+                  className="rounded-md bg-background px-2 py-1 border border-border/60"
+                />
+                <span className="text-xs text-foreground/60">→</span>
+                <input
+                  type="datetime-local"
+                  value={promoEnd}
+                  onChange={(e) => setPromoEnd(e.target.value)}
+                  className="rounded-md bg-background px-2 py-1 border border-border/60"
+                />
+                <select
+                  value={promoRole}
+                  onChange={(e) => setPromoRole(e.target.value)}
+                  className="rounded-md bg-background px-2 py-1 border border-border/60"
+                >
+                  <option value="all">Tous</option>
+                  <option value="user">Utilisateurs</option>
+                  <option value="verified">Certifiés</option>
+                </select>
+                <Button
+                  className="ml-2"
+                  size="sm"
+                  onClick={async () => {
+                    const start = promoStart ? new Date(promoStart) : null;
+                    const end = promoEnd ? new Date(promoEnd) : null;
+                    await setDoc(
+                      doc(db, "promotions", "packs"),
+                      {
+                        percent: Number(promo) || 0,
+                        startAt: start ? Timestamp.fromDate(start) : null,
+                        endAt: end ? Timestamp.fromDate(end) : null,
+                        roles: promoRole === "all" ? ["all"] : [promoRole],
+                        // keep legacy field for backward compat
+                        all: Number(promo) || 0,
+                      },
+                      { merge: true },
+                    );
+                    toast({ title: "Promo mise à jour" });
+                  }}
+                >
+                  Appliquer
+                </Button>
               </div>
-              <Input
-                type="number"
-                placeholder="Réduction % pour tous les packs"
-                value={promo}
-                onChange={(e) => setPromo(Number(e.target.value))}
-                className="w-40"
-              />
-              <Button
-                className="ml-2"
-                size="sm"
-                onClick={async () => {
-                  await setDoc(
-                    doc(db, "promotions", "packs"),
-                    { all: Number(promo) || 0 },
-                    { merge: true },
-                  );
-                  toast({ title: "Promo mise à jour" });
-                }}
-              >
-                Appliquer
-              </Button>
             </div>
           </div>
         </TabsContent>
