@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +16,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  orderBy,
   addDoc,
   deleteDoc,
   arrayUnion,
@@ -54,6 +55,49 @@ function AnimatedNumber({ value }: { value: number }) {
     return () => unsub();
   }, [spring]);
   return <span>{Number(display || 0).toLocaleString()}</span>;
+}
+
+function ChartTooltip({
+  active,
+  payload,
+  label,
+  title,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number; name: string; color?: string }>;
+  label?: string | number;
+  title?: string;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  const items = payload.filter(Boolean);
+  const formatName = (n?: string) => {
+    if (!n) return "";
+    if (n === "rcSpent") return "RC dépensés";
+    if (n === "purchases") return "Achats";
+    if (n === "sales") return "Ventes";
+    return n;
+  };
+  return (
+    <div className="rounded-md border border-border/60 bg-popover text-popover-foreground shadow px-3 py-2 text-xs">
+      <div className="font-medium mb-1">
+        {title ? `${title} ${label}` : label}
+      </div>
+      <div className="space-y-0.5">
+        {items.map((p, idx) => (
+          <div key={idx} className="flex items-center gap-2">
+            <span
+              className="h-2 w-2 rounded-sm"
+              style={{ background: p.color || "hsl(var(--primary))" }}
+            />
+            <span className="text-foreground/70">{formatName(p.name)}</span>
+            <span className="ml-auto font-medium">
+              {Number(p.value || 0).toLocaleString()}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function AdminLogin({ onOk }: { onOk: () => void }) {
@@ -123,6 +167,28 @@ export default function AdminPanel() {
   const [savingRole, setSavingRole] = useState(false);
   const [adjusting, setAdjusting] = useState(false);
   const [searching, setSearching] = useState(false);
+  const rolePanelRef = useRef<HTMLDivElement | null>(null);
+  const emailInputRef = useRef<HTMLInputElement | null>(null);
+  const filterInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Founder tools state
+  const [questTitle, setQuestTitle] = useState("");
+  const [questDesc, setQuestDesc] = useState("");
+  const [questReward, setQuestReward] = useState<number>(50);
+  const [questAction, setQuestAction] = useState<string>("discord_join");
+  const [questTarget, setQuestTarget] = useState<string>(
+    "https://discord.gg/kcHHJy7C4J",
+  );
+
+  const [gcAmount, setGcAmount] = useState<number>(100);
+  const [gcCode, setGcCode] = useState<string>("");
+  const [gcTarget, setGcTarget] = useState<"all" | "email">("all");
+  const [gcEmail, setGcEmail] = useState<string>("");
+
+  const genCode = (len = 12) =>
+    Array.from(crypto.getRandomValues(new Uint8Array(len)))
+      .map((x) => "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"[x % 32])
+      .join("");
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users"), (snap) => {
@@ -536,11 +602,27 @@ export default function AdminPanel() {
                 />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
+                <Tooltip
+                  content={(props: any) => (
+                    <ChartTooltip {...props} title="Jour" />
+                  )}
+                  cursor={{
+                    stroke: "hsl(var(--primary))",
+                    strokeWidth: 1,
+                    opacity: 0.25,
+                  }}
+                />
                 <Area
                   type="monotone"
                   dataKey="rcSpent"
                   stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  activeDot={{
+                    r: 3,
+                    stroke: "hsl(var(--primary))",
+                    strokeWidth: 2,
+                    fill: "hsl(var(--card))",
+                  }}
                   fillOpacity={1}
                   fill="url(#rcSpent)"
                 />
@@ -572,7 +654,12 @@ export default function AdminPanel() {
                   tick={{ fontSize: 11 }}
                   width={90}
                 />
-                <Tooltip />
+                <Tooltip
+                  content={(props: any) => (
+                    <ChartTooltip {...props} title="Vendeur" />
+                  )}
+                  cursor={{ fill: "hsl(var(--muted) / 0.35)" }}
+                />
                 <Bar dataKey="sales" fill="hsl(var(--secondary))" />
               </BarChart>
             </ResponsiveContainer>
@@ -592,7 +679,12 @@ export default function AdminPanel() {
                 />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip />
+                <Tooltip
+                  content={(props: any) => (
+                    <ChartTooltip {...props} title="Jour" />
+                  )}
+                  cursor={{ fill: "hsl(var(--muted) / 0.35)" }}
+                />
                 <Bar dataKey="purchases" fill="hsl(var(--accent))" />
               </BarChart>
             </ResponsiveContainer>
@@ -603,9 +695,9 @@ export default function AdminPanel() {
       {/* Users overview - big table */}
       <div className="mt-6 rounded-xl border border-border/60 bg-card p-4">
         <h2 className="font-semibold mb-3">Utilisateurs (aperçu)</h2>
-        <div className="overflow-auto">
+        <div className="overflow-auto max-h-[60vh]">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 bg-card">
               <tr className="text-left text-foreground/60">
                 <th className="p-2">Email / Nom</th>
                 <th className="p-2">Rôle</th>
@@ -637,7 +729,15 @@ export default function AdminPanel() {
                           setUserId(u.id);
                           setUserInfo(u);
                           setSelectedRole((u.role ?? "user") as any);
-                          window.scrollTo({ top: 400, behavior: "smooth" });
+                          setEmail(u.email ?? "");
+                          setFilter(u.email || u.displayName || "");
+                          setTimeout(() => {
+                            rolePanelRef.current?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "start",
+                            });
+                            emailInputRef.current?.focus();
+                          }, 0);
                         }}
                       >
                         Gérer
@@ -658,6 +758,7 @@ export default function AdminPanel() {
               placeholder="Filtrer par email/nom"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
+              ref={filterInputRef}
             />
           </div>
           {loadingUsers ? (
@@ -681,6 +782,15 @@ export default function AdminPanel() {
                       setUserId(u.id);
                       setUserInfo(u);
                       setSelectedRole((u.role ?? "user") as Role);
+                      setEmail(u.email ?? "");
+                      setFilter(u.email || u.displayName || "");
+                      setTimeout(() => {
+                        rolePanelRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
+                        emailInputRef.current?.focus();
+                      }, 0);
                     }}
                     className={`w-full text-left px-2 py-2 hover:bg-muted transition-colors ${
                       userId === u.id ? "bg-muted" : ""
@@ -698,13 +808,17 @@ export default function AdminPanel() {
             </div>
           )}
         </div>
-        <div className="rounded-xl border border-border/60 bg-card p-4 md:col-span-2">
+        <div
+          ref={rolePanelRef}
+          className="rounded-xl border border-border/60 bg-card p-4 md:col-span-2"
+        >
           <div className="flex flex-wrap items-end gap-2">
             <Input
               placeholder="Email utilisateur"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-64"
+              ref={emailInputRef}
             />
             <Button onClick={findUser} disabled={searching}>
               {searching ? "Recherche…" : "Rechercher"}
@@ -1109,7 +1223,7 @@ export default function AdminPanel() {
           </div>
         </TabsContent>
         <TabsContent value="founder">
-          <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
+          <div className="rounded-xl border border-border/60 bg-card p-4 space-y-6">
             <h3 className="font-semibold">Fondateur</h3>
             <div>
               <div className="text-sm font-semibold">Etat Marketplace</div>
@@ -1146,6 +1260,82 @@ export default function AdminPanel() {
               </div>
             </div>
             <div>
+              <div className="text-sm font-semibold">Quêtes personnalisées</div>
+              <div className="mt-2 grid gap-2 md:grid-cols-2">
+                <Input
+                  placeholder="Titre de la quête"
+                  value={questTitle}
+                  onChange={(e) => setQuestTitle(e.target.value)}
+                />
+                <Input
+                  placeholder="Description"
+                  value={questDesc}
+                  onChange={(e) => setQuestDesc(e.target.value)}
+                />
+                <select
+                  className="rounded-md bg-background px-2 py-1 border border-border/60"
+                  value={questAction}
+                  onChange={(e) => setQuestAction(e.target.value)}
+                >
+                  <option value="discord_join">Rejoindre Discord</option>
+                  <option value="youtube_subscribe">S'abonner YouTube</option>
+                  <option value="like">Like</option>
+                  <option value="visit_url">Visiter une URL</option>
+                  <option value="custom">Custom</option>
+                </select>
+                <Input
+                  placeholder="Lien / cible (URL, id chaîne, etc.)"
+                  value={questTarget}
+                  onChange={(e) => setQuestTarget(e.target.value)}
+                />
+                <Input
+                  type="number"
+                  className="w-32"
+                  placeholder="RC"
+                  value={questReward}
+                  onChange={(e) => setQuestReward(Number(e.target.value))}
+                />
+                <Button
+                  size="sm"
+                  className="md:col-span-2 w-fit"
+                  onClick={async () => {
+                    if (!questTitle) return;
+                    const ref = await addDoc(collection(db, "quests"), {
+                      title: questTitle,
+                      description: questDesc,
+                      action: questAction,
+                      target: questTarget,
+                      reward: Number(questReward) || 0,
+                      active: true,
+                      createdAt: serverTimestamp(),
+                    });
+                    try {
+                      const usersSnap = await getDocs(
+                        query(collection(db, "users")),
+                      );
+                      for (const d of usersSnap.docs) {
+                        await updateDoc(doc(db, "users", d.id), {
+                          notifications: arrayUnion({
+                            type: "quest",
+                            title: "Nouvelle quête disponible",
+                            text: questTitle,
+                            link: "/quests",
+                            createdAt: Timestamp.now(),
+                            read: false,
+                          }),
+                        });
+                      }
+                    } catch (e) {}
+                    setQuestTitle("");
+                    setQuestDesc("");
+                    toast({ title: "Quête créée" });
+                  }}
+                >
+                  Créer la quête
+                </Button>
+              </div>
+            </div>
+            <div>
               <div className="text-sm font-semibold">Annonce globale</div>
               <Input
                 placeholder="Message à afficher"
@@ -1166,6 +1356,123 @@ export default function AdminPanel() {
               >
                 Publier
               </Button>
+            </div>
+            <div>
+              <div className="text-sm font-semibold">
+                Cartes cadeaux (gift cards)
+              </div>
+              <div className="mt-2 grid gap-2 md:grid-cols-[160px,1fr] items-end">
+                <Input
+                  type="number"
+                  placeholder="Montant RC"
+                  value={gcAmount}
+                  onChange={(e) => setGcAmount(Number(e.target.value))}
+                />
+                <Input
+                  placeholder="Code (auto si vide)"
+                  value={gcCode}
+                  onChange={(e) => setGcCode(e.target.value.toUpperCase())}
+                />
+                <div className="flex items-center gap-2">
+                  <label className="text-xs inline-flex items-center gap-1">
+                    <input
+                      type="radio"
+                      checked={gcTarget === "all"}
+                      onChange={() => setGcTarget("all")}
+                    />{" "}
+                    Tous
+                  </label>
+                  <label className="text-xs inline-flex items-center gap-1">
+                    <input
+                      type="radio"
+                      checked={gcTarget === "email"}
+                      onChange={() => setGcTarget("email")}
+                    />{" "}
+                    Par email
+                  </label>
+                </div>
+                {gcTarget === "email" && (
+                  <Input
+                    placeholder="Email utilisateur"
+                    value={gcEmail}
+                    onChange={(e) => setGcEmail(e.target.value)}
+                  />
+                )}
+                <Button
+                  size="sm"
+                  className="md:col-span-2 w-fit"
+                  onClick={async () => {
+                    const code = (gcCode || genCode()).toUpperCase();
+                    let target: any = { type: "all" };
+                    let notifyUsers: string[] | "all" = "all";
+                    if (gcTarget === "email") {
+                      const res = await getDocs(
+                        query(
+                          collection(db, "users"),
+                          where("email", "==", gcEmail),
+                        ),
+                      );
+                      if (res.empty) {
+                        toast({
+                          title: "Utilisateur introuvable",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      const u = res.docs[0];
+                      target = { type: "uid", uid: u.id };
+                      notifyUsers = [u.id];
+                    }
+                    await setDoc(doc(db, "giftcards", code), {
+                      code,
+                      amount: Number(gcAmount) || 0,
+                      active: true,
+                      target,
+                      redemptions: {},
+                      createdAt: serverTimestamp(),
+                    });
+                    try {
+                      if (notifyUsers === "all") {
+                        const usersSnap = await getDocs(
+                          query(collection(db, "users")),
+                        );
+                        for (const d of usersSnap.docs) {
+                          await updateDoc(doc(db, "users", d.id), {
+                            notifications: arrayUnion({
+                              type: "giftcard",
+                              title: "Carte cadeau disponible",
+                              text: `Vous avez gagné une carte cadeau de ${Number(gcAmount) || 0} RC`,
+                              code,
+                              link: `/gift-card?code=${code}`,
+                              createdAt: Timestamp.now(),
+                              read: false,
+                            }),
+                          });
+                        }
+                      } else {
+                        for (const uid of notifyUsers) {
+                          await updateDoc(doc(db, "users", uid), {
+                            notifications: arrayUnion({
+                              type: "giftcard",
+                              title: "Carte cadeau disponible",
+                              text: `Vous avez gagné une carte cadeau de ${Number(gcAmount) || 0} RC`,
+                              code,
+                              link: `/gift-card?code=${code}`,
+                              createdAt: Timestamp.now(),
+                              read: false,
+                            }),
+                          });
+                        }
+                      }
+                    } catch (e) {}
+                    setGcCode("");
+                    setGcEmail("");
+                    toast({ title: "Gift card créée" });
+                  }}
+                >
+                  Créer & Notifier
+                </Button>
+              </div>
             </div>
             <div>
               <div className="text-sm font-semibold">

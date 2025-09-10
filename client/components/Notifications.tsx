@@ -107,11 +107,28 @@ export default function Notifications() {
                   <button
                     className="text-xs bg-primary text-white px-2 py-1 rounded"
                     onClick={() => {
-                      // mark read and navigate
                       navigate(`/messages?thread=${n.threadId}`);
                     }}
                   >
                     Voir
+                  </button>
+                )}
+                {n.type === "giftcard" && n.code && (
+                  <button
+                    className="text-xs bg-secondary text-white px-2 py-1 rounded"
+                    onClick={() => {
+                      navigate(`/gift-card?code=${encodeURIComponent(n.code)}`);
+                    }}
+                  >
+                    Utiliser
+                  </button>
+                )}
+                {n.link && (
+                  <button
+                    className="text-xs bg-accent text-black px-2 py-1 rounded"
+                    onClick={() => navigate(n.link)}
+                  >
+                    Ouvrir
                   </button>
                 )}
               </div>
