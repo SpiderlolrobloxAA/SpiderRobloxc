@@ -108,6 +108,57 @@ function Header() {
   );
 }
 
+function MobileMenu() {
+  const { user, logout } = useAuth();
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          className="h-9 w-9 p-0 inline-flex items-center justify-center"
+          aria-label="Menu"
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-xs p-4">
+        <DialogTitle className="text-sm">Menu</DialogTitle>
+        <div className="mt-3 grid gap-2">
+          {nav.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+            >
+              {label}
+            </Link>
+          ))}
+          {!user ? (
+            <>
+              <Link
+                to="/login"
+                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+              >
+                Se connecter
+              </Link>
+              <Link
+                to="/register"
+                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+              >
+                S'inscrire
+              </Link>
+            </>
+          ) : (
+            <Button variant="outline" onClick={logout} className="justify-center">
+              Se déconnecter
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 import { useProfile } from "@/context/ProfileProvider";
 import { RoleBadge } from "@/components/RoleBadge";
 
