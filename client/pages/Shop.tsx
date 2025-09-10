@@ -19,19 +19,37 @@ import { packs } from "@/lib/packs";
 export default function Shop() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { addCredits } = useProfile();
+  const { addCredits, role } = useProfile();
   const [open, setOpen] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
   const [promo, setPromo] = useState<number>(0);
+  const [promoCfg, setPromoCfg] = useState<any>(null);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "promotions", "packs"), (d) => {
       const data = d.data() as any;
       setPromo(Number(data?.all || 0));
+      setPromoCfg(data || null);
     });
     return () => unsub();
   }, []);
+
+  const activePromo = (() => {
+    if (!promoCfg) return promo;
+    const percent = Number(promoCfg.percent ?? promoCfg.all ?? 0);
+    if (!percent) return 0;
+    const now = Date.now();
+    const start = promoCfg.startAt?.toMillis?.() ?? null;
+    const end = promoCfg.endAt?.toMillis?.() ?? null;
+    if (start && now < start) return 0;
+    if (end && now > end) return 0;
+    const roles: string[] = Array.isArray(promoCfg.roles)
+      ? promoCfg.roles
+      : ["all"];
+    if (!roles.includes("all") && role && !roles.includes(role)) return 0;
+    return percent;
+  })();
 
   const onBuy = (id: string) => {
     const pack = packs.find((p) => p.id === id)!;
@@ -106,13 +124,13 @@ export default function Shop() {
             </div>
             <div className="mt-4 flex items-center justify-between">
               <div className="text-foreground/80">
-                {promo > 0 ? (
+                {activePromo > 0 ? (
                   <div className="flex items-center gap-2">
                     <span className="text-sm line-through opacity-70">
                       {p.price.toFixed(2)}€
                     </span>
                     <span className="text-xl font-extrabold">
-                      {(p.price * (1 - promo / 100)).toFixed(2)}€
+                      {(p.price * (1 - activePromo / 100)).toFixed(2)}€
                     </span>
                   </div>
                 ) : (
@@ -143,13 +161,13 @@ export default function Shop() {
                   </div>
                 ) : (
                   <div>
-                    {promo > 0 && (
+                    {activePromo > 0 && (
                       <div className="mb-2 text-xs text-foreground/70">
-                        Promo: -{promo}%
+                        Promo: -{activePromo}%
                       </div>
                     )}
                     <StripeCheckout
-                      amount={(p.price * (1 - promo / 100)).toFixed(2)}
+                      amount={(p.price * (1 - activePromo / 100)).toFixed(2)}
                       onSuccess={async (paymentId) => {
                         try {
                           setProcessing(true);

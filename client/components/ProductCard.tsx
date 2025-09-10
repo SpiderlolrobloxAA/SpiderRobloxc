@@ -36,7 +36,7 @@ export function ProductCard({ product }: { product: Product }) {
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.3 }}
-        className="group relative overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+        className="group relative overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_10px_30px_rgba(0,0,0,0.25)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
       >
         <div className="aspect-[16/10] w-full overflow-hidden bg-gradient-to-tr from-muted to-muted/60">
           <div

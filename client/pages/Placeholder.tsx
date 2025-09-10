@@ -188,7 +188,7 @@ function TicketsPage() {
                 {msgs.map((m) => (
                   <div
                     key={m.id}
-                    className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === user?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
+                    className={`max-w-[70%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${m.senderId === user?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
                   >
                     <div className="text-xs text-foreground/60 mb-1 flex items-center gap-2">
                       <div>

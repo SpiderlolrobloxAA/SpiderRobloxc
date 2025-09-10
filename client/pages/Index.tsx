@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { createSmoothTiltHandlers } from "@/lib/tilt";
+import { emailToUsername } from "@/lib/usernameAuth";
 
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
@@ -81,7 +82,12 @@ export default function Index() {
         .filter((u) => (u.role ?? "user") === "verified")
         .map((u) => ({
           id: u.id,
-          name: u.displayName || u.email || "Utilisateur",
+          name:
+            u.displayName ||
+            (u.email && u.email.includes("@")
+              ? emailToUsername(u.email)
+              : u.email) ||
+            "Utilisateur",
           sales: Number(u.sales ?? 0),
         }))
         .sort((a, b) => b.sales - a.sales)
@@ -359,7 +365,7 @@ function WhyItem({
   desc: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-5">
+    <div className="rounded-xl border border-border/60 bg-card p-5 transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_14px_34px_rgba(0,0,0,0.35)]">
       <div className="flex items-center gap-3">
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 ring-1 ring-primary/30">
           <Icon className="h-5 w-5 text-white" />

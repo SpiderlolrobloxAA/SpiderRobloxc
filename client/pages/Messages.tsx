@@ -55,7 +55,7 @@ export default function Messages() {
               className={`w-full text-left px-2 py-2 hover:bg-muted ${active === t.id ? "bg-muted" : ""}`}
             >
               <div className="text-sm">{t.title || "Conversation"}</div>
-              <div className="text-xs text-foreground/60">
+              <div className="text-xs text-foreground/60 truncate">
                 {t.lastMessage?.text || "���"}
               </div>
             </button>
@@ -155,11 +155,26 @@ function Thread({ id }: { id: string }) {
 
   return (
     <div className="flex h-full flex-col">
+      {threadMeta?.productId || threadMeta?.order ? (
+        <div className="mx-2 mb-2 rounded-md border border-primary/40 bg-primary/10 p-2 text-xs">
+          <div className="font-semibold">
+            Commande: {threadMeta?.order?.productTitle || threadMeta?.title}
+          </div>
+          <div className="opacity-80">
+            Prix: {threadMeta?.order?.price ?? "-"} RC • Acheteur:{" "}
+            {threadMeta?.order?.buyerId
+              ? threadMeta.order.buyerId === user?.uid
+                ? "vous"
+                : threadMeta.order.buyerId
+              : ""}
+          </div>
+        </div>
+      ) : null}
       <div className="flex-1 space-y-2 overflow-auto p-2">
         {msgs.map((m) => (
           <div
             key={m.id}
-            className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === user?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
+            className={`max-w-[70%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${m.senderId === user?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
           >
             {m.text}
           </div>

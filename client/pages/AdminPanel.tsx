@@ -24,10 +24,37 @@ import {
 import { useProfile } from "@/context/ProfileProvider";
 import { useAuth } from "@/context/AuthProvider";
 import { Users, LifeBuoy, ShoppingBag } from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 
 const ROLES = ["user", "verified", "helper", "moderator", "founder"] as const;
 
 type Role = (typeof ROLES)[number];
+
+function AnimatedNumber({ value }: { value: number }) {
+  const mv = useMotionValue(0);
+  const spring = useSpring(mv, { stiffness: 140, damping: 18 });
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    mv.set(value || 0);
+  }, [value]);
+  useEffect(() => {
+    const unsub = spring.on("change", (v) => setDisplay(Math.round(v)));
+    return () => unsub();
+  }, [spring]);
+  return <span>{Number(display || 0).toLocaleString()}</span>;
+}
 
 function AdminLogin({ onOk }: { onOk: () => void }) {
   const [u, setU] = useState("");
@@ -83,11 +110,16 @@ export default function AdminPanel() {
   const [ticketMsgs, setTicketMsgs] = useState<any[]>([]);
   const [reply, setReply] = useState("");
   const [promo, setPromo] = useState<number>(0);
+  const [promoStart, setPromoStart] = useState<string>("");
+  const [promoEnd, setPromoEnd] = useState<string>("");
+  const [promoRole, setPromoRole] = useState<string>("all");
   const [announcement, setAnnouncement] = useState("");
   const [banDays, setBanDays] = useState<number>(0);
   const [banHours, setBanHours] = useState<number>(0);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [txData, setTxData] = useState<any[]>([]);
+  const [sellerBars, setSellerBars] = useState<any[]>([]);
   const [savingRole, setSavingRole] = useState(false);
   const [adjusting, setAdjusting] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -98,6 +130,52 @@ export default function AdminPanel() {
       setUsers(list);
       setLoadingUsers(false);
       setStats((s) => ({ ...s, users: list.length }));
+      const top = list
+        .map((u: any) => ({
+          name: u.displayName || u.email || u.id,
+          sales: Number(u.sales || u.stats?.sales || 0),
+        }))
+        .sort((a, b) => b.sales - a.sales)
+        .slice(0, 5);
+      setSellerBars(top);
+    });
+    return () => unsub();
+  }, []);
+
+  // Load transactions for charts (last 30 days)
+  useEffect(() => {
+    const since = Timestamp.fromMillis(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const q = query(
+      collection(db, "transactions"),
+      where("createdAt", ">=", since),
+      orderBy("createdAt", "asc"),
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      const byDay: Record<
+        string,
+        { day: string; rcSpent: number; purchases: number; rcPending: number }
+      > = {};
+      for (const t of rows) {
+        const ts = t.createdAt?.toMillis?.() ?? Date.now();
+        const dkey = new Date(ts).toISOString().slice(0, 10);
+        if (!byDay[dkey])
+          byDay[dkey] = {
+            day: dkey.slice(5),
+            rcSpent: 0,
+            purchases: 0,
+            rcPending: 0,
+          };
+        if (t.type === "purchase") {
+          byDay[dkey].rcSpent += Math.abs(Number(t.credits || 0));
+          byDay[dkey].purchases += 1;
+        }
+        if (t.type === "salePending") {
+          byDay[dkey].rcPending += Math.abs(Number(t.credits || 0));
+        }
+      }
+      const arr = Object.values(byDay);
+      setTxData(arr);
     });
     return () => unsub();
   }, []);
@@ -390,7 +468,9 @@ export default function AdminPanel() {
               <div className="text-xs uppercase text-foreground/60">
                 Utilisateurs
               </div>
-              <div className="text-xl font-extrabold">{stats.users}</div>
+              <div className="text-xl font-extrabold">
+                <AnimatedNumber value={stats.users} />
+              </div>
             </div>
           </div>
         </div>
@@ -403,7 +483,9 @@ export default function AdminPanel() {
               <div className="text-xs uppercase text-foreground/60">
                 Tickets ouverts
               </div>
-              <div className="text-xl font-extrabold">{stats.tickets}</div>
+              <div className="text-xl font-extrabold">
+                <AnimatedNumber value={stats.tickets} />
+              </div>
             </div>
           </div>
         </div>
@@ -416,8 +498,104 @@ export default function AdminPanel() {
               <div className="text-xs uppercase text-foreground/60">
                 Produits
               </div>
-              <div className="text-xl font-extrabold">{stats.products}</div>
+              <div className="text-xl font-extrabold">
+                <AnimatedNumber value={stats.products} />
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Dashboard Charts */}
+      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+        <div className="rounded-xl border border-border/60 bg-card p-4 lg:col-span-2">
+          <h3 className="font-semibold">Ventes (RC) par jour</h3>
+          <div className="mt-3 h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={txData}
+                margin={{ left: 8, right: 8, top: 8, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="rcSpent" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(var(--primary))"
+                      stopOpacity={0.6}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(var(--primary))"
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--muted))"
+                />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Area
+                  type="monotone"
+                  dataKey="rcSpent"
+                  stroke="hsl(var(--primary))"
+                  fillOpacity={1}
+                  fill="url(#rcSpent)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-card p-4">
+          <h3 className="font-semibold">Top vendeurs (30j)</h3>
+          <div className="mt-3 h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={sellerBars}
+                layout="vertical"
+                margin={{ left: 16, right: 8, top: 8, bottom: 8 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--muted))"
+                />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 11 }}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={{ fontSize: 11 }}
+                  width={90}
+                />
+                <Tooltip />
+                <Bar dataKey="sales" fill="hsl(var(--secondary))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-card p-4">
+          <h3 className="font-semibold">Achats (nb/jour)</h3>
+          <div className="mt-3 h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={txData}
+                margin={{ left: 8, right: 8, top: 8, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--muted))"
+                />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="purchases" fill="hsl(var(--accent))" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -746,7 +924,7 @@ export default function AdminPanel() {
                     {ticketMsgs.map((m) => (
                       <div
                         key={m.id}
-                        className={`max-w-[70%] rounded-md px-3 py-2 text-sm ${m.senderId === currentUser?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
+                        className={`max-w-[70%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${m.senderId === currentUser?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <div className="text-xs text-foreground/60">
@@ -993,27 +1171,60 @@ export default function AdminPanel() {
               <div className="text-sm font-semibold">
                 Promotions RotCoins (%)
               </div>
-              <Input
-                type="number"
-                placeholder="Réduction % pour tous les packs"
-                value={promo}
-                onChange={(e) => setPromo(Number(e.target.value))}
-                className="w-40"
-              />
-              <Button
-                className="ml-2"
-                size="sm"
-                onClick={async () => {
-                  await setDoc(
-                    doc(db, "promotions", "packs"),
-                    { all: Number(promo) || 0 },
-                    { merge: true },
-                  );
-                  toast({ title: "Promo mise à jour" });
-                }}
-              >
-                Appliquer
-              </Button>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Input
+                  type="number"
+                  placeholder="% global"
+                  value={promo}
+                  onChange={(e) => setPromo(Number(e.target.value))}
+                  className="w-28"
+                />
+                <input
+                  type="datetime-local"
+                  value={promoStart}
+                  onChange={(e) => setPromoStart(e.target.value)}
+                  className="rounded-md bg-background px-2 py-1 border border-border/60"
+                />
+                <span className="text-xs text-foreground/60">→</span>
+                <input
+                  type="datetime-local"
+                  value={promoEnd}
+                  onChange={(e) => setPromoEnd(e.target.value)}
+                  className="rounded-md bg-background px-2 py-1 border border-border/60"
+                />
+                <select
+                  value={promoRole}
+                  onChange={(e) => setPromoRole(e.target.value)}
+                  className="rounded-md bg-background px-2 py-1 border border-border/60"
+                >
+                  <option value="all">Tous</option>
+                  <option value="user">Utilisateurs</option>
+                  <option value="verified">Certifiés</option>
+                </select>
+                <Button
+                  className="ml-2"
+                  size="sm"
+                  onClick={async () => {
+                    const start = promoStart ? new Date(promoStart) : null;
+                    const end = promoEnd ? new Date(promoEnd) : null;
+                    await setDoc(
+                      doc(db, "promotions", "packs"),
+                      {
+                        percent: Number(promo) || 0,
+                        startAt: start ? Timestamp.fromDate(start) : null,
+                        endAt: end ? Timestamp.fromDate(end) : null,
+                        roles: promoRole === "all" ? ["all"] : [promoRole],
+                        // keep legacy field for backward compat
+                        all: Number(promo) || 0,
+                      },
+                      { merge: true },
+                    );
+                    toast({ title: "Promo mise à jour" });
+                  }}
+                >
+                  Appliquer
+                </Button>
+              </div>
             </div>
           </div>
         </TabsContent>

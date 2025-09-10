@@ -86,6 +86,14 @@ export function ProductDetailContent({
           participants: [user.uid, sellerId].filter(Boolean),
           title: product.title,
           productId: product.id,
+          order: {
+            productId: product.id,
+            productTitle: product.title,
+            buyerId: user.uid,
+            sellerId: sellerId ?? null,
+            price: 0,
+            createdAt: serverTimestamp(),
+          },
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -225,6 +233,14 @@ export function ProductDetailContent({
         participants: [user.uid, sellerId].filter(Boolean),
         title: product.title,
         productId: product.id,
+        order: {
+          productId: product.id,
+          productTitle: product.title,
+          buyerId: user.uid,
+          sellerId: sellerId ?? null,
+          price: price,
+          createdAt: serverTimestamp(),
+        },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
