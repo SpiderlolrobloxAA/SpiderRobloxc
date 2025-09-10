@@ -190,7 +190,9 @@ export default function Quests() {
                   <div>
                     <div className="font-semibold">{q.title}</div>
                     {q.description && (
-                      <div className="text-xs text-foreground/70">{q.description}</div>
+                      <div className="text-xs text-foreground/70">
+                        {q.description}
+                      </div>
                     )}
                     <div className="text-xs text-foreground/70">
                       Récompense: {Number(q.reward || 0)} RC
@@ -199,8 +201,12 @@ export default function Quests() {
                   {q.target ? (
                     <a
                       href={q.target}
-                      target={q.target?.startsWith("http") ? "_blank" : undefined}
-                      rel={q.target?.startsWith("http") ? "noreferrer" : undefined}
+                      target={
+                        q.target?.startsWith("http") ? "_blank" : undefined
+                      }
+                      rel={
+                        q.target?.startsWith("http") ? "noreferrer" : undefined
+                      }
                       className="text-xs text-primary hover:underline"
                     >
                       Ouvrir

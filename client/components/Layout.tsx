@@ -394,7 +394,10 @@ function MaintenanceOverlay() {
   // Global maintenance: full black screen
   if (state.scope === "global") {
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center" style={{ background: "#000" }}>
+      <div
+        className="fixed inset-0 z-[200] flex items-center justify-center"
+        style={{ background: "#000" }}
+      >
         <div className="text-center">
           <div
             className="mx-auto mb-5 h-3 w-64 rounded"
@@ -407,7 +410,8 @@ function MaintenanceOverlay() {
             Maintenance en cours
           </h3>
           <p className="mt-2 text-sm text-white/80">
-            {state.message || "Nous revenons très vite. Merci de votre patience."}
+            {state.message ||
+              "Nous revenons très vite. Merci de votre patience."}
           </p>
           <div
             className="mx-auto mt-5 h-3 w-64 rounded"
@@ -426,7 +430,9 @@ function MaintenanceOverlay() {
     <div className="fixed top-16 left-0 right-0 z-[120] px-4">
       <div className="mx-auto max-w-6xl rounded-lg border border-yellow-500/40 bg-yellow-400/90 text-black px-4 py-3 shadow">
         <div className="flex items-center gap-2 text-sm">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-black/10 text-xs font-bold">🚧</span>
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-black/10 text-xs font-bold">
+            🚧
+          </span>
           <span>
             Maintenance en cours — Cette page est temporairement désactivée.
             {state.message ? ` ${state.message}` : ""}

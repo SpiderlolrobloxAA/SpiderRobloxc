@@ -123,7 +123,8 @@ export default function Marketplace() {
         <div className="mt-6 rounded-xl border border-yellow-500/40 bg-yellow-400/90 text-black p-6 text-center">
           <div className="text-xl font-semibold">Maintenance en cours</div>
           <div className="mt-2 text-sm">
-            Le marketplace est temporairement désactivé. Merci de revenir plus tard.
+            Le marketplace est temporairement désactivé. Merci de revenir plus
+            tard.
           </div>
         </div>
       ) : products.length === 0 ? (

@@ -1347,25 +1347,36 @@ export default function AdminPanel() {
                 <div className="text-sm font-semibold">Quêtes existantes</div>
                 <div className="mt-2 max-h-64 overflow-auto divide-y divide-border/50">
                   {questList.length === 0 ? (
-                    <div className="text-xs text-foreground/60 px-2 py-2">Aucune</div>
+                    <div className="text-xs text-foreground/60 px-2 py-2">
+                      Aucune
+                    </div>
                   ) : (
                     questList.map((q) => (
-                      <div key={q.id} className="flex items-center gap-2 px-2 py-2">
+                      <div
+                        key={q.id}
+                        className="flex items-center gap-2 px-2 py-2"
+                      >
                         <div className="flex-1">
                           <div className="text-sm font-medium">{q.title}</div>
-                          <div className="text-xs text-foreground/60">Récompense: {Number(q.reward || 0)} RC</div>
+                          <div className="text-xs text-foreground/60">
+                            Récompense: {Number(q.reward || 0)} RC
+                          </div>
                         </div>
                         <Button
                           size="sm"
                           variant="destructive"
                           onClick={async () => {
-                            if (!window.confirm("Supprimer cette quête ?")) return;
+                            if (!window.confirm("Supprimer cette quête ?"))
+                              return;
                             try {
                               await deleteDoc(doc(db, "quests", q.id));
                               toast({ title: "Quête supprimée" });
                             } catch (e) {
                               console.error("quest:delete failed", e);
-                              toast({ title: "Erreur suppression", variant: "destructive" });
+                              toast({
+                                title: "Erreur suppression",
+                                variant: "destructive",
+                              });
                             }
                           }}
                         >
