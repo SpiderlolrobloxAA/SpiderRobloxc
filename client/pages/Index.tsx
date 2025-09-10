@@ -84,7 +84,9 @@ export default function Index() {
           id: u.id,
           name:
             u.displayName ||
-            (u.email && u.email.includes("@") ? emailToUsername(u.email) : u.email) ||
+            (u.email && u.email.includes("@")
+              ? emailToUsername(u.email)
+              : u.email) ||
             "Utilisateur",
           sales: Number(u.sales ?? 0),
         }))

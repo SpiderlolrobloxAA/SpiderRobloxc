@@ -31,9 +31,8 @@ export default function Register() {
     const { createUserWithEmailAndPassword, updateProfile } = await import(
       "firebase/auth"
     );
-    const { doc, setDoc, serverTimestamp, getDoc, addDoc, collection } = await import(
-      "firebase/firestore"
-    );
+    const { doc, setDoc, serverTimestamp, getDoc, addDoc, collection } =
+      await import("firebase/firestore");
     const { usernameToEmail, normalizeUsername } = await import(
       "@/lib/usernameAuth"
     );

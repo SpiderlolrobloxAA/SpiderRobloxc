@@ -161,7 +161,12 @@ function Thread({ id }: { id: string }) {
             Commande: {threadMeta?.order?.productTitle || threadMeta?.title}
           </div>
           <div className="opacity-80">
-            Prix: {threadMeta?.order?.price ?? "-"} RC • Acheteur: {threadMeta?.order?.buyerId ? (threadMeta.order.buyerId === user?.uid ? "vous" : threadMeta.order.buyerId) : ""}
+            Prix: {threadMeta?.order?.price ?? "-"} RC • Acheteur:{" "}
+            {threadMeta?.order?.buyerId
+              ? threadMeta.order.buyerId === user?.uid
+                ? "vous"
+                : threadMeta.order.buyerId
+              : ""}
           </div>
         </div>
       ) : null}

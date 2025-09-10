@@ -24,7 +24,18 @@ import {
 import { useProfile } from "@/context/ProfileProvider";
 import { useAuth } from "@/context/AuthProvider";
 import { Users, LifeBuoy, ShoppingBag } from "lucide-react";
-import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 
 const ROLES = ["user", "verified", "helper", "moderator", "founder"] as const;
@@ -120,7 +131,10 @@ export default function AdminPanel() {
       setLoadingUsers(false);
       setStats((s) => ({ ...s, users: list.length }));
       const top = list
-        .map((u: any) => ({ name: u.displayName || u.email || u.id, sales: Number(u.sales || u.stats?.sales || 0) }))
+        .map((u: any) => ({
+          name: u.displayName || u.email || u.id,
+          sales: Number(u.sales || u.stats?.sales || 0),
+        }))
         .sort((a, b) => b.sales - a.sales)
         .slice(0, 5);
       setSellerBars(top);
@@ -138,11 +152,20 @@ export default function AdminPanel() {
     );
     const unsub = onSnapshot(q, (snap) => {
       const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
-      const byDay: Record<string, { day: string; rcSpent: number; purchases: number; rcPending: number }> = {};
+      const byDay: Record<
+        string,
+        { day: string; rcSpent: number; purchases: number; rcPending: number }
+      > = {};
       for (const t of rows) {
         const ts = t.createdAt?.toMillis?.() ?? Date.now();
         const dkey = new Date(ts).toISOString().slice(0, 10);
-        if (!byDay[dkey]) byDay[dkey] = { day: dkey.slice(5), rcSpent: 0, purchases: 0, rcPending: 0 };
+        if (!byDay[dkey])
+          byDay[dkey] = {
+            day: dkey.slice(5),
+            rcSpent: 0,
+            purchases: 0,
+            rcPending: 0,
+          };
         if (t.type === "purchase") {
           byDay[dkey].rcSpent += Math.abs(Number(t.credits || 0));
           byDay[dkey].purchases += 1;
@@ -445,7 +468,9 @@ export default function AdminPanel() {
               <div className="text-xs uppercase text-foreground/60">
                 Utilisateurs
               </div>
-              <div className="text-xl font-extrabold"><AnimatedNumber value={stats.users} /></div>
+              <div className="text-xl font-extrabold">
+                <AnimatedNumber value={stats.users} />
+              </div>
             </div>
           </div>
         </div>
@@ -458,7 +483,9 @@ export default function AdminPanel() {
               <div className="text-xs uppercase text-foreground/60">
                 Tickets ouverts
               </div>
-              <div className="text-xl font-extrabold"><AnimatedNumber value={stats.tickets} /></div>
+              <div className="text-xl font-extrabold">
+                <AnimatedNumber value={stats.tickets} />
+              </div>
             </div>
           </div>
         </div>
@@ -471,7 +498,9 @@ export default function AdminPanel() {
               <div className="text-xs uppercase text-foreground/60">
                 Produits
               </div>
-              <div className="text-xl font-extrabold"><AnimatedNumber value={stats.products} /></div>
+              <div className="text-xl font-extrabold">
+                <AnimatedNumber value={stats.products} />
+              </div>
             </div>
           </div>
         </div>
@@ -483,18 +512,38 @@ export default function AdminPanel() {
           <h3 className="font-semibold">Ventes (RC) par jour</h3>
           <div className="mt-3 h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={txData} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+              <AreaChart
+                data={txData}
+                margin={{ left: 8, right: 8, top: 8, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="rcSpent" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(var(--primary))"
+                      stopOpacity={0.6}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(var(--primary))"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--muted))"
+                />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Area type="monotone" dataKey="rcSpent" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#rcSpent)" />
+                <Area
+                  type="monotone"
+                  dataKey="rcSpent"
+                  stroke="hsl(var(--primary))"
+                  fillOpacity={1}
+                  fill="url(#rcSpent)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -503,10 +552,26 @@ export default function AdminPanel() {
           <h3 className="font-semibold">Top vendeurs (30j)</h3>
           <div className="mt-3 h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={sellerBars} layout="vertical" margin={{ left: 16, right: 8, top: 8, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
-                <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={90} />
+              <BarChart
+                data={sellerBars}
+                layout="vertical"
+                margin={{ left: 16, right: 8, top: 8, bottom: 8 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--muted))"
+                />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 11 }}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={{ fontSize: 11 }}
+                  width={90}
+                />
                 <Tooltip />
                 <Bar dataKey="sales" fill="hsl(var(--secondary))" />
               </BarChart>
@@ -517,8 +582,14 @@ export default function AdminPanel() {
           <h3 className="font-semibold">Achats (nb/jour)</h3>
           <div className="mt-3 h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={txData} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+              <BarChart
+                data={txData}
+                margin={{ left: 8, right: 8, top: 8, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--muted))"
+                />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                 <Tooltip />
@@ -1097,7 +1168,9 @@ export default function AdminPanel() {
               </Button>
             </div>
             <div>
-              <div className="text-sm font-semibold">Promotions RotCoins (%)</div>
+              <div className="text-sm font-semibold">
+                Promotions RotCoins (%)
+              </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Input
                   type="number"
