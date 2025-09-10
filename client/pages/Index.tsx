@@ -149,7 +149,7 @@ export default function Index() {
             </div>
             <p className="mt-4 text-foreground/80 max-w-prose">
               Achetez et vendez des Brain Rots, gagnez des{" "}
-              <strong>RotCoins</strong>. Paiements PayPal, vendeurs certifiés. , Et Revente 
+              <strong>RotCoins</strong>. Paiements Stripe, vendeurs certifiés. , Et Revente 
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild variant="outline">
@@ -263,7 +263,7 @@ export default function Index() {
           <WhyItem
             icon={ShieldCheck}
             title="Safe Payments"
-            desc="Protection acheteur & vendeur via PayPal"
+            desc="Protection acheteur & vendeur via Stripe"
           />
           <WhyItem
             icon={Zap}
