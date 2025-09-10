@@ -1,13 +1,57 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { loadStripe, StripeElementsOptions } from "@stripe/stripe-js";
-import { Elements, useElements, useStripe, PaymentElement } from "@stripe/react-stripe-js";
+import { loadStripe, StripeElementsOptions, type StripePaymentRequest } from "@stripe/stripe-js";
+import { Elements, useElements, useStripe, PaymentElement, PaymentRequestButtonElement } from "@stripe/react-stripe-js";
 
 const stripePk = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
 
-function CheckoutForm({ clientSecret, onSuccess }: { clientSecret: string; onSuccess: (paymentId: string) => void }) {
+function CheckoutForm({ clientSecret, onSuccess, amount, currency }: { clientSecret: string; onSuccess: (paymentId: string) => void; amount: string; currency: string; }) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
+  const [pr, setPr] = useState<StripePaymentRequest | null>(null);
+  useEffect(() => {
+    if (!stripe) return;
+    const cents = Math.max(1, Math.round(Number(amount) * 100) || 0);
+    const req = stripe.paymentRequest({
+      country: "FR",
+      currency: currency.toLowerCase(),
+      total: { label: "Brainrot Market", amount: cents },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+    req.canMakePayment().then((res) => {
+      if (res && (res.applePay || res.googlePay)) setPr(req);
+      else setPr(null);
+    });
+  }, [stripe, amount, currency]);
+
+  useEffect(() => {
+    if (!pr || !stripe) return;
+    const handler = async (ev: any) => {
+      const { error } = await stripe.confirmCardPayment(
+        clientSecret,
+        { payment_method: ev.paymentMethod.id },
+        { handleActions: false },
+      );
+      if (error) {
+        ev.complete("fail");
+        return;
+      }
+      ev.complete("success");
+      const result = await stripe.confirmCardPayment(clientSecret);
+      if (!result.error && result.paymentIntent?.status === "succeeded") {
+        onSuccess(result.paymentIntent.id);
+      }
+    };
+    pr.on("paymentmethod", handler);
+    return () => {
+      try {
+        // @ts-ignore
+        pr.off && pr.off("paymentmethod", handler);
+      } catch {}
+    };
+  }, [pr, stripe, clientSecret, onSuccess]);
+
   const onSubmit = useCallback(async () => {
     if (!stripe || !elements) return;
     setSubmitting(true);
@@ -31,6 +75,14 @@ function CheckoutForm({ clientSecret, onSuccess }: { clientSecret: string; onSuc
 
   return (
     <div className="space-y-3">
+      {pr && (
+        <div className="mb-2">
+          <PaymentRequestButtonElement
+            options={{ paymentRequest: pr, style: { paymentRequestButton: { type: "buy", theme: "dark", height: "40px" } } }}
+          />
+          <div className="my-2 text-center text-xs text-foreground/60">ou</div>
+        </div>
+      )}
       <PaymentElement options={{ layout: "tabs" }} />
       <button
         onClick={onSubmit}
@@ -106,7 +158,7 @@ export default function StripeCheckout({
   const options: StripeElementsOptions = { clientSecret, appearance: { theme: "flat" } };
   return (
     <Elements stripe={stripePromise} options={options}>
-      <CheckoutForm clientSecret={clientSecret} onSuccess={onSuccess} />
+      <CheckoutForm clientSecret={clientSecret} onSuccess={onSuccess} amount={amount} currency={currency} />
     </Elements>
   );
 }
