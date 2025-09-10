@@ -155,6 +155,16 @@ function Thread({ id }: { id: string }) {
 
   return (
     <div className="flex h-full flex-col">
+      {threadMeta?.productId || threadMeta?.order ? (
+        <div className="mx-2 mb-2 rounded-md border border-primary/40 bg-primary/10 p-2 text-xs">
+          <div className="font-semibold">
+            Commande: {threadMeta?.order?.productTitle || threadMeta?.title}
+          </div>
+          <div className="opacity-80">
+            Prix: {threadMeta?.order?.price ?? "-"} RC • Acheteur: {threadMeta?.order?.buyerId ? (threadMeta.order.buyerId === user?.uid ? "vous" : threadMeta.order.buyerId) : ""}
+          </div>
+        </div>
+      ) : null}
       <div className="flex-1 space-y-2 overflow-auto p-2">
         {msgs.map((m) => (
           <div
