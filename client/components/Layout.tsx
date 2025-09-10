@@ -255,7 +255,7 @@ function BanOverlay() {
   if (!active) return null;
   const endTxt = state?.bannedUntil
     ? new Date(state.bannedUntil).toLocaleString()
-    : "—";
+    : "���";
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center">
       <div className="rounded-xl border border-border/60 bg-card p-6 max-w-sm text-center">
@@ -445,12 +445,12 @@ function Footer() {
         <div>
           <h4 className="font-semibold mb-3">Paiements</h4>
           <div className="flex items-center gap-3 text-foreground/70">
-            <PayPalLogo />
+            <StripeLogo />
             <VisaLogo />
             <MastercardLogo />
           </div>
           <p className="mt-3 text-xs text-foreground/60">
-            Transactions sécurisées via PayPal Checkout. Redistribution 70%
+            Transactions sécurisées via Stripe. Redistribution 70%
             vendeur / 30% admins.
           </p>
         </div>
@@ -463,7 +463,7 @@ function Footer() {
   );
 }
 
-function PayPalLogo() {
+function StripeLogo() {
   return (
     <svg
       width="52"
@@ -481,7 +481,7 @@ function PayPalLogo() {
         fontWeight="700"
         fill="hsl(var(--secondary))"
       >
-        PayPal
+        Stripe
       </text>
     </svg>
   );
