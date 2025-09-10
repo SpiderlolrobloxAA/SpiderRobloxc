@@ -56,9 +56,9 @@ export default function Notifications() {
           )}
         </button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-h-[80vh]">
         <DialogTitle>Notifications</DialogTitle>
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-2 max-h-[60vh] overflow-y-auto pr-1">
           {notes.length === 0 && (
             <div className="text-sm text-foreground/60">
               Aucune notification
