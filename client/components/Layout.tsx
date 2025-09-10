@@ -26,7 +26,7 @@ import {
   DialogTrigger,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthProvider";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { VERIFIED_IMG } from "@/components/RoleBadge";
@@ -121,6 +121,7 @@ function MobileMenu() {
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-[280px] p-4">
+        <SheetTitle className="sr-only">Menu</SheetTitle>
         <div className="text-sm font-semibold">Menu</div>
         <div className="mt-3 grid gap-2">
           {nav.map(({ to, label }) => (
