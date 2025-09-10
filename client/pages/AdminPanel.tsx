@@ -16,6 +16,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  orderBy,
   addDoc,
   deleteDoc,
   arrayUnion,
@@ -948,7 +949,7 @@ export default function AdminPanel() {
                     <Input
                       value={reply}
                       onChange={(e) => setReply(e.target.value)}
-                      placeholder="Réponse…"
+                      placeholder="Réponse���"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") sendReply();
                       }}
