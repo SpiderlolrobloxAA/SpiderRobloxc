@@ -62,7 +62,7 @@ function Header() {
             </span>
           </span>
         </Link>
-        <nav className="hidden md:flex items-center justify-center gap-1">
+        <nav className="hidden">
           {nav.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -81,9 +81,7 @@ function Header() {
           ))}
         </nav>
         <div className="flex items-center justify-end gap-3">
-          <div className="md:hidden">
-            <MobileMenu />
-          </div>
+          <MobileMenu />
           {!user ? (
             <>
               <Button
