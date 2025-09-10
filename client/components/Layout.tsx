@@ -370,13 +370,16 @@ function PushPermissionPrompt() {
   return (
     <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2">
       <div className="rounded-lg border border-border/60 bg-card/95 px-4 py-3 text-sm shadow-md flex items-center gap-3">
-        <span>Activer les notifications pour recevoir les achats sur vos appareils.</span>
+        <span>
+          Activer les notifications pour recevoir les achats sur vos appareils.
+        </span>
         <Button
           size="sm"
           onClick={async () => {
             try {
               const perm = await Notification.requestPermission();
-              if (perm !== "granted") localStorage.setItem("notify:dismissed", "1");
+              if (perm !== "granted")
+                localStorage.setItem("notify:dismissed", "1");
             } finally {
               setShow(false);
             }
@@ -408,7 +411,9 @@ function LiveNotificationBridge() {
     const unsub = onSnapshot(doc(db, "users", user.uid), (d) => {
       if (!supported || Notification.permission !== "granted") return;
       const data = d.data() as any;
-      const notes: any[] = Array.isArray(data?.notifications) ? data.notifications : [];
+      const notes: any[] = Array.isArray(data?.notifications)
+        ? data.notifications
+        : [];
       if (!notes.length) return;
       const latest = notes[notes.length - 1];
       const ts = latest?.createdAt?.toMillis?.() ?? Date.now();
@@ -417,7 +422,9 @@ function LiveNotificationBridge() {
       if (ts <= prev || ts <= lastRef.current) return;
       lastRef.current = ts;
       localStorage.setItem(key, String(ts));
-      const title = latest.title || (latest.type === "thread" ? "Nouvelle commande" : "Notification");
+      const title =
+        latest.title ||
+        (latest.type === "thread" ? "Nouvelle commande" : "Notification");
       const body = latest.text || "Vous avez une nouvelle notification.";
       try {
         const n = new Notification(title, { body });
