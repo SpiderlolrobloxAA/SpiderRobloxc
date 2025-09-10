@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
-import PayPalCheckout from "@/components/PayPalCheckout";
+import StripeCheckout from "@/components/StripeCheckout";
 import { ShieldCheck, Zap, BadgeDollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
