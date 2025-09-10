@@ -43,20 +43,15 @@ export default function Marketplace() {
   const [maintenance, setMaintenance] = useState(false);
 
   useEffect(() => {
-    const settingsRef = doc(db, "settings", "app");
+    const maintRef = doc(db, "maintenance", "global");
     const unsubMeta = onSnapshot(
-      settingsRef,
+      maintRef,
       (d) => {
         const data = d.data() as any | undefined;
-        // Show maintenance only if scope is global or marketplace
-        const isOn = Boolean(data?.maintenance);
+        const isOn = Boolean(data?.on);
         const scope = data?.scope || "global";
-        if (!isOn) {
-          setMaintenance(false);
-          return;
-        }
-        if (scope === "global" || scope === "marketplace") setMaintenance(true);
-        else setMaintenance(false);
+        if (!isOn) return setMaintenance(false);
+        setMaintenance(scope === "global" || scope === "marketplace");
       },
       () => {},
     );
@@ -125,11 +120,11 @@ export default function Marketplace() {
       </div>
 
       {maintenance ? (
-        <div className="mt-6 rounded-xl border border-border/60 bg-card p-6 text-center">
-          <div className="text-xl font-semibold">Maintenance</div>
-          <div className="mt-2 text-sm text-foreground/70">
-            Le marketplace est actuellement en maintenance. Merci de revenir
-            plus tard.
+        <div className="mt-6 rounded-xl border border-yellow-500/40 bg-yellow-400/90 text-black p-6 text-center">
+          <div className="text-xl font-semibold">Maintenance en cours</div>
+          <div className="mt-2 text-sm">
+            Le marketplace est temporairement désactivé. Merci de revenir plus
+            tard.
           </div>
         </div>
       ) : products.length === 0 ? (

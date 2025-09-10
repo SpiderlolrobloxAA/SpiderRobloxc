@@ -373,12 +373,12 @@ function MaintenanceOverlay() {
           message: data.message,
           scope: data.scope,
         });
+      else setState({ on: false });
     });
     return () => unsub();
   }, []);
   if (!state?.on) return null;
 
-  // determine page key from location
   const path = location.pathname || "/";
   const pageKey = path.startsWith("/tickets")
     ? "tickets"
@@ -387,15 +387,57 @@ function MaintenanceOverlay() {
       : path === "/" || path.startsWith("/marketplace")
         ? "marketplace"
         : "other";
+
+  // If maintenance is not for this page, render nothing
   if (state.scope !== "global" && state.scope !== pageKey) return null;
 
+  // Global maintenance: full black screen
+  if (state.scope === "global") {
+    return (
+      <div
+        className="fixed inset-0 z-[200] flex items-center justify-center"
+        style={{ background: "#000" }}
+      >
+        <div className="text-center">
+          <div
+            className="mx-auto mb-5 h-3 w-64 rounded"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, #FFD54F, #FFD54F 12px, #000 12px, #000 24px)",
+            }}
+          />
+          <h3 className="text-2xl font-extrabold text-white tracking-wide">
+            Maintenance en cours
+          </h3>
+          <p className="mt-2 text-sm text-white/80">
+            {state.message ||
+              "Nous revenons très vite. Merci de votre patience."}
+          </p>
+          <div
+            className="mx-auto mt-5 h-3 w-64 rounded"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, #FFD54F, #FFD54F 12px, #000 12px, #000 24px)",
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Scoped maintenance: show a non-blocking banner on the affected page only
   return (
-    <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur flex items-center justify-center">
-      <div className="rounded-xl border border-border/60 bg-card p-6 max-w-md text-center">
-        <h3 className="font-semibold text-lg">Maintenance en cours</h3>
-        <p className="mt-2 text-sm text-foreground/70">
-          {state.message || "Le site est temporairement indisponible."}
-        </p>
+    <div className="fixed top-16 left-0 right-0 z-[120] px-4">
+      <div className="mx-auto max-w-6xl rounded-lg border border-yellow-500/40 bg-yellow-400/90 text-black px-4 py-3 shadow">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-black/10 text-xs font-bold">
+            🚧
+          </span>
+          <span>
+            Maintenance en cours — Cette page est temporairement désactivée.
+            {state.message ? ` ${state.message}` : ""}
+          </span>
+        </div>
       </div>
     </div>
   );

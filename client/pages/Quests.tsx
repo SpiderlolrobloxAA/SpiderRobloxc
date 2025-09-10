@@ -25,6 +25,16 @@ interface QuestDef {
   }) => boolean;
 }
 
+type CustomQuest = {
+  id: string;
+  title: string;
+  description?: string;
+  reward: number;
+  action?: string;
+  target?: string;
+  active?: boolean;
+};
+
 const QUESTS: QuestDef[] = [
   {
     id: "profile_complete",
@@ -56,6 +66,7 @@ export default function Quests() {
     hasTicket: false,
     hasProfile: false,
   });
+  const [customQuests, setCustomQuests] = useState<CustomQuest[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -73,6 +84,15 @@ export default function Quests() {
     );
     return () => unsub();
   }, [user]);
+
+  useEffect(() => {
+    const q = query(collection(db, "quests"), where("active", "==", true));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      setCustomQuests(list as CustomQuest[]);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -103,11 +123,9 @@ export default function Quests() {
         console.error("quests:hasTicket query failed", e);
       }
 
-      // Profile complete if displayName exists on auth or users doc
       let hasProfile = Boolean(user.displayName);
       try {
         const userDoc = doc(db, "users", user.uid);
-        // We already listen above but we just infer from auth to keep it simple
         hasProfile = hasProfile || Boolean(user.displayName);
       } catch {}
       setCtx({ hasPurchase, hasTicket, hasProfile });
@@ -158,7 +176,50 @@ export default function Quests() {
       <p className="text-sm text-foreground/70">
         Complétez des quêtes et gagnez des RotCoins.
       </p>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+      {customQuests.length > 0 && (
+        <div className="mt-6">
+          <h2 className="font-semibold mb-2">Quêtes spéciales</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {customQuests.map((q) => (
+              <div
+                key={q.id}
+                className="rounded-xl border border-border/60 bg-card p-4 space-y-2"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold">{q.title}</div>
+                    {q.description && (
+                      <div className="text-xs text-foreground/70">
+                        {q.description}
+                      </div>
+                    )}
+                    <div className="text-xs text-foreground/70">
+                      Récompense: {Number(q.reward || 0)} RC
+                    </div>
+                  </div>
+                  {q.target ? (
+                    <a
+                      href={q.target}
+                      target={
+                        q.target?.startsWith("http") ? "_blank" : undefined
+                      }
+                      rel={
+                        q.target?.startsWith("http") ? "noreferrer" : undefined
+                      }
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Ouvrir
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((q) => (
           <div
             key={q.id}

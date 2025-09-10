@@ -179,6 +179,7 @@ export default function AdminPanel() {
   const [questTarget, setQuestTarget] = useState<string>(
     "https://discord.gg/kcHHJy7C4J",
   );
+  const [questList, setQuestList] = useState<any[]>([]);
 
   const [gcAmount, setGcAmount] = useState<number>(100);
   const [gcCode, setGcCode] = useState<string>("");
@@ -320,6 +321,14 @@ export default function AdminPanel() {
   }, [toast]);
 
   // Users overview table for easier management
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "quests"), (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      setQuestList(list);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
@@ -1333,6 +1342,50 @@ export default function AdminPanel() {
                 >
                   Créer la quête
                 </Button>
+              </div>
+              <div className="mt-4">
+                <div className="text-sm font-semibold">Quêtes existantes</div>
+                <div className="mt-2 max-h-64 overflow-auto divide-y divide-border/50">
+                  {questList.length === 0 ? (
+                    <div className="text-xs text-foreground/60 px-2 py-2">
+                      Aucune
+                    </div>
+                  ) : (
+                    questList.map((q) => (
+                      <div
+                        key={q.id}
+                        className="flex items-center gap-2 px-2 py-2"
+                      >
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{q.title}</div>
+                          <div className="text-xs text-foreground/60">
+                            Récompense: {Number(q.reward || 0)} RC
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={async () => {
+                            if (!window.confirm("Supprimer cette quête ?"))
+                              return;
+                            try {
+                              await deleteDoc(doc(db, "quests", q.id));
+                              toast({ title: "Quête supprimée" });
+                            } catch (e) {
+                              console.error("quest:delete failed", e);
+                              toast({
+                                title: "Erreur suppression",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
             <div>
