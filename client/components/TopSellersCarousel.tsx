@@ -39,7 +39,7 @@ export default function TopSellersCarousel({ sellers }: { sellers: Seller[] }) {
         {sellers.map((s) => (
           <div
             key={s.id}
-            className="min-w-[240px] rounded-xl border border-border/60 bg-card/80 px-4 py-3 shadow-[0_6px_18px_rgba(0,0,0,0.25)]"
+            className="min-w-[240px] rounded-xl border border-border/60 bg-card/80 px-4 py-3 shadow-[0_6px_18px_rgba(0,0,0,0.25)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_14px_34px_rgba(0,0,0,0.35)]"
           >
             <div className="flex items-center gap-3">
               {(() => { const t = createSmoothTiltHandlers(8, 1.06); return (
