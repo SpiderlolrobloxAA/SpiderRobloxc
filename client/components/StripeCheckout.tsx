@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { loadStripe, StripeElementsOptions, type StripePaymentRequest } from "@stripe/stripe-js";
+import { loadStripe, StripeElementsOptions, type PaymentRequest as StripePaymentRequest } from "@stripe/stripe-js";
 import { Elements, useElements, useStripe, PaymentElement, PaymentRequestButtonElement } from "@stripe/react-stripe-js";
 
 const stripePk = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
