@@ -158,7 +158,7 @@ export default function Index() {
               <strong>RotCoins</strong>. Paiements Stripe, vendeurs certifiés. ,
               Et Revente
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild variant="outline">
                 <Link
                   to="/marketplace"
@@ -181,6 +181,14 @@ export default function Index() {
                   Start Selling
                 </Link>
               </Button>
+              <a
+                href="https://discord.gg/kcHHJy7C4J"
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-primary hover:underline"
+              >
+                Rejoindre Discord
+              </a>
             </div>
             {sellers.length > 0 && (
               <div className="mt-8">

@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
+import GiftCard from "./pages/GiftCard";
 import AdminRoles from "./pages/AdminRoles";
 import PrivateRoute from "@/components/PrivateRoute";
 import { AuthProvider } from "@/context/AuthProvider";
@@ -45,6 +46,7 @@ const App = () => (
                   <Route path="/rotcoins" element={<Shop />} />
                   <Route path="/quests" element={<Quests />} />
                   <Route path="/quetes" element={<Quests />} />
+                  <Route path="/gift-card" element={<GiftCard />} />
                 </Route>
                 <Route path="/profile" element={<Profile />} />
                 <Route element={<PrivateRoute />}>

@@ -171,6 +171,23 @@ export default function AdminPanel() {
   const emailInputRef = useRef<HTMLInputElement | null>(null);
   const filterInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Founder tools state
+  const [questTitle, setQuestTitle] = useState("");
+  const [questDesc, setQuestDesc] = useState("");
+  const [questReward, setQuestReward] = useState<number>(50);
+  const [questAction, setQuestAction] = useState<string>("discord_join");
+  const [questTarget, setQuestTarget] = useState<string>("https://discord.gg/kcHHJy7C4J");
+
+  const [gcAmount, setGcAmount] = useState<number>(100);
+  const [gcCode, setGcCode] = useState<string>("");
+  const [gcTarget, setGcTarget] = useState<"all" | "email">("all");
+  const [gcEmail, setGcEmail] = useState<string>("");
+
+  const genCode = (len = 12) =>
+    Array.from(crypto.getRandomValues(new Uint8Array(len)))
+      .map((x) => "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"[x % 32])
+      .join("");
+
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users"), (snap) => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -1182,7 +1199,7 @@ export default function AdminPanel() {
           </div>
         </TabsContent>
         <TabsContent value="founder">
-          <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
+          <div className="rounded-xl border border-border/60 bg-card p-4 space-y-6">
             <h3 className="font-semibold">Fondateur</h3>
             <div>
               <div className="text-sm font-semibold">Etat Marketplace</div>
@@ -1219,6 +1236,51 @@ export default function AdminPanel() {
               </div>
             </div>
             <div>
+              <div className="text-sm font-semibold">Quêtes personnalisées</div>
+              <div className="mt-2 grid gap-2 md:grid-cols-2">
+                <Input placeholder="Titre de la quête" value={questTitle} onChange={(e)=>setQuestTitle(e.target.value)} />
+                <Input placeholder="Description" value={questDesc} onChange={(e)=>setQuestDesc(e.target.value)} />
+                <select className="rounded-md bg-background px-2 py-1 border border-border/60" value={questAction} onChange={(e)=>setQuestAction(e.target.value)}>
+                  <option value="discord_join">Rejoindre Discord</option>
+                  <option value="youtube_subscribe">S'abonner YouTube</option>
+                  <option value="like">Like</option>
+                  <option value="visit_url">Visiter une URL</option>
+                  <option value="custom">Custom</option>
+                </select>
+                <Input placeholder="Lien / cible (URL, id chaîne, etc.)" value={questTarget} onChange={(e)=>setQuestTarget(e.target.value)} />
+                <Input type="number" className="w-32" placeholder="RC" value={questReward} onChange={(e)=>setQuestReward(Number(e.target.value))} />
+                <Button size="sm" className="md:col-span-2 w-fit" onClick={async ()=>{
+                  if(!questTitle) return;
+                  const ref = await addDoc(collection(db, "quests"), {
+                    title: questTitle,
+                    description: questDesc,
+                    action: questAction,
+                    target: questTarget,
+                    reward: Number(questReward)||0,
+                    active: true,
+                    createdAt: serverTimestamp(),
+                  });
+                  try {
+                    const usersSnap = await getDocs(query(collection(db, "users")));
+                    for (const d of usersSnap.docs) {
+                      await updateDoc(doc(db, "users", d.id), {
+                        notifications: arrayUnion({
+                          type: "quest",
+                          title: "Nouvelle quête disponible",
+                          text: questTitle,
+                          link: "/quests",
+                          createdAt: Timestamp.now(),
+                          read: false,
+                        }),
+                      });
+                    }
+                  } catch(e) {}
+                  setQuestTitle(""); setQuestDesc("");
+                  toast({ title: "Quête créée" });
+                }}>Créer la quête</Button>
+              </div>
+            </div>
+            <div>
               <div className="text-sm font-semibold">Annonce globale</div>
               <Input
                 placeholder="Message à afficher"
@@ -1239,6 +1301,74 @@ export default function AdminPanel() {
               >
                 Publier
               </Button>
+            </div>
+            <div>
+              <div className="text-sm font-semibold">Cartes cadeaux (gift cards)</div>
+              <div className="mt-2 grid gap-2 md:grid-cols-[160px,1fr] items-end">
+                <Input type="number" placeholder="Montant RC" value={gcAmount} onChange={(e)=>setGcAmount(Number(e.target.value))} />
+                <Input placeholder="Code (auto si vide)" value={gcCode} onChange={(e)=>setGcCode(e.target.value.toUpperCase())} />
+                <div className="flex items-center gap-2">
+                  <label className="text-xs inline-flex items-center gap-1"><input type="radio" checked={gcTarget==='all'} onChange={()=>setGcTarget('all')} /> Tous</label>
+                  <label className="text-xs inline-flex items-center gap-1"><input type="radio" checked={gcTarget==='email'} onChange={()=>setGcTarget('email')} /> Par email</label>
+                </div>
+                {gcTarget==='email' && (
+                  <Input placeholder="Email utilisateur" value={gcEmail} onChange={(e)=>setGcEmail(e.target.value)} />
+                )}
+                <Button size="sm" className="md:col-span-2 w-fit" onClick={async ()=>{
+                  const code = (gcCode || genCode()).toUpperCase();
+                  let target: any = { type: 'all' };
+                  let notifyUsers: string[] | 'all' = 'all';
+                  if(gcTarget==='email'){
+                    const res = await getDocs(query(collection(db,'users'), where('email','==', gcEmail)));
+                    if(res.empty){ toast({ title: 'Utilisateur introuvable', variant: 'destructive' }); return; }
+                    const u = res.docs[0];
+                    target = { type: 'uid', uid: u.id };
+                    notifyUsers = [u.id];
+                  }
+                  await setDoc(doc(db,'giftcards', code), {
+                    code,
+                    amount: Number(gcAmount)||0,
+                    active: true,
+                    target,
+                    redemptions: {},
+                    createdAt: serverTimestamp(),
+                  });
+                  try {
+                    if(notifyUsers==='all'){
+                      const usersSnap = await getDocs(query(collection(db,'users')));
+                      for(const d of usersSnap.docs){
+                        await updateDoc(doc(db,'users', d.id), {
+                          notifications: arrayUnion({
+                            type: 'giftcard',
+                            title: 'Carte cadeau disponible',
+                            text: `Vous avez gagné une carte cadeau de ${Number(gcAmount)||0} RC`,
+                            code,
+                            link: `/gift-card?code=${code}`,
+                            createdAt: Timestamp.now(),
+                            read: false,
+                          })
+                        });
+                      }
+                    } else {
+                      for(const uid of notifyUsers){
+                        await updateDoc(doc(db,'users', uid), {
+                          notifications: arrayUnion({
+                            type: 'giftcard',
+                            title: 'Carte cadeau disponible',
+                            text: `Vous avez gagné une carte cadeau de ${Number(gcAmount)||0} RC`,
+                            code,
+                            link: `/gift-card?code=${code}`,
+                            createdAt: Timestamp.now(),
+                            read: false,
+                          })
+                        });
+                      }
+                    }
+                  } catch(e) {}
+                  setGcCode(""); setGcEmail("");
+                  toast({ title: 'Gift card créée' });
+                }}>Créer & Notifier</Button>
+              </div>
             </div>
             <div>
               <div className="text-sm font-semibold">
