@@ -149,7 +149,8 @@ export default function Index() {
             </div>
             <p className="mt-4 text-foreground/80 max-w-prose">
               Achetez et vendez des Brain Rots, gagnez des{" "}
-              <strong>RotCoins</strong>. Paiements Stripe, vendeurs certifiés. , Et Revente 
+              <strong>RotCoins</strong>. Paiements Stripe, vendeurs certifiés. ,
+              Et Revente
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild variant="outline">
@@ -166,7 +167,10 @@ export default function Index() {
                 variant="ghost"
                 className="border border-border/60"
               >
-                <Link to="/marketplace" className="inline-flex items-center gap-2">
+                <Link
+                  to="/marketplace"
+                  className="inline-flex items-center gap-2"
+                >
                   <Trophy className="h-4 w-4" />
                   Start Selling
                 </Link>
@@ -381,7 +385,5 @@ function StatPill({ label, value }: { label: string; value: string }) {
 function GoldCoin() {
   const src =
     "https://cdn.builder.io/api/v1/image/assets%2F7ca6692b844e492da4519bd1be30c27d%2F010980b0e1d0488b82cdd1e39f84e4d5?format=webp&width=800";
-  return (
-    <img src={src} alt="RotCoin" className="h-12 w-12 object-contain" />
-  );
+  return <img src={src} alt="RotCoin" className="h-12 w-12 object-contain" />;
 }

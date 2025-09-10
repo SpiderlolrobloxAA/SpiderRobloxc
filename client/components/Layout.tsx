@@ -26,7 +26,12 @@ import {
   DialogTrigger,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthProvider";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { VERIFIED_IMG } from "@/components/RoleBadge";
@@ -149,7 +154,11 @@ function MobileMenu() {
               </Link>
             </>
           ) : (
-            <Button variant="outline" onClick={logout} className="justify-center">
+            <Button
+              variant="outline"
+              onClick={logout}
+              className="justify-center"
+            >
               Se déconnecter
             </Button>
           )}
@@ -504,8 +513,8 @@ function Footer() {
             <MastercardLogo />
           </div>
           <p className="mt-3 text-xs text-foreground/60">
-            Transactions sécurisées via Stripe. Redistribution 70%
-            vendeur / 30% admins.
+            Transactions sécurisées via Stripe. Redistribution 70% vendeur / 30%
+            admins.
           </p>
         </div>
       </div>

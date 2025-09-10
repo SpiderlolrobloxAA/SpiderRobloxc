@@ -1,10 +1,32 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { loadStripe, StripeElementsOptions, type PaymentRequest as StripePaymentRequest } from "@stripe/stripe-js";
-import { Elements, useElements, useStripe, PaymentElement, PaymentRequestButtonElement } from "@stripe/react-stripe-js";
+import {
+  loadStripe,
+  StripeElementsOptions,
+  type PaymentRequest as StripePaymentRequest,
+} from "@stripe/stripe-js";
+import {
+  Elements,
+  useElements,
+  useStripe,
+  PaymentElement,
+  PaymentRequestButtonElement,
+} from "@stripe/react-stripe-js";
 
-const stripePk = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+const stripePk = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as
+  | string
+  | undefined;
 
-function CheckoutForm({ clientSecret, onSuccess, amount, currency }: { clientSecret: string; onSuccess: (paymentId: string) => void; amount: string; currency: string; }) {
+function CheckoutForm({
+  clientSecret,
+  onSuccess,
+  amount,
+  currency,
+}: {
+  clientSecret: string;
+  onSuccess: (paymentId: string) => void;
+  amount: string;
+  currency: string;
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -78,7 +100,16 @@ function CheckoutForm({ clientSecret, onSuccess, amount, currency }: { clientSec
       {pr && (
         <div className="mb-2">
           <PaymentRequestButtonElement
-            options={{ paymentRequest: pr, style: { paymentRequestButton: { type: "buy", theme: "dark", height: "40px" } } }}
+            options={{
+              paymentRequest: pr,
+              style: {
+                paymentRequestButton: {
+                  type: "buy",
+                  theme: "dark",
+                  height: "40px",
+                },
+              },
+            }}
           />
           <div className="my-2 text-center text-xs text-foreground/60">ou</div>
         </div>
@@ -132,12 +163,16 @@ export default function StripeCheckout({
     };
   }, [amount, currency]);
 
-  const stripePromise = useMemo(() => (stripePk ? loadStripe(stripePk) : null), []);
+  const stripePromise = useMemo(
+    () => (stripePk ? loadStripe(stripePk) : null),
+    [],
+  );
 
   if (!stripePk) {
     return (
       <div className="rounded-md border border-border/60 bg-card p-3 text-sm text-foreground/80">
-        Stripe non configuré. Ajoutez VITE_STRIPE_PUBLISHABLE_KEY dans les variables d'environnement puis rechargez.
+        Stripe non configuré. Ajoutez VITE_STRIPE_PUBLISHABLE_KEY dans les
+        variables d'environnement puis rechargez.
       </div>
     );
   }
@@ -155,10 +190,18 @@ export default function StripeCheckout({
     );
   }
 
-  const options: StripeElementsOptions = { clientSecret, appearance: { theme: "flat" } };
+  const options: StripeElementsOptions = {
+    clientSecret,
+    appearance: { theme: "flat" },
+  };
   return (
     <Elements stripe={stripePromise} options={options}>
-      <CheckoutForm clientSecret={clientSecret} onSuccess={onSuccess} amount={amount} currency={currency} />
+      <CheckoutForm
+        clientSecret={clientSecret}
+        onSuccess={onSuccess}
+        amount={amount}
+        currency={currency}
+      />
     </Elements>
   );
 }

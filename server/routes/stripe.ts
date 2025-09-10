@@ -5,7 +5,9 @@ const stripeSecret = process.env.STRIPE_SECRET_KEY;
 
 if (!stripeSecret) {
   // eslint-disable-next-line no-console
-  console.warn("STRIPE_SECRET_KEY is not set. Stripe routes will not work until configured.");
+  console.warn(
+    "STRIPE_SECRET_KEY is not set. Stripe routes will not work until configured.",
+  );
 }
 
 const stripe = stripeSecret
@@ -16,9 +18,14 @@ const stripe = stripeSecret
 
 export const createPaymentIntent: RequestHandler = async (req, res) => {
   try {
-    if (!stripe) return res.status(500).json({ error: "stripe_not_configured" });
+    if (!stripe)
+      return res.status(500).json({ error: "stripe_not_configured" });
 
-    const { amount, currency = "EUR", metadata } = req.body as {
+    const {
+      amount,
+      currency = "EUR",
+      metadata,
+    } = req.body as {
       amount: number | string;
       currency?: string;
       metadata?: Record<string, string>;

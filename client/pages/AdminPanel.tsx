@@ -73,7 +73,11 @@ export default function AdminPanel() {
   const [userInfo, setUserInfo] = useState<any | null>(null);
   const [tickets, setTickets] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [stats, setStats] = useState<{ users: number; tickets: number; products: number }>({ users: 0, tickets: 0, products: 0 });
+  const [stats, setStats] = useState<{
+    users: number;
+    tickets: number;
+    products: number;
+  }>({ users: 0, tickets: 0, products: 0 });
   const [filter, setFilter] = useState("");
   const [activeTicket, setActiveTicket] = useState<string | null>(null);
   const [ticketMsgs, setTicketMsgs] = useState<any[]>([]);
@@ -383,7 +387,9 @@ export default function AdminPanel() {
               <Users className="h-4 w-4" />
             </span>
             <div>
-              <div className="text-xs uppercase text-foreground/60">Utilisateurs</div>
+              <div className="text-xs uppercase text-foreground/60">
+                Utilisateurs
+              </div>
               <div className="text-xl font-extrabold">{stats.users}</div>
             </div>
           </div>
@@ -394,7 +400,9 @@ export default function AdminPanel() {
               <LifeBuoy className="h-4 w-4" />
             </span>
             <div>
-              <div className="text-xs uppercase text-foreground/60">Tickets ouverts</div>
+              <div className="text-xs uppercase text-foreground/60">
+                Tickets ouverts
+              </div>
               <div className="text-xl font-extrabold">{stats.tickets}</div>
             </div>
           </div>
@@ -405,7 +413,9 @@ export default function AdminPanel() {
               <ShoppingBag className="h-4 w-4" />
             </span>
             <div>
-              <div className="text-xs uppercase text-foreground/60">Produits</div>
+              <div className="text-xs uppercase text-foreground/60">
+                Produits
+              </div>
               <div className="text-xl font-extrabold">{stats.products}</div>
             </div>
           </div>
