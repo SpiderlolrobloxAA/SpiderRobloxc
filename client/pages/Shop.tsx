@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
-import PayPalCheckout from "@/components/PayPalCheckout";
+import StripeCheckout from "@/components/StripeCheckout";
 import { ShieldCheck, Zap, BadgeDollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
@@ -53,7 +53,7 @@ export default function Shop() {
             Boutique RotCoins
           </h1>
           <p className="text-sm text-foreground/70">
-            Achetez des crédits instantanément. Paiements sécurisés via PayPal.
+            Achetez des crédits instantanément. Paiements sécurisés via Stripe.
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-foreground/70">
@@ -148,9 +148,9 @@ export default function Shop() {
                         Promo: -{promo}%
                       </div>
                     )}
-                    <PayPalCheckout
+                    <StripeCheckout
                       amount={(p.price * (1 - promo / 100)).toFixed(2)}
-                      onSuccess={async (orderId) => {
+                      onSuccess={async (paymentId) => {
                         try {
                           setProcessing(true);
                           const credits =
@@ -161,7 +161,7 @@ export default function Shop() {
                             uid: user?.uid,
                             email: user?.email,
                             type: "credits_purchase",
-                            orderId,
+                            orderId: paymentId,
                             amountEUR: p.price,
                             credits,
                             createdAt: serverTimestamp(),
@@ -192,7 +192,7 @@ export default function Shop() {
       <div className="mt-10 rounded-xl border border-border/60 bg-card p-5">
         <h3 className="font-semibold">Moyens de paiement</h3>
         <div className="mt-3 flex items-center gap-3 text-foreground/70">
-          <PayPalLogo />
+          <StripeLogo />
           <VisaLogo />
           <MastercardLogo />
         </div>
@@ -223,7 +223,7 @@ function GoldCoin({ size = 48 }: { size?: number }) {
   );
 }
 
-function PayPalLogo() {
+function StripeLogo() {
   return (
     <svg
       width="52"
@@ -241,7 +241,7 @@ function PayPalLogo() {
         fontWeight="700"
         fill="hsl(var(--secondary))"
       >
-        PayPal
+        Stripe
       </text>
     </svg>
   );

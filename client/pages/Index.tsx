@@ -149,7 +149,8 @@ export default function Index() {
             </div>
             <p className="mt-4 text-foreground/80 max-w-prose">
               Achetez et vendez des Brain Rots, gagnez des{" "}
-              <strong>RotCoins</strong>. Paiements PayPal, vendeurs certifiés. , Et Revente 
+              <strong>RotCoins</strong>. Paiements Stripe, vendeurs certifiés. ,
+              Et Revente
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild variant="outline">
@@ -166,7 +167,10 @@ export default function Index() {
                 variant="ghost"
                 className="border border-border/60"
               >
-                <Link to="/sell" className="inline-flex items-center gap-2">
+                <Link
+                  to="/marketplace"
+                  className="inline-flex items-center gap-2"
+                >
                   <Trophy className="h-4 w-4" />
                   Start Selling
                 </Link>
@@ -263,7 +267,7 @@ export default function Index() {
           <WhyItem
             icon={ShieldCheck}
             title="Safe Payments"
-            desc="Protection acheteur & vendeur via PayPal"
+            desc="Protection acheteur & vendeur via Stripe"
           />
           <WhyItem
             icon={Zap}
@@ -336,8 +340,8 @@ function CreditPack({
             <span className="text-xl font-extrabold">{price}</span>
           )}
         </div>
-        <Button size="sm" variant="secondary">
-          Acheter
+        <Button size="sm" variant="secondary" asChild>
+          <Link to="/shop">Acheter</Link>
         </Button>
       </div>
       <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
@@ -379,21 +383,7 @@ function StatPill({ label, value }: { label: string; value: string }) {
 }
 
 function GoldCoin() {
-  return (
-    <svg
-      className="h-12 w-12"
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="32" cy="32" r="28" fill="#F9D84A" />
-      <circle cx="32" cy="32" r="22" fill="#FFC928" />
-      <path
-        d="M24 32h16M32 24v16"
-        stroke="#8B5E00"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
+  const src =
+    "https://cdn.builder.io/api/v1/image/assets%2F7ca6692b844e492da4519bd1be30c27d%2F010980b0e1d0488b82cdd1e39f84e4d5?format=webp&width=800";
+  return <img src={src} alt="RotCoin" className="h-12 w-12 object-contain" />;
 }

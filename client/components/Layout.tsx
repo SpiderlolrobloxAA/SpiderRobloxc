@@ -11,6 +11,7 @@ import {
   Home,
   BadgeCheck,
   LogOut,
+  Menu,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import {
@@ -25,6 +26,12 @@ import {
   DialogTrigger,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthProvider";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { VERIFIED_IMG } from "@/components/RoleBadge";
@@ -60,7 +67,7 @@ function Header() {
             </span>
           </span>
         </Link>
-        <nav className="hidden md:flex items-center justify-center gap-1">
+        <nav className="hidden">
           {nav.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -79,6 +86,7 @@ function Header() {
           ))}
         </nav>
         <div className="flex items-center justify-end gap-3">
+          <MobileMenu />
           {!user ? (
             <>
               <Button
@@ -104,6 +112,62 @@ function Header() {
   );
 }
 
+function MobileMenu() {
+  const { user, logout } = useAuth();
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button
+          variant="outline"
+          className="h-9 w-9 p-0 inline-flex items-center justify-center"
+          aria-label="Menu"
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[280px] p-4">
+        <SheetTitle className="sr-only">Menu</SheetTitle>
+        <div className="text-sm font-semibold">Menu</div>
+        <div className="mt-3 grid gap-2">
+          {nav.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+            >
+              {label}
+            </Link>
+          ))}
+          {!user ? (
+            <>
+              <Link
+                to="/login"
+                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+              >
+                Se connecter
+              </Link>
+              <Link
+                to="/register"
+                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+              >
+                S'inscrire
+              </Link>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={logout}
+              className="justify-center"
+            >
+              Se déconnecter
+            </Button>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 import { useProfile } from "@/context/ProfileProvider";
 import { RoleBadge } from "@/components/RoleBadge";
 
@@ -118,17 +182,16 @@ function CompactRole({ role }: { role: string }) {
       />
     );
   }
-  const map: Record<string, { label: string; icon: React.ReactNode }> = {
-    founder: { label: "Fondateur", icon: <span>👑</span> },
-    moderator: { label: "Mod", icon: <span>🛡️</span> },
-    helper: { label: "Helper", icon: <span>🧰</span> },
-    user: { label: "User", icon: <span>👤</span> },
+  const labels: Record<string, string> = {
+    founder: "Fondateur",
+    moderator: "Mod",
+    helper: "Helper",
+    user: "User",
   };
-  const cfg = map[role] ?? map.user;
+  const label = labels[role] ?? labels.user;
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-[2px] text-[10px] md:text-[11px] text-foreground/80">
-      {cfg.icon}
-      {cfg.label}
+      {label}
     </span>
   );
 }
@@ -255,7 +318,7 @@ function BanOverlay() {
   if (!active) return null;
   const endTxt = state?.bannedUntil
     ? new Date(state.bannedUntil).toLocaleString()
-    : "—";
+    : "���";
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center">
       <div className="rounded-xl border border-border/60 bg-card p-6 max-w-sm text-center">
@@ -445,13 +508,13 @@ function Footer() {
         <div>
           <h4 className="font-semibold mb-3">Paiements</h4>
           <div className="flex items-center gap-3 text-foreground/70">
-            <PayPalLogo />
+            <StripeLogo />
             <VisaLogo />
             <MastercardLogo />
           </div>
           <p className="mt-3 text-xs text-foreground/60">
-            Transactions sécurisées via PayPal Checkout. Redistribution 70%
-            vendeur / 30% admins.
+            Transactions sécurisées via Stripe. Redistribution 70% vendeur / 30%
+            admins.
           </p>
         </div>
       </div>
@@ -463,7 +526,7 @@ function Footer() {
   );
 }
 
-function PayPalLogo() {
+function StripeLogo() {
   return (
     <svg
       width="52"
@@ -481,7 +544,7 @@ function PayPalLogo() {
         fontWeight="700"
         fill="hsl(var(--secondary))"
       >
-        PayPal
+        Stripe
       </text>
     </svg>
   );
