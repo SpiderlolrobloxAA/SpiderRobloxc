@@ -24,10 +24,26 @@ import {
 import { useProfile } from "@/context/ProfileProvider";
 import { useAuth } from "@/context/AuthProvider";
 import { Users, LifeBuoy, ShoppingBag } from "lucide-react";
+import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 
 const ROLES = ["user", "verified", "helper", "moderator", "founder"] as const;
 
 type Role = (typeof ROLES)[number];
+
+function AnimatedNumber({ value }: { value: number }) {
+  const mv = useMotionValue(0);
+  const spring = useSpring(mv, { stiffness: 140, damping: 18 });
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    mv.set(value || 0);
+  }, [value]);
+  useEffect(() => {
+    const unsub = spring.on("change", (v) => setDisplay(Math.round(v)));
+    return () => unsub();
+  }, [spring]);
+  return <span>{Number(display || 0).toLocaleString()}</span>;
+}
 
 function AdminLogin({ onOk }: { onOk: () => void }) {
   const [u, setU] = useState("");
@@ -91,6 +107,8 @@ export default function AdminPanel() {
   const [banHours, setBanHours] = useState<number>(0);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [txData, setTxData] = useState<any[]>([]);
+  const [sellerBars, setSellerBars] = useState<any[]>([]);
   const [savingRole, setSavingRole] = useState(false);
   const [adjusting, setAdjusting] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -101,6 +119,40 @@ export default function AdminPanel() {
       setUsers(list);
       setLoadingUsers(false);
       setStats((s) => ({ ...s, users: list.length }));
+      const top = list
+        .map((u: any) => ({ name: u.displayName || u.email || u.id, sales: Number(u.sales || u.stats?.sales || 0) }))
+        .sort((a, b) => b.sales - a.sales)
+        .slice(0, 5);
+      setSellerBars(top);
+    });
+    return () => unsub();
+  }, []);
+
+  // Load transactions for charts (last 30 days)
+  useEffect(() => {
+    const since = Timestamp.fromMillis(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const q = query(
+      collection(db, "transactions"),
+      where("createdAt", ">=", since),
+      orderBy("createdAt", "asc"),
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      const byDay: Record<string, { day: string; rcSpent: number; purchases: number; rcPending: number }> = {};
+      for (const t of rows) {
+        const ts = t.createdAt?.toMillis?.() ?? Date.now();
+        const dkey = new Date(ts).toISOString().slice(0, 10);
+        if (!byDay[dkey]) byDay[dkey] = { day: dkey.slice(5), rcSpent: 0, purchases: 0, rcPending: 0 };
+        if (t.type === "purchase") {
+          byDay[dkey].rcSpent += Math.abs(Number(t.credits || 0));
+          byDay[dkey].purchases += 1;
+        }
+        if (t.type === "salePending") {
+          byDay[dkey].rcPending += Math.abs(Number(t.credits || 0));
+        }
+      }
+      const arr = Object.values(byDay);
+      setTxData(arr);
     });
     return () => unsub();
   }, []);
@@ -393,7 +445,7 @@ export default function AdminPanel() {
               <div className="text-xs uppercase text-foreground/60">
                 Utilisateurs
               </div>
-              <div className="text-xl font-extrabold">{stats.users}</div>
+              <div className="text-xl font-extrabold"><AnimatedNumber value={stats.users} /></div>
             </div>
           </div>
         </div>
@@ -406,7 +458,7 @@ export default function AdminPanel() {
               <div className="text-xs uppercase text-foreground/60">
                 Tickets ouverts
               </div>
-              <div className="text-xl font-extrabold">{stats.tickets}</div>
+              <div className="text-xl font-extrabold"><AnimatedNumber value={stats.tickets} /></div>
             </div>
           </div>
         </div>
@@ -419,8 +471,60 @@ export default function AdminPanel() {
               <div className="text-xs uppercase text-foreground/60">
                 Produits
               </div>
-              <div className="text-xl font-extrabold">{stats.products}</div>
+              <div className="text-xl font-extrabold"><AnimatedNumber value={stats.products} /></div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Dashboard Charts */}
+      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+        <div className="rounded-xl border border-border/60 bg-card p-4 lg:col-span-2">
+          <h3 className="font-semibold">Ventes (RC) par jour</h3>
+          <div className="mt-3 h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={txData} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="rcSpent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.6} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Area type="monotone" dataKey="rcSpent" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#rcSpent)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-card p-4">
+          <h3 className="font-semibold">Top vendeurs (30j)</h3>
+          <div className="mt-3 h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={sellerBars} layout="vertical" margin={{ left: 16, right: 8, top: 8, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+                <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={90} />
+                <Tooltip />
+                <Bar dataKey="sales" fill="hsl(var(--secondary))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-card p-4">
+          <h3 className="font-semibold">Achats (nb/jour)</h3>
+          <div className="mt-3 h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={txData} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="purchases" fill="hsl(var(--accent))" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
