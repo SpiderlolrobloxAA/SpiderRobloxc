@@ -57,6 +57,49 @@ function AnimatedNumber({ value }: { value: number }) {
   return <span>{Number(display || 0).toLocaleString()}</span>;
 }
 
+function ChartTooltip({
+  active,
+  payload,
+  label,
+  title,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number; name: string; color?: string }>;
+  label?: string | number;
+  title?: string;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  const items = payload.filter(Boolean);
+  const formatName = (n?: string) => {
+    if (!n) return "";
+    if (n === "rcSpent") return "RC dépensés";
+    if (n === "purchases") return "Achats";
+    if (n === "sales") return "Ventes";
+    return n;
+  };
+  return (
+    <div className="rounded-md border border-border/60 bg-popover text-popover-foreground shadow px-3 py-2 text-xs">
+      <div className="font-medium mb-1">
+        {title ? `${title} ${label}` : label}
+      </div>
+      <div className="space-y-0.5">
+        {items.map((p, idx) => (
+          <div key={idx} className="flex items-center gap-2">
+            <span
+              className="h-2 w-2 rounded-sm"
+              style={{ background: p.color || "hsl(var(--primary))" }}
+            />
+            <span className="text-foreground/70">{formatName(p.name)}</span>
+            <span className="ml-auto font-medium">
+              {Number(p.value || 0).toLocaleString()}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AdminLogin({ onOk }: { onOk: () => void }) {
   const [u, setU] = useState("");
   const [p, setP] = useState("");
@@ -537,11 +580,18 @@ export default function AdminPanel() {
                 />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
+                <Tooltip
+                  content={(props: any) => (
+                    <ChartTooltip {...props} title="Jour" />
+                  )}
+                  cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1, opacity: 0.25 }}
+                />
                 <Area
                   type="monotone"
                   dataKey="rcSpent"
                   stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  activeDot={{ r: 3, stroke: "hsl(var(--primary))", strokeWidth: 2, fill: "hsl(var(--card))" }}
                   fillOpacity={1}
                   fill="url(#rcSpent)"
                 />
@@ -573,7 +623,10 @@ export default function AdminPanel() {
                   tick={{ fontSize: 11 }}
                   width={90}
                 />
-                <Tooltip />
+                <Tooltip
+                  content={(props: any) => <ChartTooltip {...props} title="Vendeur" />}
+                  cursor={{ fill: "hsl(var(--muted) / 0.35)" }}
+                />
                 <Bar dataKey="sales" fill="hsl(var(--secondary))" />
               </BarChart>
             </ResponsiveContainer>
@@ -593,7 +646,10 @@ export default function AdminPanel() {
                 />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip />
+                <Tooltip
+                  content={(props: any) => <ChartTooltip {...props} title="Jour" />}
+                  cursor={{ fill: "hsl(var(--muted) / 0.35)" }}
+                />
                 <Bar dataKey="purchases" fill="hsl(var(--accent))" />
               </BarChart>
             </ResponsiveContainer>
