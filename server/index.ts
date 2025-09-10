@@ -30,6 +30,14 @@ export async function createServer() {
   }
 
   try {
+    const { createPaymentIntent } = await import("./routes/stripe");
+    app.post("/api/stripe/create-payment-intent", createPaymentIntent);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("Could not load stripe route:", e?.message || e);
+  }
+
+  try {
     const { moderateHandler } = await import("./routes/moderation");
     app.post("/api/moderate", moderateHandler);
   } catch (e) {
