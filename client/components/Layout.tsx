@@ -80,6 +80,9 @@ function Header() {
           ))}
         </nav>
         <div className="flex items-center justify-end gap-3">
+          <div className="md:hidden">
+            <MobileMenu />
+          </div>
           {!user ? (
             <>
               <Button
