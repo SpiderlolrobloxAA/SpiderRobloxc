@@ -112,8 +112,8 @@ function Header() {
 function MobileMenu() {
   const { user, logout } = useAuth();
   return (
-    <Dialog>
-      <DialogTrigger asChild>
+    <Sheet>
+      <SheetTrigger asChild>
         <Button
           variant="outline"
           className="h-9 w-9 p-0 inline-flex items-center justify-center"
@@ -121,9 +121,9 @@ function MobileMenu() {
         >
           <Menu className="h-4 w-4" />
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-xs p-4">
-        <DialogTitle className="text-sm">Menu</DialogTitle>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[280px] p-4">
+        <div className="text-sm font-semibold">Menu</div>
         <div className="mt-3 grid gap-2">
           {nav.map(({ to, label }) => (
             <Link
@@ -155,8 +155,8 @@ function MobileMenu() {
             </Button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
 
