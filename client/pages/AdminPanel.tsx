@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -167,6 +167,9 @@ export default function AdminPanel() {
   const [savingRole, setSavingRole] = useState(false);
   const [adjusting, setAdjusting] = useState(false);
   const [searching, setSearching] = useState(false);
+  const rolePanelRef = useRef<HTMLDivElement | null>(null);
+  const emailInputRef = useRef<HTMLInputElement | null>(null);
+  const filterInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users"), (snap) => {
@@ -694,7 +697,12 @@ export default function AdminPanel() {
                           setUserId(u.id);
                           setUserInfo(u);
                           setSelectedRole((u.role ?? "user") as any);
-                          window.scrollTo({ top: 400, behavior: "smooth" });
+                          setEmail(u.email ?? "");
+                          setFilter(u.email || u.displayName || "");
+                          setTimeout(() => {
+                            rolePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            emailInputRef.current?.focus();
+                          }, 0);
                         }}
                       >
                         Gérer
@@ -715,6 +723,7 @@ export default function AdminPanel() {
               placeholder="Filtrer par email/nom"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
+              ref={filterInputRef}
             />
           </div>
           {loadingUsers ? (
@@ -738,6 +747,12 @@ export default function AdminPanel() {
                       setUserId(u.id);
                       setUserInfo(u);
                       setSelectedRole((u.role ?? "user") as Role);
+                      setEmail(u.email ?? "");
+                      setFilter(u.email || u.displayName || "");
+                      setTimeout(() => {
+                        rolePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        emailInputRef.current?.focus();
+                      }, 0);
                     }}
                     className={`w-full text-left px-2 py-2 hover:bg-muted transition-colors ${
                       userId === u.id ? "bg-muted" : ""
@@ -755,13 +770,14 @@ export default function AdminPanel() {
             </div>
           )}
         </div>
-        <div className="rounded-xl border border-border/60 bg-card p-4 md:col-span-2">
+        <div ref={rolePanelRef} className="rounded-xl border border-border/60 bg-card p-4 md:col-span-2">
           <div className="flex flex-wrap items-end gap-2">
             <Input
               placeholder="Email utilisateur"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-64"
+              ref={emailInputRef}
             />
             <Button onClick={findUser} disabled={searching}>
               {searching ? "Recherche…" : "Rechercher"}
