@@ -604,9 +604,9 @@ export default function AdminPanel() {
       {/* Users overview - big table */}
       <div className="mt-6 rounded-xl border border-border/60 bg-card p-4">
         <h2 className="font-semibold mb-3">Utilisateurs (aperçu)</h2>
-        <div className="overflow-auto">
+        <div className="overflow-auto max-h-[60vh]">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 bg-card">
               <tr className="text-left text-foreground/60">
                 <th className="p-2">Email / Nom</th>
                 <th className="p-2">Rôle</th>
@@ -949,7 +949,7 @@ export default function AdminPanel() {
                     <Input
                       value={reply}
                       onChange={(e) => setReply(e.target.value)}
-                      placeholder="Réponse���"
+                      placeholder="Réponse…"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") sendReply();
                       }}
