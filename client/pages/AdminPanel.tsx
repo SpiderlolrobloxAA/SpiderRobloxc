@@ -23,6 +23,7 @@ import {
 } from "firebase/firestore";
 import { useProfile } from "@/context/ProfileProvider";
 import { useAuth } from "@/context/AuthProvider";
+import { Users, LifeBuoy, ShoppingBag } from "lucide-react";
 
 const ROLES = ["user", "verified", "helper", "moderator", "founder"] as const;
 
@@ -72,6 +73,7 @@ export default function AdminPanel() {
   const [userInfo, setUserInfo] = useState<any | null>(null);
   const [tickets, setTickets] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [stats, setStats] = useState<{ users: number; tickets: number; products: number }>({ users: 0, tickets: 0, products: 0 });
   const [filter, setFilter] = useState("");
   const [activeTicket, setActiveTicket] = useState<string | null>(null);
   const [ticketMsgs, setTicketMsgs] = useState<any[]>([]);
@@ -88,8 +90,10 @@ export default function AdminPanel() {
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users"), (snap) => {
-      setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setUsers(list);
       setLoadingUsers(false);
+      setStats((s) => ({ ...s, users: list.length }));
     });
     return () => unsub();
   }, []);
@@ -117,15 +121,12 @@ export default function AdminPanel() {
     (async () => {
       const snap = await getDocs(query(collection(db, "products")));
       const count = snap.size;
-      const el = document.getElementById("product-count");
-      if (el) el.textContent = `${count} produit(s) actifs`;
+      setStats((s) => ({ ...s, products: count }));
 
-      // subscribe to products to update count live
       const q = query(collection(db, "products"));
       unsubProducts = onSnapshot(q, (s) => {
-        const c = s.docs.filter(
-          (d) => (d.data() as any).status === "active",
-        ).length;
+        const c = s.size;
+        setStats((st) => ({ ...st, products: c }));
         const el2 = document.getElementById("product-count");
         if (el2) el2.textContent = `${c} produit(s) actifs`;
       });
@@ -193,6 +194,7 @@ export default function AdminPanel() {
     const unsub = onSnapshot(q, (snap) => {
       const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setTickets(rows);
+      setStats((s) => ({ ...s, tickets: rows.length }));
       if (!activeTicket && rows.length) setActiveTicket(rows[0].id);
     });
     return () => unsub();
@@ -373,6 +375,42 @@ export default function AdminPanel() {
       <p className="text-sm text-foreground/70">
         CTRL + F1 pour ouvrir rapidement cet écran.
       </p>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-primary/15 to-background p-4">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/25 ring-1 ring-primary/30">
+              <Users className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-xs uppercase text-foreground/60">Utilisateurs</div>
+              <div className="text-xl font-extrabold">{stats.users}</div>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-secondary/15 to-background p-4">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/25 ring-1 ring-secondary/30">
+              <LifeBuoy className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-xs uppercase text-foreground/60">Tickets ouverts</div>
+              <div className="text-xl font-extrabold">{stats.tickets}</div>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-gradient-to-br from-accent/15 to-background p-4">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-accent/25 ring-1 ring-accent/30">
+              <ShoppingBag className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-xs uppercase text-foreground/60">Produits</div>
+              <div className="text-xl font-extrabold">{stats.products}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Users overview - big table */}
       <div className="mt-6 rounded-xl border border-border/60 bg-card p-4">
@@ -921,11 +959,6 @@ export default function AdminPanel() {
             </div>
             <div>
               <div className="text-sm font-semibold">Annonce globale</div>
-              <Input
-                placeholder="Message à afficher"
-                value={announcement}
-                onChange={(e) => setAnnouncement(e.target.value)}
-              />
               <Input
                 placeholder="Message à afficher"
                 value={announcement}
