@@ -223,7 +223,7 @@ function GoldCoin({ size = 48 }: { size?: number }) {
   );
 }
 
-function PayPalLogo() {
+function StripeLogo() {
   return (
     <svg
       width="52"
@@ -241,7 +241,7 @@ function PayPalLogo() {
         fontWeight="700"
         fill="hsl(var(--secondary))"
       >
-        PayPal
+        Stripe
       </text>
     </svg>
   );
