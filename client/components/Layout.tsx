@@ -173,17 +173,16 @@ function CompactRole({ role }: { role: string }) {
       />
     );
   }
-  const map: Record<string, { label: string; icon: React.ReactNode }> = {
-    founder: { label: "Fondateur", icon: <span>👑</span> },
-    moderator: { label: "Mod", icon: <span>🛡️</span> },
-    helper: { label: "Helper", icon: <span>🧰</span> },
-    user: { label: "User", icon: <span>👤</span> },
+  const labels: Record<string, string> = {
+    founder: "Fondateur",
+    moderator: "Mod",
+    helper: "Helper",
+    user: "User",
   };
-  const cfg = map[role] ?? map.user;
+  const label = labels[role] ?? labels.user;
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-[2px] text-[10px] md:text-[11px] text-foreground/80">
-      {cfg.icon}
-      {cfg.label}
+      {label}
     </span>
   );
 }
