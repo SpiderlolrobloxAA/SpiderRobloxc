@@ -181,14 +181,21 @@ export default function Index() {
                   Start Selling
                 </Link>
               </Button>
-              <a
-                href="https://discord.gg/kcHHJy7C4J"
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm text-primary hover:underline"
+              <Button
+                asChild
+                variant="ghost"
+                className="border border-border/60"
               >
-                Rejoindre Discord
-              </a>
+                <a
+                  href="https://discord.gg/kcHHJy7C4J"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2"
+                >
+                  <Zap className="h-4 w-4" />
+                  Rejoindre Discord
+                </a>
+              </Button>
             </div>
             {sellers.length > 0 && (
               <div className="mt-8">
