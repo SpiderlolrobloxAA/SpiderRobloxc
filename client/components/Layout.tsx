@@ -26,6 +26,7 @@ import {
   DialogTrigger,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthProvider";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { VERIFIED_IMG } from "@/components/RoleBadge";
