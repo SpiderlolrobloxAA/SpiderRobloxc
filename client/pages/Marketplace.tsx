@@ -28,7 +28,7 @@ import {
   setDoc,
   doc,
 } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes, uploadBytesResumable } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { canPublish, normalizePrice } from "@/lib/marketplace";
 import { useToast } from "@/hooks/use-toast";
 import ModerationWarning from "@/components/ModerationWarning";
@@ -230,7 +230,6 @@ function AddProduct({
 
   const [imageUploading, setImageUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -248,18 +247,20 @@ function AddProduct({
     await onPick(fake);
   };
 
-  // simple pick handler: upload file directly to storage without compression
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setImageUploading(true);
-    setUploadProgress(0);
     let timedOut = false;
+    // start a timeout: if upload doesn't finish in 8s, fallback to data URL
     const timer = window.setTimeout(() => {
       timedOut = true;
       setImageUploading(false);
-      setUploadProgress(null);
-      // fallback to data URL after long delay
+      toast({
+        title: "Upload lent",
+        description: "Upload trop long, utilisation d'un fallback local.",
+        variant: "default",
+      });
       try {
         const reader = new FileReader();
         reader.onload = () => {
@@ -271,61 +272,60 @@ function AddProduct({
       } catch (e) {
         console.warn("fallback conversion failed after timeout", e);
       }
-    }, 20000);
+    }, 8000);
 
     try {
+      // show immediate preview while uploading
       try {
         const p = URL.createObjectURL(f);
         setPreviewUrl(p);
       } catch {}
 
+      // Try to upload immediately to storage and set imageUrl to the returned link
       const storage = await getStorageClient();
       if (storage) {
         try {
-          const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${f.name}`);
-          const uploadTask = uploadBytesResumable(tmpRef, f);
-          uploadTask.on(
-            "state_changed",
-            (snapshot) => {
-              const prog = Math.round((snapshot.bytesTransferred / (snapshot.totalBytes || 1)) * 100);
-              setUploadProgress(prog);
-            },
-            (error) => {
-              console.warn("resumable upload error", error);
-            },
-            async () => {
-              if (timedOut) {
-                clearTimeout(timer);
-                return;
-              }
-              const dl = await getDownloadURL(tmpRef);
-              clearTimeout(timer);
-              setImageUrl(dl);
-              setFile(null);
-              setPreviewUrl(null);
-              setImageUploading(false);
-              setUploadProgress(null);
-            },
+          const tmpRef = ref(
+            storage,
+            `products/${userId}/${Date.now()}_${f.name}`,
           );
+          await uploadBytes(tmpRef, f);
+          // if timed out already, don't override fallback
+          if (timedOut) {
+            clearTimeout(timer);
+            return;
+          }
+          const dl = await getDownloadURL(tmpRef);
+          clearTimeout(timer);
+          setImageUrl(dl);
+          setFile(null);
+          setPreviewUrl(null);
+          setImageUploading(false);
           return;
         } catch (uploadErr) {
           console.warn("upload immediate failed", uploadErr);
+          // continue to fallback to data URL
         }
       }
 
-      const data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(f);
-      });
-      clearTimeout(timer);
-      setImageUrl(data);
-      setFile(null);
-      setPreviewUrl(null);
-      setImageUploading(false);
-      setUploadProgress(null);
-      return;
+      // Fallback: convert to data URL and set it as imageUrl
+      try {
+        const data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(f);
+        });
+        clearTimeout(timer);
+        setImageUrl(data);
+        setFile(null);
+        setPreviewUrl(null);
+        setImageUploading(false);
+        return;
+      } catch (err) {
+        console.warn("file to dataURL failed", err);
+        setFile(f);
+      }
     } catch (err) {
       console.error("onPick error", err);
       toast({
@@ -564,17 +564,9 @@ function AddProduct({
             />
           </div>
         )}
-        {(imageUploading || uploadProgress !== null) && (
-          <div className="mt-2">
-            <div className="h-2 w-full rounded-full bg-muted/40 overflow-hidden">
-              <div
-                className="h-full bg-primary transition-[width]"
-                style={{ width: `${uploadProgress ?? 0}%` }}
-              />
-            </div>
-            <div className="text-xs text-foreground/60 mt-1">
-              {uploadProgress !== null ? `Upload: ${uploadProgress}%` : "Upload en cours…"}
-            </div>
+        {imageUploading && (
+          <div className="mt-2 text-sm text-foreground/60">
+            Upload image en cours…
           </div>
         )}
       </div>
