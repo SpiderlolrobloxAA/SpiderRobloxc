@@ -28,7 +28,7 @@ import {
   setDoc,
   doc,
 } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytes, uploadBytesResumable } from "firebase/storage";
 import { canPublish, normalizePrice } from "@/lib/marketplace";
 import { useToast } from "@/hooks/use-toast";
 import ModerationWarning from "@/components/ModerationWarning";
