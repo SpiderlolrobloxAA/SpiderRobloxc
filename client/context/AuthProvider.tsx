@@ -27,7 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     initAnalytics();
     if (!auth) {
-      // Auth not available (SSR). Mark loading false and skip auth listeners.
       setLoading(false);
       return;
     }
@@ -39,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const ref = doc(db, "users", u.uid);
           const snap = await getDoc(ref);
           if (!snap.exists()) {
-            // First time: create full profile with initial balances
             await setDoc(
               ref,
               {
@@ -56,14 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               { merge: true },
             );
           } else {
-            // Don't overwrite balances on every auth change — only update missing fields and timestamps
             const data = snap.data() as any;
             const updates: any = {
               lastSeen: serverTimestamp(),
               updatedAt: serverTimestamp(),
             };
-            if (!data.username && u.displayName)
-              updates.username = u.displayName;
+            if (!data.username && u.displayName) updates.username = u.displayName;
             if (!data.email && u.email) updates.email = u.email;
             await setDoc(ref, updates, { merge: true });
           }
@@ -74,6 +70,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => unsub();
   }, []);
+
+  // Presence: refresh lastSeen periodically and on visibility changes
+  useEffect(() => {
+    if (!user) return;
+    let timer: any;
+    const tick = async () => {
+      try {
+        await setDoc(
+          doc(db, "users", user.uid),
+          { lastSeen: serverTimestamp(), updatedAt: serverTimestamp() },
+          { merge: true },
+        );
+      } catch {}
+    };
+    timer = setInterval(tick, 60_000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", tick);
+    tick();
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", tick);
+    };
+  }, [user]);
 
   const logout = async () => {
     await signOut(auth);
