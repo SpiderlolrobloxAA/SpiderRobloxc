@@ -86,6 +86,7 @@ function Thread({ id }: { id: string }) {
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const [threadMeta, setThreadMeta] = useState<any>(null);
+  const [otherUser, setOtherUser] = useState<any>(null);
 
   useEffect(() => {
     const q = query(
@@ -106,6 +107,17 @@ function Thread({ id }: { id: string }) {
     });
     return () => unsub();
   }, [id]);
+
+  // subscribe to the other participant for name/role/status
+  useEffect(() => {
+    const otherId = threadMeta?.participants?.find((p: string) => p !== user?.uid);
+    if (!otherId) return;
+    const unsub = onSnapshot(doc(db, "users", otherId), (d) => {
+      setOtherUser(d.data());
+    });
+    return () => unsub();
+  }, [threadMeta?.participants, user?.uid]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs.length]);
@@ -155,13 +167,19 @@ function Thread({ id }: { id: string }) {
 
   return (
     <div className="flex h-full flex-col">
+      <div className="mx-2 mb-2 flex items-center justify-between">
+        <div className="text-sm font-semibold truncate">
+          {threadMeta?.title || "Conversation"}
+        </div>
+        {otherUser && <UserStatus otherUser={otherUser} />}
+      </div>
       {threadMeta?.productId || threadMeta?.order ? (
         <div className="mx-2 mb-2 rounded-md border border-primary/40 bg-primary/10 p-2 text-xs">
           <div className="font-semibold">
             Commande: {threadMeta?.order?.productTitle || threadMeta?.title}
           </div>
           <div className="opacity-80">
-            Prix: {threadMeta?.order?.price ?? "-"} RC • Acheteur:{" "}
+            Prix: {threadMeta?.order?.price ?? "-"} RC • Acheteur: {" "}
             {threadMeta?.order?.buyerId
               ? threadMeta.order.buyerId === user?.uid
                 ? "vous"
@@ -171,14 +189,24 @@ function Thread({ id }: { id: string }) {
         </div>
       ) : null}
       <div className="flex-1 space-y-2 overflow-auto p-2">
-        {msgs.map((m) => (
-          <div
-            key={m.id}
-            className={`max-w-[70%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${m.senderId === user?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
-          >
-            {m.text}
-          </div>
-        ))}
+        {msgs.map((m) => {
+          if (m.senderId === "system")
+            return (
+              <div key={m.id} className="text-center text-xs text-foreground/60">
+                {m.text}
+              </div>
+            );
+          const mine = m.senderId === user?.uid;
+          const name = mine ? "Vous" : otherUser?.username || otherUser?.email || "Utilisateur";
+          return (
+            <div key={m.id} className={`max-w-[75%] ${mine ? "ml-auto" : ""}`}>
+              <div className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}>{name}</div>
+              <div className={`rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine ? "bg-secondary/20" : "bg-muted"}`}>
+                {m.text}
+              </div>
+            </div>
+          );
+        })}
         <div ref={bottomRef} />
       </div>
       {threadMeta?.system ? (
@@ -198,6 +226,32 @@ function Thread({ id }: { id: string }) {
           <Button onClick={send}>Envoyer</Button>
         </div>
       )}
+    </div>
+  );
+}
+
+function UserStatus({ otherUser }: { otherUser: any }) {
+  const ts = otherUser?.lastSeen?.toMillis?.() ?? 0;
+  let label = "hors ligne";
+  let color = "bg-gray-400";
+  if (ts) {
+    const diff = Date.now() - ts;
+    if (diff < 2 * 60 * 1000) {
+      label = "en ligne";
+      color = "bg-emerald-500";
+    } else if (diff < 10 * 60 * 1000) {
+      label = "inactif";
+      color = "bg-amber-500";
+    }
+  }
+  return (
+    <div className="text-xs text-foreground/70 inline-flex items-center gap-2">
+      <span className={`h-2 w-2 rounded-full ${color}`} />
+      <span className="capitalize">{label}</span>
+      <span className="opacity-60">•</span>
+      <span className="truncate max-w-[160px]">
+        {otherUser?.username || otherUser?.email || "Utilisateur"}
+      </span>
     </div>
   );
 }
