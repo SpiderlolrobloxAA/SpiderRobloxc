@@ -38,7 +38,8 @@ export default function Notifications() {
           (n: any) => (n.createdAt?.toMillis?.() ?? 0) > lastSeen,
         );
         fresh.forEach((n: any) => {
-          const title = n.title || (n.type === "thread" ? "Nouveau chat" : "Notification");
+          const title =
+            n.title || (n.type === "thread" ? "Nouveau chat" : "Notification");
           const description = n.text || undefined;
           toast({ title, description });
           beep();
@@ -69,7 +70,10 @@ export default function Notifications() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="relative inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted/60" aria-label="Notifications (F8)">
+        <button
+          className="relative inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted/60"
+          aria-label="Notifications (F8)"
+        >
           <svg
             className="h-4 w-4"
             viewBox="0 0 24 24"
@@ -90,11 +94,20 @@ export default function Notifications() {
           )}
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-h-[80vh] bg-background/60 backdrop-blur-md border-border/60" aria-label="Notifications alt+T">
+      <DialogContent
+        className="sm:max-h-[80vh] bg-background/60 backdrop-blur-md border-border/60"
+        aria-label="Notifications alt+T"
+      >
         <DialogTitle>Notifications</DialogTitle>
-        <div className="mt-3 space-y-2 max-h-[60vh] overflow-y-auto pr-1" role="region" aria-label="Notifications (F8)">
+        <div
+          className="mt-3 space-y-2 max-h-[60vh] overflow-y-auto pr-1"
+          role="region"
+          aria-label="Notifications (F8)"
+        >
           {notes.length === 0 && (
-            <div className="text-sm text-foreground/60">Aucune notification</div>
+            <div className="text-sm text-foreground/60">
+              Aucune notification
+            </div>
           )}
           {notes.map((n, i) => (
             <div
@@ -103,7 +116,9 @@ export default function Notifications() {
             >
               <div>
                 <div className="text-sm font-medium">
-                  {n.type === "role" ? `Rôle : ${n.role}` : n.title || "Notification"}
+                  {n.type === "role"
+                    ? `Rôle : ${n.role}`
+                    : n.title || "Notification"}
                 </div>
                 <div className="text-xs text-foreground/70 mt-1">{n.text}</div>
               </div>
@@ -118,7 +133,9 @@ export default function Notifications() {
                         const target = n;
                         await updateDoc(ref, {
                           notifications: cur
-                            .map((x: any) => (x === target ? { ...x, read: true } : x))
+                            .map((x: any) =>
+                              x === target ? { ...x, read: true } : x,
+                            )
                             .slice()
                             .reverse(),
                         });
@@ -167,7 +184,8 @@ export default function Notifications() {
 
 function beep() {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const ctx = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
     const o = ctx.createOscillator();
     const g = ctx.createGain();
     o.type = "sine";

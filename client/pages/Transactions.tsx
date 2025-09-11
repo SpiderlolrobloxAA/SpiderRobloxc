@@ -130,7 +130,8 @@ export default function Transactions() {
                   )}
                   {t.status === "pending" && (
                     <div className="text-xs text-amber-400 font-semibold">
-                      En attente {t.type === "salePending" ? `• ${eta(t.createdAt)}` : ""}
+                      En attente{" "}
+                      {t.type === "salePending" ? `• ${eta(t.createdAt)}` : ""}
                     </div>
                   )}
                 </div>

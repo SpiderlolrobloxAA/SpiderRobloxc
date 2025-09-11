@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 
 type Item = { id: string; text: string };
 
@@ -43,11 +49,16 @@ export default function CreditNotifier() {
         if (c <= 0) continue;
         const source = map[t.type] || t.type;
         newItems.push({ id: t.id, text: `+${c} crédits reçus de ${source}` });
-        if (navigator?.vibrate) try { navigator.vibrate(40); } catch {}
+        if (navigator?.vibrate)
+          try {
+            navigator.vibrate(40);
+          } catch {}
       }
       if (newItems.length) {
         setItems((cur) => [...cur, ...newItems]);
-        try { localStorage.setItem(key, String(Date.now())); } catch {}
+        try {
+          localStorage.setItem(key, String(Date.now()));
+        } catch {}
       }
     });
     return () => unsub();

@@ -37,7 +37,9 @@ export default function Messages() {
       (err) => {
         console.error("messages:onSnapshot error", err);
         const msg = String(err?.message || err);
-        const match = msg.match(/https?:\/\/console\.firebase\.google\.com\/[\S]+/);
+        const match = msg.match(
+          /https?:\/\/console\.firebase\.google\.com\/[\S]+/,
+        );
         const indexUrl = match ? match[0] : undefined;
         try {
           // user-friendly toast with index URL if available
@@ -127,7 +129,9 @@ function Thread({ id }: { id: string }) {
 
   // subscribe to the other participant for name/role/status
   useEffect(() => {
-    const otherId = threadMeta?.participants?.find((p: string) => p !== user?.uid);
+    const otherId = threadMeta?.participants?.find(
+      (p: string) => p !== user?.uid,
+    );
     if (!otherId) return;
     const unsub = onSnapshot(doc(db, "users", otherId), (d) => {
       setOtherUser(d.data());
@@ -204,7 +208,7 @@ function Thread({ id }: { id: string }) {
             Commande: {threadMeta?.order?.productTitle || threadMeta?.title}
           </div>
           <div className="opacity-80">
-            Prix: {threadMeta?.order?.price ?? "-"} RC • Acheteur: {" "}
+            Prix: {threadMeta?.order?.price ?? "-"} RC • Acheteur:{" "}
             {threadMeta?.order?.buyerId
               ? threadMeta.order.buyerId === user?.uid
                 ? "vous"
@@ -217,17 +221,29 @@ function Thread({ id }: { id: string }) {
         {msgs.map((m) => {
           if (m.senderId === "system")
             return (
-              <div key={m.id} className="text-center text-xs text-foreground/60">
+              <div
+                key={m.id}
+                className="text-center text-xs text-foreground/60"
+              >
                 {m.text}
               </div>
             );
           const mine = m.senderId === user?.uid;
-          const name = mine ? "Vous" : otherUser?.username || otherUser?.email || "Utilisateur";
+          const name = mine
+            ? "Vous"
+            : otherUser?.username || otherUser?.email || "Utilisateur";
           const role = mine ? "" : roleLabel(otherUser?.role);
           return (
             <div key={m.id} className={`max-w-[75%] ${mine ? "ml-auto" : ""}`}>
-              <div className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}>{name}{role ? ` (${role})` : ""}</div>
-              <div className={`rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine ? "bg-secondary/20" : "bg-muted"}`}>
+              <div
+                className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}
+              >
+                {name}
+                {role ? ` (${role})` : ""}
+              </div>
+              <div
+                className={`rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine ? "bg-secondary/20" : "bg-muted"}`}
+              >
                 {m.text}
               </div>
             </div>

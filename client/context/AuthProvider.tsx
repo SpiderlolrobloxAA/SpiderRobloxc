@@ -59,7 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               lastSeen: serverTimestamp(),
               updatedAt: serverTimestamp(),
             };
-            if (!data.username && u.displayName) updates.username = u.displayName;
+            if (!data.username && u.displayName)
+              updates.username = u.displayName;
             if (!data.email && u.email) updates.email = u.email;
             await setDoc(ref, updates, { merge: true });
           }
