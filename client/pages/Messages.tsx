@@ -337,27 +337,83 @@ function Thread({ id }: { id: string }) {
                 {m.text}
               </div>
             );
+
           const mine = m.senderId === user?.uid;
-          const name = mine
-            ? "Vous"
-            : otherUser?.username || otherUser?.email || "Utilisateur";
-          const role = mine ? "" : roleLabel(otherUser?.role);
+          const isOther = !mine;
+          const avatarUrl = isOther ? (otherUser?.avatarUrl || DEFAULT_AVATAR_IMG) : (user?.photoURL || DEFAULT_AVATAR_IMG);
+          const name = mine ? "Vous" : otherUser?.username || otherUser?.email || "Utilisateur";
+
           return (
-            <div key={m.id} className={`max-w-[75%] ${mine ? "ml-auto" : ""}`}>
-              <div
-                className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}
-              >
-                {name}
-                {role ? ` (${role})` : ""}
+            <div key={m.id} className={`flex items-end gap-3 ${mine ? 'justify-end' : ''}`}>
+              {/* Avatar for other users */}
+              {!mine && (
+                <div className="flex-shrink-0">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={avatarUrl} alt={name} />
+                    <AvatarFallback>{(name || 'U').slice(0,2)}</AvatarFallback>
+                  </Avatar>
+                </div>
+              )}
+
+              <div className={`max-w-[75%] ${mine ? 'ml-auto text-right' : ''}`}>
+                <div className={`mb-1 text-[10px] text-foreground/60 ${mine ? 'text-right' : ''}`}>
+                  {name}
+                </div>
+                <div className={`inline-block rounded-lg px-4 py-2 text-sm whitespace-pre-wrap break-words ${mine ? 'bg-gradient-to-r from-primary to-secondary text-white' : 'bg-muted text-foreground'}`}
+                >
+                  {m.text}
+                </div>
               </div>
-              <div
-                className={`rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine ? "bg-secondary/20" : "bg-muted"}`}
-              >
-                {m.text}
-              </div>
+
+              {/* Avatar for mine on the right */}
+              {mine && (
+                <div className="flex-shrink-0">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={avatarUrl} alt={name} />
+                    <AvatarFallback>{(name || 'U').slice(0,2)}</AvatarFallback>
+                  </Avatar>
+                </div>
+              )}
             </div>
           );
         })}
+
+        {/* typing indicator bubble */}
+        {(() => {
+          const typingObj = threadMeta?.typing || {};
+          const entries = Object.entries(typingObj || {}) as [string, any][];
+          const recent = entries
+            .map(([uid, ts]) => ({ uid, ts }))
+            .filter((x) => {
+              try {
+                const t = x.ts?.toMillis?.() ?? 0;
+                return Date.now() - t < 4000 && x.uid !== user?.uid;
+              } catch {
+                return false;
+              }
+            });
+          if (recent.length === 0) return null;
+          // show first typer
+          const typerId = recent[0].uid;
+          const name = otherUser && threadMeta?.participants?.includes(typerId) ? (otherUser?.username || otherUser?.email || 'Utilisateur') : 'Quelqu\'un';
+          const avatarUrl = otherUser?.avatarUrl || DEFAULT_AVATAR_IMG;
+          return (
+            <div className="flex items-end gap-3">
+              <div className="flex-shrink-0">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={avatarUrl} alt={name} />
+                  <AvatarFallback>{(name || 'U').slice(0,2)}</AvatarFallback>
+                </Avatar>
+              </div>
+              <div className="max-w-[50%]">
+                <div className="mb-1 text-[10px] text-foreground/60">{name}</div>
+                <div className="inline-block rounded-lg px-4 py-2 bg-muted">
+                  <TypingDots />
+                </div>
+              </div>
+            </div>
+          );
+        })()}
         <div ref={bottomRef} />
       </div>
       {threadMeta?.system ? (
