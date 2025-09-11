@@ -682,6 +682,7 @@ export default function Layout() {
       <BanOverlay />
       <Announcements />
       <MaintenanceOverlay />
+      <CreditNotifier />
       <main className="relative z-10">
         <TosModal />
         <Outlet />
