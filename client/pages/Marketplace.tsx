@@ -231,6 +231,8 @@ function AddProduct({
 
   const [imageUploading, setImageUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const uploadedUrlRef = useRef<string | null>(null);
+  const backgroundUploadRef = useRef<Promise<string | null> | null>(null);
 
   const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -248,96 +250,72 @@ function AddProduct({
     await onPick(fake);
   };
 
+  // create a small preview quickly and start background upload of original file
+  const startBackgroundUpload = async (fileToUpload: File) => {
+    const promise = (async () => {
+      try {
+        const storage = await getStorageClient();
+        if (!storage) return null;
+        const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${fileToUpload.name}`);
+        await uploadBytes(tmpRef, fileToUpload);
+        const dl = await getDownloadURL(tmpRef);
+        uploadedUrlRef.current = dl;
+        return dl;
+      } catch (e) {
+        console.warn("background upload failed", e);
+        return null;
+      }
+    })();
+    backgroundUploadRef.current = promise;
+    return promise;
+  };
+
+  const createPreviewDataUrl = async (fileToPreview: File) => {
+    try {
+      const img = await createImageBitmap(fileToPreview);
+      const maxDim = 800;
+      let { width, height } = img;
+      const ratio = Math.min(1, maxDim / Math.max(width, height));
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.drawImage(img, 0, 0, width, height);
+      return canvas.toDataURL("image/jpeg", 0.7);
+    } catch (e) {
+      return null;
+    }
+  };
+
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setImageUploading(true);
-    let timedOut = false;
-    // start a timeout: if upload doesn't finish in 8s, fallback to data URL
-    const timer = window.setTimeout(() => {
-      timedOut = true;
-      setImageUploading(false);
-      toast({
-        title: "Upload lent",
-        description: "Upload trop long, utilisation d'un fallback local.",
-        variant: "default",
-      });
-      try {
-        const reader = new FileReader();
-        reader.onload = () => {
-          setImageUrl(String(reader.result || ""));
-          setFile(null);
-          setPreviewUrl(null);
-        };
-        reader.readAsDataURL(f);
-      } catch (e) {
-        console.warn("fallback conversion failed after timeout", e);
-      }
-    }, 8000);
+    setFile(f);
 
-    try {
-      // show immediate preview while uploading
+    // create small preview immediately
+    const preview = await createPreviewDataUrl(f);
+    if (preview) {
+      setPreviewUrl(preview);
+      setImageUrl(preview); // use preview so UI is fast
+    } else {
       try {
         const p = URL.createObjectURL(f);
         setPreviewUrl(p);
       } catch {}
-
-      // Try to upload immediately to storage and set imageUrl to the returned link
-      const storage = await getStorageClient();
-      if (storage) {
-        try {
-          const tmpRef = ref(
-            storage,
-            `products/${userId}/${Date.now()}_${f.name}`,
-          );
-          await uploadBytes(tmpRef, f);
-          // if timed out already, don't override fallback
-          if (timedOut) {
-            clearTimeout(timer);
-            return;
-          }
-          const dl = await getDownloadURL(tmpRef);
-          clearTimeout(timer);
-          setImageUrl(dl);
-          setFile(null);
-          setPreviewUrl(null);
-          setImageUploading(false);
-          return;
-        } catch (uploadErr) {
-          console.warn("upload immediate failed", uploadErr);
-          // continue to fallback to data URL
-        }
-      }
-
-      // Fallback: convert to data URL and set it as imageUrl
-      try {
-        const data = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ""));
-          reader.onerror = (err) => reject(err);
-          reader.readAsDataURL(f);
-        });
-        clearTimeout(timer);
-        setImageUrl(data);
-        setFile(null);
-        setPreviewUrl(null);
-        setImageUploading(false);
-        return;
-      } catch (err) {
-        console.warn("file to dataURL failed", err);
-        setFile(f);
-      }
-    } catch (err) {
-      console.error("onPick error", err);
-      toast({
-        title: "Erreur image",
-        description: "Impossible de traiter l'image.",
-        variant: "destructive",
-      });
-    } finally {
-      clearTimeout(timer);
-      if (!timedOut) setImageUploading(false);
     }
+
+    // start background upload but do NOT block publish
+    startBackgroundUpload(f).then((dl) => {
+      if (dl) {
+        // if preview was set to data URL, swap to final URL for subsequent publishes
+        setImageUrl(dl);
+      }
+      setImageUploading(false);
+    });
   };
 
   // actual creation logic extracted so it can be called after moderation acceptance
