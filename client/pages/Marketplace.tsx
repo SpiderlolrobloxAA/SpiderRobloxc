@@ -285,7 +285,15 @@ function AddProduct({
 
         // read as base64
         const arrayBuf = await toUpload.arrayBuffer();
-        const b64 = Buffer.from(arrayBuf).toString("base64");
+        const uint8 = new Uint8Array(arrayBuf);
+        // browser-friendly base64 conversion in chunks
+        let binary = "";
+        const chunkSize = 0x8000;
+        for (let i = 0; i < uint8.length; i += chunkSize) {
+          const sub = uint8.subarray(i, i + chunkSize);
+          binary += String.fromCharCode.apply(null, Array.from(sub));
+        }
+        const b64 = btoa(binary);
         const dataUrl = `data:${toUpload.type};base64,${b64}`;
 
         // send to server function to upload with admin SDK (avoids CORS)
