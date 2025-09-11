@@ -31,8 +31,25 @@ export default function Messages() {
       where("participants", "array-contains", user.uid),
       orderBy("updatedAt", "desc"),
     );
-    const unsub = onSnapshot(q, (snap) =>
-      setThreads(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    const unsub = onSnapshot(
+      q,
+      (snap) => setThreads(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (err) => {
+        console.error("messages:onSnapshot error", err);
+        const msg = String(err?.message || err);
+        const match = msg.match(/https?:\/\/console\.firebase\.google\.com\/[\S]+/);
+        const indexUrl = match ? match[0] : undefined;
+        try {
+          // user-friendly toast with index URL if available
+          toast({
+            title: "Firestore: index requis",
+            description: indexUrl
+              ? `Cette requête nécessite un index. Ouvrez: ${indexUrl}`
+              : "Cette requête Firestore nécessite un index composite. Créez-le dans la console Firebase.",
+            variant: "destructive",
+          });
+        } catch {}
+      },
     );
     return () => unsub();
   }, [user]);
