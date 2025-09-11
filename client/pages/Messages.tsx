@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Messages() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [threads, setThreads] = useState<any[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
