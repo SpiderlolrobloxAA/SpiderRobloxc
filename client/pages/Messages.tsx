@@ -288,6 +288,26 @@ function Thread({ id }: { id: string }) {
       <div className="mx-2 mb-2 flex items-center justify-between">
         <div className="text-sm font-semibold truncate">
           {threadMeta?.title || "Conversation"}
+          <div className="text-xs text-foreground/60">
+            {/* typing indicator */}
+            {(() => {
+              const typingObj = threadMeta?.typing || {};
+              const entries = Object.entries(typingObj || {}) as [string, any][];
+              const recent = entries
+                .map(([uid, ts]) => ({ uid, ts }))
+                .filter((x) => {
+                  try {
+                    const t = x.ts?.toMillis?.() ?? 0;
+                    return Date.now() - t < 5000 && x.uid !== user?.uid;
+                  } catch {
+                    return false;
+                  }
+                });
+              if (recent.length === 0) return null;
+              const names = recent.map((r) => (otherUser && threadMeta?.participants?.includes(r.uid) ? (otherUser?.username || otherUser?.email || "Utilisateur") : "Quelqu'un"));
+              return <span>{names.join(", ")} est en train d'écrire…</span>;
+            })()}
+          </div>
         </div>
         {otherUser && <UserStatus otherUser={otherUser} />}
       </div>
