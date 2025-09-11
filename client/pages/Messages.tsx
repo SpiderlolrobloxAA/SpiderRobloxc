@@ -368,7 +368,7 @@ function Thread({ id }: { id: string }) {
         <div className="mt-2 flex items-center gap-2">
           <Input
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => onTextChange(e.target.value)}
             placeholder="Votre message…"
             onKeyDown={(e) => {
               if (e.key === "Enter") send();
