@@ -45,6 +45,13 @@ export async function createServer() {
   }
 
   try {
+    const { uploadHandler } = await import("./routes/upload");
+    app.post("/api/upload", uploadHandler);
+  } catch (e) {
+    console.warn("Could not load upload route:", e?.message || e);
+  }
+
+  try {
     const { processPendingSales } = await import("./routes/pending");
     app.post("/api/process-pending", processPendingSales);
   } catch (e) {
