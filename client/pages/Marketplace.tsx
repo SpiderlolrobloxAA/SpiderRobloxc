@@ -381,76 +381,14 @@ function AddProduct({
       if (!finalUrl) finalUrl = placeholder;
 
       // If finalUrl is a data URL, try to upload it to storage to avoid storing large base64 strings in Firestore.
-      // If storage is not available, attempt to compress the image client-side before saving.
       async function dataUrlToBlob(dataUrl: string) {
         const res = await fetch(dataUrl);
         return await res.blob();
       }
 
-      async function compressDataUrl(dataUrl: string, maxBytes = 300 * 1024) {
-        return await new Promise<string | null>(async (resolve) => {
-          try {
-            const img = new Image();
-            img.onload = async () => {
-              try {
-                const canvas = document.createElement("canvas");
-                // scale down if large
-                const maxDim = 1024;
-                let { width, height } = img;
-                if (width > maxDim || height > maxDim) {
-                  const ratio = Math.min(maxDim / width, maxDim / height);
-                  width = Math.round(width * ratio);
-                  height = Math.round(height * ratio);
-                }
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext("2d");
-                if (!ctx) return resolve(null);
-                ctx.drawImage(img, 0, 0, width, height);
-
-                // aggressive quality reduction
-                let quality = 0.8;
-                for (let i = 0; i < 8; i++) {
-                  const mime = "image/jpeg";
-                  const data = canvas.toDataURL(mime, quality);
-                  if (data.length <= maxBytes) return resolve(data);
-                  quality -= 0.1;
-                  if (quality <= 0.2) break;
-                }
-                // as last resort, reduce dimensions further aggressively
-                let w = Math.floor(width * 0.7);
-                let h = Math.floor(height * 0.7);
-                while (w > 200 && h > 200) {
-                  canvas.width = w;
-                  canvas.height = h;
-                  if (!ctx) return resolve(null);
-                  ctx.drawImage(img, 0, 0, w, h);
-                  let q = 0.6;
-                  for (let i = 0; i < 6; i++) {
-                    const data = canvas.toDataURL("image/jpeg", q);
-                    if (data.length <= maxBytes) return resolve(data);
-                    q -= 0.1;
-                  }
-                  w = Math.floor(w * 0.7);
-                  h = Math.floor(h * 0.7);
-                }
-                resolve(null);
-              } catch (e) {
-                resolve(null);
-              }
-            };
-            img.onerror = () => resolve(null);
-            img.src = dataUrl;
-          } catch (e) {
-            resolve(null);
-          }
-        });
-      }
-
       try {
         if (finalUrl.startsWith("data:")) {
           const storage = await getStorageClient();
-          // convert to blob first
           let blob: Blob | null = null;
           try {
             blob = await dataUrlToBlob(finalUrl);
@@ -461,44 +399,18 @@ function AddProduct({
           if (storage && blob) {
             try {
               const tmpRef = ref(storage, `products/${userId}/${Date.now()}_pasted_image`);
+              // upload without compression
               await uploadBytes(tmpRef, blob);
               finalUrl = await getDownloadURL(tmpRef);
             } catch (err) {
-              console.warn("upload of data URL failed, will try compression fallback", err);
-              // try compression then upload
-              const compressed = await compressDataUrl(finalUrl);
-              if (compressed) {
-                try {
-                  const compressedBlob = await dataUrlToBlob(compressed);
-                  const tmpRef2 = ref(storage, `products/${userId}/${Date.now()}_pasted_image_compressed`);
-                  await uploadBytes(tmpRef2, compressedBlob);
-                  finalUrl = await getDownloadURL(tmpRef2);
-                } catch (err2) {
-                  console.warn("upload of compressed image failed", err2);
-                  // keep trying to proceed below
-                }
-              }
-            }
-          } else {
-            // No storage client: try to compress in-browser and keep a small data URL
-            const compressed = await compressDataUrl(finalUrl);
-            if (compressed) {
-              finalUrl = compressed;
-            } else {
-              throw new Error("image_too_large_no_storage");
+              console.warn("upload of data URL failed", err);
+              // keep finalUrl as-is (data URL) if upload fails
             }
           }
         }
       } catch (err: any) {
         console.error("product:image handling failed", err);
-        toast({
-          title: "Image trop volumineuse",
-          description:
-            "L'image fournie est trop grande et n'a pas pu être compressée. Utilisez une URL externe ou téléversez un fichier plus petit.",
-          variant: "destructive",
-        });
-        setSaving(false);
-        return;
+        // proceed without failing — keep finalUrl
       }
 
       // If flagged (any reasons), always create as pending — do not publish active even after acceptance
