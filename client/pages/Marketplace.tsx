@@ -342,6 +342,16 @@ function AddProduct({
   // actual creation logic extracted so it can be called after moderation acceptance
   const doCreate = async () => {
     setSaving(true);
+
+    const withTimeout = async <T,>(p: Promise<T>, ms = 20000, name = "operation") => {
+      return await Promise.race([
+        p,
+        new Promise<T>((_, rej) =>
+          setTimeout(() => rej(new Error(`${name}_timeout`)), ms),
+        ),
+      ] as unknown as Promise<T>);
+    };
+
     try {
       let finalUrl = imageUrl;
       if (!finalUrl && file) {
@@ -351,8 +361,9 @@ function AddProduct({
             storage,
             `products/${userId}/${Date.now()}_${file.name}`,
           );
-          await uploadBytes(tmpRef, file);
-          finalUrl = await getDownloadURL(tmpRef);
+          // use timeout wrapper to avoid hanging
+          await withTimeout(uploadBytes(tmpRef, file), 20000, "uploadBytes");
+          finalUrl = await withTimeout(getDownloadURL(tmpRef), 20000, "getDownloadURL");
         } else {
           // Fallback: convert file to data URL and store in Firestore so it can be displayed
           try {
@@ -399,9 +410,9 @@ function AddProduct({
           if (storage && blob) {
             try {
               const tmpRef = ref(storage, `products/${userId}/${Date.now()}_pasted_image`);
-              // upload without compression
-              await uploadBytes(tmpRef, blob);
-              finalUrl = await getDownloadURL(tmpRef);
+              // upload without compression but with timeout
+              await withTimeout(uploadBytes(tmpRef, blob), 20000, "uploadDataUrl");
+              finalUrl = await withTimeout(getDownloadURL(tmpRef), 20000, "getDownloadURL_pasted");
             } catch (err) {
               console.warn("upload of data URL failed", err);
               // keep finalUrl as-is (data URL) if upload fails
@@ -417,26 +428,8 @@ function AddProduct({
       const flagged = moderationReasons.length > 0;
       const status = flagged ? "pending" : "active";
 
-      const refDoc = await addDoc(collection(db, "products"), {
-        title: title.trim(),
-        imageUrl: finalUrl,
-        price: validPrice,
-        sellerId: userId,
-        sellerName,
-        sellerRole,
-        status,
-        moderation: {
-          flagged: moderationReasons.length > 0,
-          reasons: moderationReasons,
-          accepted: moderationAccepted,
-        },
-        createdAt: serverTimestamp(),
-      });
-
-      // Mirror to namespaced per-user collection for instant access
-      await setDoc(
-        doc(db, "DataProject", "data1", "users", userId, "products", refDoc.id),
-        {
+      const refDoc = await withTimeout(
+        addDoc(collection(db, "products"), {
           title: title.trim(),
           imageUrl: finalUrl,
           price: validPrice,
@@ -450,7 +443,33 @@ function AddProduct({
             accepted: moderationAccepted,
           },
           createdAt: serverTimestamp(),
-        },
+        }),
+        20000,
+        "addDoc",
+      );
+
+      // Mirror to namespaced per-user collection for instant access
+      await withTimeout(
+        setDoc(
+          doc(db, "DataProject", "data1", "users", userId, "products", refDoc.id),
+          {
+            title: title.trim(),
+            imageUrl: finalUrl,
+            price: validPrice,
+            sellerId: userId,
+            sellerName,
+            sellerRole,
+            status,
+            moderation: {
+              flagged: moderationReasons.length > 0,
+              reasons: moderationReasons,
+              accepted: moderationAccepted,
+            },
+            createdAt: serverTimestamp(),
+          },
+        ),
+        20000,
+        "setDoc",
       );
 
       // charge only when active
