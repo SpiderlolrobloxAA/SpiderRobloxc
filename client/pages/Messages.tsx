@@ -198,9 +198,10 @@ function Thread({ id }: { id: string }) {
             );
           const mine = m.senderId === user?.uid;
           const name = mine ? "Vous" : otherUser?.username || otherUser?.email || "Utilisateur";
+          const role = mine ? "" : roleLabel(otherUser?.role);
           return (
             <div key={m.id} className={`max-w-[75%] ${mine ? "ml-auto" : ""}`}>
-              <div className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}>{name}</div>
+              <div className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}>{name}{role ? ` (${role})` : ""}</div>
               <div className={`rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine ? "bg-secondary/20" : "bg-muted"}`}>
                 {m.text}
               </div>
