@@ -27,6 +27,7 @@ import {
   serverTimestamp,
   setDoc,
   doc,
+  updateDoc,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { canPublish, normalizePrice } from "@/lib/marketplace";
