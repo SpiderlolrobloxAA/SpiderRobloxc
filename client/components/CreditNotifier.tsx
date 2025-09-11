@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
 import {
@@ -27,6 +28,18 @@ export default function CreditNotifier() {
       orderBy("createdAt", "desc"),
     );
     const unsub = onSnapshot(q, (snap) => {
+      // Determine most recent createdAt in the snapshot
+      const latest = snap.docs[0]?.data()?.createdAt?.toMillis?.() ?? Date.now();
+
+      // If we have no recorded last timestamp, initialize it to the latest
+      // and do not show historic notifications on first load.
+      if (!last) {
+        try {
+          localStorage.setItem(key, String(latest));
+        } catch {}
+        return;
+      }
+
       const fresh = snap.docs
         .map((d) => ({ id: d.id, ...(d.data() as any) }))
         .filter((t) => {
@@ -44,11 +57,14 @@ export default function CreditNotifier() {
         credits_purchase: "achat boutique",
       };
       const newItems: Item[] = [];
+      let maxTs = last;
       for (const t of fresh) {
         const c = Number(t.credits || 0);
         if (c <= 0) continue;
         const source = map[t.type] || t.type;
         newItems.push({ id: t.id, text: `+${c} crédits reçus de ${source}` });
+        const ts = t.createdAt?.toMillis?.() ?? 0;
+        if (ts > maxTs) maxTs = ts;
         if (navigator?.vibrate)
           try {
             navigator.vibrate(40);
@@ -57,7 +73,8 @@ export default function CreditNotifier() {
       if (newItems.length) {
         setItems((cur) => [...cur, ...newItems]);
         try {
-          localStorage.setItem(key, String(Date.now()));
+          // persist latest processed timestamp to avoid duplicates
+          localStorage.setItem(key, String(Math.max(maxTs, Date.now())));
         } catch {}
       }
     });
