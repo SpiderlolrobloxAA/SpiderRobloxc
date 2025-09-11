@@ -28,7 +28,8 @@ export default function CreditNotifier() {
     );
     const unsub = onSnapshot(q, (snap) => {
       // Determine most recent createdAt in the snapshot
-      const latest = snap.docs[0]?.data()?.createdAt?.toMillis?.() ?? Date.now();
+      const latest =
+        snap.docs[0]?.data()?.createdAt?.toMillis?.() ?? Date.now();
 
       // If we have no recorded last timestamp, initialize it to the latest
       // and do not show historic notifications on first load.

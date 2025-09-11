@@ -29,7 +29,9 @@ export function Toaster() {
             )}
             <div className={isBanner ? "ml-3 grid gap-1" : "grid gap-1"}>
               {title && (
-                <ToastTitle className={isBanner ? "text-lg font-extrabold" : ""}>
+                <ToastTitle
+                  className={isBanner ? "text-lg font-extrabold" : ""}
+                >
                   {title}
                 </ToastTitle>
               )}

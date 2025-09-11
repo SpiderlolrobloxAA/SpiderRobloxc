@@ -399,7 +399,10 @@ function AddProduct({
 
           if (storage && blob) {
             try {
-              const tmpRef = ref(storage, `products/${userId}/${Date.now()}_pasted_image`);
+              const tmpRef = ref(
+                storage,
+                `products/${userId}/${Date.now()}_pasted_image`,
+              );
               // upload without compression
               await uploadBytes(tmpRef, blob);
               finalUrl = await getDownloadURL(tmpRef);
