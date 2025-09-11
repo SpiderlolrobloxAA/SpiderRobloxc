@@ -199,6 +199,15 @@ function Thread({ id }: { id: string }) {
     updateDoc(doc(db, "threads", id), {
       [`lastReadAt.${user.uid}`]: serverTimestamp(),
     }).catch(() => {});
+
+    // ensure typing indicator is cleared when unmounting
+    return () => {
+      try {
+        updateDoc(doc(db, "threads", id), {
+          [`typing.${user.uid}`]: deleteField(),
+        }).catch(() => {});
+      } catch {}
+    };
   }, [id, user]);
 
   const { toast } = useToast();
