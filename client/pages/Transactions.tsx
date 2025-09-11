@@ -99,7 +99,7 @@ export default function Transactions() {
                     : ""}
                 </div>
                 <div>
-                  <div className="capitalize">{t.type}</div>
+                  <div className="capitalize">{labelForType(t.type)}</div>
                   {t.adminName && (
                     <div className="text-xs text-foreground/60">
                       par {t.adminName}
@@ -107,7 +107,7 @@ export default function Transactions() {
                   )}
                   {t.status === "pending" && (
                     <div className="text-xs text-amber-400 font-semibold">
-                      En attente
+                      En attente {t.type === "salePending" ? `• ${eta(t.createdAt)}` : ""}
                     </div>
                   )}
                 </div>
