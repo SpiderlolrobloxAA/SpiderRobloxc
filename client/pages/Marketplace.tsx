@@ -280,17 +280,27 @@ function AddProduct({
 
     const promise = (async () => {
       try {
-        const storage = await getStorageClient();
-        if (!storage) return null;
         // compress before upload (this usually reduces size dramatically and speeds up uploads)
         const toUpload = await compress(fileToUpload, 1024, 0.75);
-        const tmpRef = ref(
-          storage,
-          `products/${userId}/${Date.now()}_${toUpload.name}`,
-        );
-        await uploadBytes(tmpRef, toUpload);
-        const dl = await getDownloadURL(tmpRef);
-        uploadedUrlRef.current = dl;
+
+        // read as base64
+        const arrayBuf = await toUpload.arrayBuffer();
+        const b64 = Buffer.from(arrayBuf).toString("base64");
+        const dataUrl = `data:${toUpload.type};base64,${b64}`;
+
+        // send to server function to upload with admin SDK (avoids CORS)
+        const resp = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: toUpload.name, data: dataUrl }),
+        });
+        if (!resp.ok) {
+          console.warn("server upload failed", await resp.text());
+          return null;
+        }
+        const json = await resp.json();
+        const dl = json?.url || null;
+        if (dl) uploadedUrlRef.current = dl;
         return dl;
       } catch (e) {
         console.warn("background upload failed", e);
