@@ -20,9 +20,11 @@ export default function Transactions() {
     pending: number;
   } | null>(null);
   const { toast } = useToast();
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     if (!user) return;
+    const id = window.setInterval(() => setTick((n) => n + 1), 1000);
     const q = query(
       collection(db, "transactions"),
       where("uid", "==", user.uid),
@@ -55,8 +57,29 @@ export default function Transactions() {
     return () => {
       unsub();
       unsubUser();
+      window.clearInterval(id);
     };
   }, [user, toast]);
+
+  function labelForType(t: string) {
+    if (t === "salePending") return "En attente";
+    if (t === "saleReleased") return "Validé";
+    if (t === "admin_revoke") return "Retiré par admin";
+    if (t === "quest") return "Reçu via quête";
+    if (t === "giftcard") return "Carte cadeau";
+    if (t === "credits_purchase") return "Achat boutique";
+    if (t === "purchase") return "Achat";
+    return t;
+  }
+
+  function eta(createdAt: any) {
+    const ts = createdAt?.toMillis?.() ?? 0;
+    if (!ts) return "";
+    const total = 60; // seconds
+    const elapsed = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+    const left = Math.max(0, total - elapsed);
+    return left > 0 ? `${left}s` : "bientôt";
+  }
   if (!user) return <div className="container py-10">Connectez-vous.</div>;
   return (
     <div className="container py-10">
@@ -99,7 +122,7 @@ export default function Transactions() {
                     : ""}
                 </div>
                 <div>
-                  <div className="capitalize">{t.type}</div>
+                  <div className="capitalize">{labelForType(t.type)}</div>
                   {t.adminName && (
                     <div className="text-xs text-foreground/60">
                       par {t.adminName}
@@ -107,7 +130,8 @@ export default function Transactions() {
                   )}
                   {t.status === "pending" && (
                     <div className="text-xs text-amber-400 font-semibold">
-                      En attente
+                      En attente{" "}
+                      {t.type === "salePending" ? `• ${eta(t.createdAt)}` : ""}
                     </div>
                   )}
                 </div>

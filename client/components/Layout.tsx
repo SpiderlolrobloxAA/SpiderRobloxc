@@ -20,12 +20,7 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogTitle,
-} from "@/components/ui/dialog";
+// removed profile dialog
 import {
   Sheet,
   SheetContent,
@@ -39,6 +34,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import TosModal from "@/components/TosModal";
 import Notifications from "@/components/Notifications";
+import CreditNotifier from "@/components/CreditNotifier";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
@@ -125,7 +121,7 @@ function MobileMenu() {
           <Menu className="h-4 w-4" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[280px] p-4">
+      <SheetContent side="right" className="w-[300px] p-4">
         <SheetTitle className="sr-only">Menu</SheetTitle>
         <div className="text-sm font-semibold">Menu</div>
         <div className="mt-3 grid gap-2">
@@ -154,13 +150,55 @@ function MobileMenu() {
               </Link>
             </>
           ) : (
-            <Button
-              variant="outline"
-              onClick={logout}
-              className="justify-center"
-            >
-              Se déconnecter
-            </Button>
+            <>
+              {/** Account section moved here to avoid profile modal **/}
+              {role !== "user" && (
+                <Link
+                  to="/admin"
+                  className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+                >
+                  Admin Panel
+                </Link>
+              )}
+              <Link
+                to="/profile"
+                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+              >
+                Profil
+              </Link>
+              <Link
+                to="/transactions"
+                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+              >
+                Transactions
+              </Link>
+              <Link
+                to="/quests"
+                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+              >
+                Quêtes
+              </Link>
+              <Link
+                to="/tickets"
+                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+              >
+                Tickets
+              </Link>
+              <Link
+                to="/messages"
+                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted inline-flex items-center justify-between"
+              >
+                <span>Messagerie</span>
+                <UnreadBadge />
+              </Link>
+              <Button
+                variant="outline"
+                onClick={logout}
+                className="justify-center"
+              >
+                Se déconnecter
+              </Button>
+            </>
           )}
         </div>
       </SheetContent>
@@ -202,65 +240,17 @@ function UserInfo() {
   return (
     <div className="hidden md:flex items-center justify-end gap-4">
       <Notifications />
-      <Dialog>
-        <DialogTrigger asChild>
-          <button className="flex items-center gap-2 min-w-0 hover:bg-muted/60 px-2 py-1 rounded-md">
-            <img
-              src={DEFAULT_AVATAR_IMG}
-              alt="avatar"
-              className="h-8 w-8 rounded-full object-cover"
-            />
-            <span className="max-w-[160px] truncate text-sm text-foreground/90 text-left">
-              {user?.displayName || user?.email}
-            </span>
-            <CompactRole role={role as any} />
-          </button>
-        </DialogTrigger>
-        <DialogContent className="max-w-xs p-4">
-          <DialogTitle className="text-sm">Mon compte</DialogTitle>
-          <div className="mt-3 grid gap-2">
-            {role !== "user" && (
-              <Link
-                to="/admin"
-                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
-              >
-                Admin Panel
-              </Link>
-            )}
-            <Link
-              to="/profile"
-              className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
-            >
-              Profil
-            </Link>
-            <Link
-              to="/transactions"
-              className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
-            >
-              Transactions
-            </Link>
-            <Link
-              to="/quests"
-              className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
-            >
-              Quêtes
-            </Link>
-            <Link
-              to="/tickets"
-              className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
-            >
-              Tickets
-            </Link>
-            <Link
-              to="/messages"
-              className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted inline-flex items-center justify-between"
-            >
-              <span>Messagerie</span>
-              <UnreadBadge />
-            </Link>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <div className="flex items-center gap-2 min-w-0 px-2 py-1 rounded-md">
+        <img
+          src={DEFAULT_AVATAR_IMG}
+          alt="avatar"
+          className="h-8 w-8 rounded-full object-cover"
+        />
+        <span className="max-w-[160px] truncate text-sm text-foreground/90 text-left">
+          {user?.displayName || user?.email}
+        </span>
+        <CompactRole role={role as any} />
+      </div>
       <span
         className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-xs whitespace-nowrap"
         title="Crédits disponibles"
@@ -645,11 +635,11 @@ export default function Layout() {
     };
     window.addEventListener("keydown", onKey);
 
+    // Trigger pending sales processor once on app load (best-effort)
+    fetch("/api/process-pending", { method: "POST" }).catch(() => {});
+
     // Global error listeners to help debug 'Script error.' and uncaught rejections
     const onError = (event: ErrorEvent) => {
-      // Log detailed info to help debugging
-      // Script errors from cross-origin may show as 'Script error.'; adding crossorigin on external scripts helps.
-      // Keep logs in console for now.
       // eslint-disable-next-line no-console
       console.error(
         "Global error captured:",
@@ -681,6 +671,7 @@ export default function Layout() {
       <BanOverlay />
       <Announcements />
       <MaintenanceOverlay />
+      <CreditNotifier />
       <main className="relative z-10">
         <TosModal />
         <Outlet />

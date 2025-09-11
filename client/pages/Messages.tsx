@@ -31,8 +31,27 @@ export default function Messages() {
       where("participants", "array-contains", user.uid),
       orderBy("updatedAt", "desc"),
     );
-    const unsub = onSnapshot(q, (snap) =>
-      setThreads(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    const unsub = onSnapshot(
+      q,
+      (snap) => setThreads(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (err) => {
+        console.error("messages:onSnapshot error", err);
+        const msg = String(err?.message || err);
+        const match = msg.match(
+          /https?:\/\/console\.firebase\.google\.com\/[\S]+/,
+        );
+        const indexUrl = match ? match[0] : undefined;
+        try {
+          // user-friendly toast with index URL if available
+          toast({
+            title: "Firestore: index requis",
+            description: indexUrl
+              ? `Cette requête nécessite un index. Ouvrez: ${indexUrl}`
+              : "Cette requête Firestore nécessite un index composite. Créez-le dans la console Firebase.",
+            variant: "destructive",
+          });
+        } catch {}
+      },
     );
     return () => unsub();
   }, [user]);
@@ -86,6 +105,7 @@ function Thread({ id }: { id: string }) {
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const [threadMeta, setThreadMeta] = useState<any>(null);
+  const [otherUser, setOtherUser] = useState<any>(null);
 
   useEffect(() => {
     const q = query(
@@ -106,6 +126,19 @@ function Thread({ id }: { id: string }) {
     });
     return () => unsub();
   }, [id]);
+
+  // subscribe to the other participant for name/role/status
+  useEffect(() => {
+    const otherId = threadMeta?.participants?.find(
+      (p: string) => p !== user?.uid,
+    );
+    if (!otherId) return;
+    const unsub = onSnapshot(doc(db, "users", otherId), (d) => {
+      setOtherUser(d.data());
+    });
+    return () => unsub();
+  }, [threadMeta?.participants, user?.uid]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs.length]);
@@ -119,6 +152,14 @@ function Thread({ id }: { id: string }) {
   }, [id, user]);
 
   const { toast } = useToast();
+  const roleLabel = (role?: string) => {
+    if (!role) return "";
+    if (role === "verified") return "Certifié";
+    if (role === "helper") return "Helper";
+    if (role === "moderator") return "Modérateur";
+    if (role === "founder") return "Fondateur";
+    return "User";
+  };
 
   const send = async () => {
     if (!user || !text.trim()) return;
@@ -155,6 +196,12 @@ function Thread({ id }: { id: string }) {
 
   return (
     <div className="flex h-full flex-col">
+      <div className="mx-2 mb-2 flex items-center justify-between">
+        <div className="text-sm font-semibold truncate">
+          {threadMeta?.title || "Conversation"}
+        </div>
+        {otherUser && <UserStatus otherUser={otherUser} />}
+      </div>
       {threadMeta?.productId || threadMeta?.order ? (
         <div className="mx-2 mb-2 rounded-md border border-primary/40 bg-primary/10 p-2 text-xs">
           <div className="font-semibold">
@@ -171,14 +218,37 @@ function Thread({ id }: { id: string }) {
         </div>
       ) : null}
       <div className="flex-1 space-y-2 overflow-auto p-2">
-        {msgs.map((m) => (
-          <div
-            key={m.id}
-            className={`max-w-[70%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${m.senderId === user?.uid ? "ml-auto bg-secondary/20" : "bg-muted"}`}
-          >
-            {m.text}
-          </div>
-        ))}
+        {msgs.map((m) => {
+          if (m.senderId === "system")
+            return (
+              <div
+                key={m.id}
+                className="text-center text-xs text-foreground/60"
+              >
+                {m.text}
+              </div>
+            );
+          const mine = m.senderId === user?.uid;
+          const name = mine
+            ? "Vous"
+            : otherUser?.username || otherUser?.email || "Utilisateur";
+          const role = mine ? "" : roleLabel(otherUser?.role);
+          return (
+            <div key={m.id} className={`max-w-[75%] ${mine ? "ml-auto" : ""}`}>
+              <div
+                className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}
+              >
+                {name}
+                {role ? ` (${role})` : ""}
+              </div>
+              <div
+                className={`rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine ? "bg-secondary/20" : "bg-muted"}`}
+              >
+                {m.text}
+              </div>
+            </div>
+          );
+        })}
         <div ref={bottomRef} />
       </div>
       {threadMeta?.system ? (
@@ -198,6 +268,32 @@ function Thread({ id }: { id: string }) {
           <Button onClick={send}>Envoyer</Button>
         </div>
       )}
+    </div>
+  );
+}
+
+function UserStatus({ otherUser }: { otherUser: any }) {
+  const ts = otherUser?.lastSeen?.toMillis?.() ?? 0;
+  let label = "hors ligne";
+  let color = "bg-gray-400";
+  if (ts) {
+    const diff = Date.now() - ts;
+    if (diff < 2 * 60 * 1000) {
+      label = "en ligne";
+      color = "bg-emerald-500";
+    } else if (diff < 10 * 60 * 1000) {
+      label = "inactif";
+      color = "bg-amber-500";
+    }
+  }
+  return (
+    <div className="text-xs text-foreground/70 inline-flex items-center gap-2">
+      <span className={`h-2 w-2 rounded-full ${color}`} />
+      <span className="capitalize">{label}</span>
+      <span className="opacity-60">•</span>
+      <span className="truncate max-w-[160px]">
+        {otherUser?.username || otherUser?.email || "Utilisateur"}
+      </span>
     </div>
   );
 }

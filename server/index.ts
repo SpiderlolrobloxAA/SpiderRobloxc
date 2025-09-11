@@ -44,5 +44,12 @@ export async function createServer() {
     console.warn("Could not load moderation route:", e?.message || e);
   }
 
+  try {
+    const { processPendingSales } = await import("./routes/pending");
+    app.post("/api/process-pending", processPendingSales);
+  } catch (e) {
+    console.warn("Could not load pending processor:", e?.message || e);
+  }
+
   return app;
 }
