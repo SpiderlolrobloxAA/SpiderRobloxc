@@ -70,7 +70,11 @@ export default function CreditNotifier() {
           } catch {}
       }
       if (newItems.length) {
-        setItems((cur) => [...cur, ...newItems]);
+        setItems((cur) => {
+          const existingIds = new Set(cur.map((i) => i.id));
+          const filtered = newItems.filter((i) => !existingIds.has(i.id));
+          return [...cur, ...filtered];
+        });
         try {
           // persist latest processed timestamp to avoid duplicates
           localStorage.setItem(key, String(Math.max(maxTs, Date.now())));
