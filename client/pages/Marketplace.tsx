@@ -249,11 +249,11 @@ function AddProduct({
   };
 
   // compress File to Blob using canvas, tries to reduce size under maxBytes
-  async function compressFileToBlob(file: File, maxBytes = 900 * 1024): Promise<Blob | null> {
+  async function compressFileToBlob(file: File, maxBytes = 300 * 1024): Promise<Blob | null> {
     try {
       const imgBitmap = await createImageBitmap(file);
       const canvas = document.createElement("canvas");
-      const maxDim = 1600;
+      const maxDim = 1024;
       let { width, height } = imgBitmap;
       if (width > maxDim || height > maxDim) {
         const ratio = Math.min(maxDim / width, maxDim / height);
@@ -266,38 +266,38 @@ function AddProduct({
       if (!ctx) return null;
       ctx.drawImage(imgBitmap, 0, 0, width, height);
 
-      // try decreasing quality
-      let quality = 0.92;
-      for (let i = 0; i < 6; i++) {
+      // aggressive quality reduction
+      let quality = 0.8;
+      for (let i = 0; i < 8; i++) {
         const blob: Blob | null = await new Promise((res) =>
           canvas.toBlob((b) => res(b), "image/jpeg", quality),
         );
         if (!blob) break;
         if ((blob.size || 0) <= maxBytes) return blob;
-        quality -= 0.15;
-        if (quality <= 0.1) break;
+        quality -= 0.1;
+        if (quality <= 0.2) break;
       }
 
-      // try progressively scale down
-      let w = Math.floor(width * 0.8);
-      let h = Math.floor(height * 0.8);
+      // aggressive progressive scaling
+      let w = Math.floor(width * 0.7);
+      let h = Math.floor(height * 0.7);
       while (w > 200 && h > 200) {
         canvas.width = w;
         canvas.height = h;
         const ctx2 = canvas.getContext("2d");
         if (!ctx2) break;
         ctx2.drawImage(imgBitmap, 0, 0, w, h);
-        let q = 0.7;
+        let q = 0.6;
         for (let i = 0; i < 6; i++) {
           const blob: Blob | null = await new Promise((res) =>
             canvas.toBlob((b) => res(b), "image/jpeg", q),
           );
           if (!blob) break;
           if ((blob.size || 0) <= maxBytes) return blob;
-          q -= 0.12;
+          q -= 0.1;
         }
-        w = Math.floor(w * 0.8);
-        h = Math.floor(h * 0.8);
+        w = Math.floor(w * 0.7);
+        h = Math.floor(h * 0.7);
       }
       return null;
     } catch (e) {
