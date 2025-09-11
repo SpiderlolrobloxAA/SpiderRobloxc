@@ -171,9 +171,27 @@ function Thread({ id }: { id: string }) {
     return () => unsub();
   }, [threadMeta?.participants, user?.uid]);
 
+  // autoscroll behaviour: only scroll when user is near bottom
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [msgs.length]);
+    const el = containerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+      setIsAtBottom(nearBottom);
+    };
+    el.addEventListener("scroll", onScroll);
+    onScroll();
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (isAtBottom) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [msgs.length, isAtBottom]);
 
   useEffect(() => {
     if (!user) return;
