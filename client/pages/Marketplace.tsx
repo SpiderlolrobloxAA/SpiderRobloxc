@@ -380,35 +380,111 @@ function AddProduct({
         "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
       if (!finalUrl) finalUrl = placeholder;
 
-      // If finalUrl is a data URL, try to upload it to storage to avoid storing large base64 strings in Firestore
+      // If finalUrl is a data URL, try to upload it to storage to avoid storing large base64 strings in Firestore.
+      // If storage is not available, attempt to compress the image client-side before saving.
+      async function dataUrlToBlob(dataUrl: string) {
+        const res = await fetch(dataUrl);
+        return await res.blob();
+      }
+
+      async function compressDataUrl(dataUrl: string, maxBytes = 900 * 1024) {
+        return await new Promise<string | null>(async (resolve) => {
+          try {
+            const img = new Image();
+            img.onload = async () => {
+              try {
+                const canvas = document.createElement("canvas");
+                // scale down if large
+                const maxDim = 1600;
+                let { width, height } = img;
+                if (width > maxDim || height > maxDim) {
+                  const ratio = Math.min(maxDim / width, maxDim / height);
+                  width = Math.round(width * ratio);
+                  height = Math.round(height * ratio);
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return resolve(null);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // try progressive quality reduction
+                let quality = 0.92;
+                for (let i = 0; i < 6; i++) {
+                  const mime = "image/jpeg";
+                  const data = canvas.toDataURL(mime, quality);
+                  if (data.length <= maxBytes) return resolve(data);
+                  quality -= 0.15;
+                  if (quality <= 0.1) break;
+                }
+                // as last resort, reduce dimensions further
+                let w = Math.floor(width * 0.8);
+                let h = Math.floor(height * 0.8);
+                while (w > 200 && h > 200) {
+                  canvas.width = w;
+                  canvas.height = h;
+                  if (!ctx) return resolve(null);
+                  ctx.drawImage(img, 0, 0, w, h);
+                  let q = 0.7;
+                  for (let i = 0; i < 6; i++) {
+                    const data = canvas.toDataURL("image/jpeg", q);
+                    if (data.length <= maxBytes) return resolve(data);
+                    q -= 0.12;
+                  }
+                  w = Math.floor(w * 0.8);
+                  h = Math.floor(h * 0.8);
+                }
+                resolve(null);
+              } catch (e) {
+                resolve(null);
+              }
+            };
+            img.onerror = () => resolve(null);
+            img.src = dataUrl;
+          } catch (e) {
+            resolve(null);
+          }
+        });
+      }
+
       try {
         if (finalUrl.startsWith("data:")) {
           const storage = await getStorageClient();
-          if (storage) {
-            // convert data URL to blob
+          // convert to blob first
+          let blob: Blob | null = null;
+          try {
+            blob = await dataUrlToBlob(finalUrl);
+          } catch (e) {
+            console.warn("dataUrl->blob failed", e);
+          }
+
+          if (storage && blob) {
             try {
-              const res = await fetch(finalUrl);
-              const blob = await res.blob();
-              // simple size guard
-              const size = blob.size || finalUrl.length;
-              if (size > 2 * 1024 * 1024) {
-                // larger than 2MB, reject to avoid huge uploads
-                throw new Error("image_too_large");
-              }
-              const tmpRef = ref(storage, `products/${userId}/${Date.now()}_pasted_image.png`);
+              const tmpRef = ref(storage, `products/${userId}/${Date.now()}_pasted_image`);
               await uploadBytes(tmpRef, blob);
               finalUrl = await getDownloadURL(tmpRef);
             } catch (err) {
-              console.warn("failed to upload data URL to storage", err);
-              // If upload failed and the data URL is huge, abort
-              if ((finalUrl || "").length > 1048000) {
-                throw new Error("image_too_large");
+              console.warn("upload of data URL failed, will try compression fallback", err);
+              // try compression then upload
+              const compressed = await compressDataUrl(finalUrl);
+              if (compressed) {
+                try {
+                  const compressedBlob = await dataUrlToBlob(compressed);
+                  const tmpRef2 = ref(storage, `products/${userId}/${Date.now()}_pasted_image_compressed`);
+                  await uploadBytes(tmpRef2, compressedBlob);
+                  finalUrl = await getDownloadURL(tmpRef2);
+                } catch (err2) {
+                  console.warn("upload of compressed image failed", err2);
+                  // keep trying to proceed below
+                }
               }
-              // otherwise keep finalUrl as-is (small data URL)
             }
           } else {
-            // no storage client available — reject very large data URLs to prevent Firestore errors
-            if (finalUrl.length > 1048000) {
+            // No storage client: try to compress in-browser and keep a small data URL
+            const compressed = await compressDataUrl(finalUrl);
+            if (compressed) {
+              finalUrl = compressed;
+            } else {
               throw new Error("image_too_large_no_storage");
             }
           }
@@ -418,7 +494,7 @@ function AddProduct({
         toast({
           title: "Image trop volumineuse",
           description:
-            "L'image fournie est trop grande. Utilisez une URL externe ou téléversez un fichier plus petit.",
+            "L'image fournie est trop grande et n'a pas pu être compressée. Utilisez une URL externe ou téléversez un fichier plus petit.",
           variant: "destructive",
         });
         setSaving(false);
