@@ -326,7 +326,7 @@ function Thread({ id }: { id: string }) {
           </div>
         </div>
       ) : null}
-      <div className="flex-1 space-y-2 overflow-auto p-2">
+      <div ref={containerRef} className="flex-1 space-y-2 overflow-auto p-2">
         {msgs.map((m) => {
           if (m.senderId === "system")
             return (
