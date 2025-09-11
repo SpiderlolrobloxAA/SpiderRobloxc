@@ -30,7 +30,8 @@ export async function uploadHandler(req: Request, res: Response) {
     const file = bucket.file(destPath);
 
     // generate a random token for public download link
-    const token = (globalThis as any).crypto?.randomUUID?.() || Date.now().toString(36);
+    const token =
+      (globalThis as any).crypto?.randomUUID?.() || Date.now().toString(36);
 
     await file.save(buffer, {
       metadata: {
