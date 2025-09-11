@@ -226,17 +226,28 @@ function CompactRole({ role }: { role: string }) {
 function UserInfo() {
   const { user, logout } = useAuth();
   const { credits, role } = useProfile();
+  const [userMeta, setUserMeta] = useState<any>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const ref = doc(db, "users", user.uid);
+    const unsub = onSnapshot(ref, (d) => setUserMeta(d.data()));
+    return () => unsub();
+  }, [user]);
+
+  const avatarSrc = userMeta?.avatarUrl || user?.photoURL || DEFAULT_AVATAR_IMG;
+
   return (
     <div className="hidden md:flex items-center justify-end gap-4">
       <Notifications />
       <div className="flex items-center gap-2 min-w-0 px-2 py-1 rounded-md">
         <img
-          src={DEFAULT_AVATAR_IMG}
+          src={avatarSrc}
           alt="avatar"
           className="h-8 w-8 rounded-full object-cover"
         />
         <span className="max-w-[160px] truncate text-sm text-foreground/90 text-left">
-          {user?.displayName || user?.email}
+          {userMeta?.displayName || user?.displayName || user?.email}
         </span>
         <CompactRole role={role as any} />
       </div>
