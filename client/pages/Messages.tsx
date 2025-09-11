@@ -131,6 +131,14 @@ function Thread({ id }: { id: string }) {
   }, [id, user]);
 
   const { toast } = useToast();
+  const roleLabel = (role?: string) => {
+    if (!role) return "";
+    if (role === "verified") return "Certifié";
+    if (role === "helper") return "Helper";
+    if (role === "moderator") return "Modérateur";
+    if (role === "founder") return "Fondateur";
+    return "User";
+  };
 
   const send = async () => {
     if (!user || !text.trim()) return;
