@@ -461,7 +461,7 @@ function AddProduct({
         return await res.blob();
       }
 
-      async function compressDataUrl(dataUrl: string, maxBytes = 900 * 1024) {
+      async function compressDataUrl(dataUrl: string, maxBytes = 300 * 1024) {
         return await new Promise<string | null>(async (resolve) => {
           try {
             const img = new Image();
@@ -469,7 +469,7 @@ function AddProduct({
               try {
                 const canvas = document.createElement("canvas");
                 // scale down if large
-                const maxDim = 1600;
+                const maxDim = 1024;
                 let { width, height } = img;
                 if (width > maxDim || height > maxDim) {
                   const ratio = Math.min(maxDim / width, maxDim / height);
@@ -482,31 +482,31 @@ function AddProduct({
                 if (!ctx) return resolve(null);
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // try progressive quality reduction
-                let quality = 0.92;
-                for (let i = 0; i < 6; i++) {
+                // aggressive quality reduction
+                let quality = 0.8;
+                for (let i = 0; i < 8; i++) {
                   const mime = "image/jpeg";
                   const data = canvas.toDataURL(mime, quality);
                   if (data.length <= maxBytes) return resolve(data);
-                  quality -= 0.15;
-                  if (quality <= 0.1) break;
+                  quality -= 0.1;
+                  if (quality <= 0.2) break;
                 }
-                // as last resort, reduce dimensions further
-                let w = Math.floor(width * 0.8);
-                let h = Math.floor(height * 0.8);
+                // as last resort, reduce dimensions further aggressively
+                let w = Math.floor(width * 0.7);
+                let h = Math.floor(height * 0.7);
                 while (w > 200 && h > 200) {
                   canvas.width = w;
                   canvas.height = h;
                   if (!ctx) return resolve(null);
                   ctx.drawImage(img, 0, 0, w, h);
-                  let q = 0.7;
+                  let q = 0.6;
                   for (let i = 0; i < 6; i++) {
                     const data = canvas.toDataURL("image/jpeg", q);
                     if (data.length <= maxBytes) return resolve(data);
-                    q -= 0.12;
+                    q -= 0.1;
                   }
-                  w = Math.floor(w * 0.8);
-                  h = Math.floor(h * 0.8);
+                  w = Math.floor(w * 0.7);
+                  h = Math.floor(h * 0.7);
                 }
                 resolve(null);
               } catch (e) {
