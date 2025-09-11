@@ -323,82 +323,18 @@ function AddProduct({
     setSaving(true);
 
     try {
-      let finalUrl = imageUrl;
-      if (!finalUrl && file) {
-        const storage = await getStorageClient();
-        if (storage) {
-          const tmpRef = ref(
-            storage,
-            `products/${userId}/${Date.now()}_${file.name}`,
-          );
-          await uploadBytes(tmpRef, file);
-          finalUrl = await getDownloadURL(tmpRef);
-        } else {
-          // Fallback: convert file to data URL and store in Firestore so it can be displayed
-          try {
-            finalUrl = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(String(reader.result || ""));
-              reader.onerror = (err) => reject(err);
-              reader.readAsDataURL(file);
-            });
-          } catch (err) {
-            toast({
-              title: "Upload image indisponible",
-              description:
-                "Veuillez saisir une URL d'image ou réessayer plus tard.",
-              variant: "destructive",
-            });
-            setSaving(false);
-            return;
-          }
-        }
-      }
+      // Prefer background uploaded URL (fast path), otherwise use current imageUrl (preview or pasted URL)
+      let finalUrl = uploadedUrlRef.current || imageUrl;
 
       // If still no image URL, use default placeholder image hosted on CDN
-      const placeholder =
-        "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
-      if (!finalUrl) finalUrl = placeholder;
-
-      // If finalUrl is a data URL, try to upload it to storage to avoid storing large base64 strings in Firestore.
-      async function dataUrlToBlob(dataUrl: string) {
-        const res = await fetch(dataUrl);
-        return await res.blob();
+      if (!finalUrl) {
+        finalUrl = "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
       }
 
-      try {
-        if (finalUrl.startsWith("data:")) {
-          const storage = await getStorageClient();
-          let blob: Blob | null = null;
-          try {
-            blob = await dataUrlToBlob(finalUrl);
-          } catch (e) {
-            console.warn("dataUrl->blob failed", e);
-          }
-
-          if (storage && blob) {
-            try {
-              const tmpRef = ref(
-                storage,
-                `products/${userId}/${Date.now()}_pasted_image`,
-              );
-              // upload without compression
-              await uploadBytes(tmpRef, blob);
-              finalUrl = await getDownloadURL(tmpRef);
-            } catch (err) {
-              console.warn("upload of data URL failed", err);
-              // keep finalUrl as-is (data URL) if upload fails
-            }
-          }
-        }
-      } catch (err: any) {
-        console.error("product:image handling failed", err);
-        // proceed without failing — keep finalUrl
-      }
-
-      // If flagged (any reasons), always create as pending — do not publish active even after acceptance
       const flagged = moderationReasons.length > 0;
       const status = flagged ? "pending" : "active";
+
+      // After publishing, if a background upload completes later, we'll reconcile the product image
 
       const refDoc = await addDoc(collection(db, "products"), {
         title: title.trim(),
