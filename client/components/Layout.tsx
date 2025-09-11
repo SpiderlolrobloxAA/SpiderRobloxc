@@ -646,11 +646,11 @@ export default function Layout() {
     };
     window.addEventListener("keydown", onKey);
 
+    // Trigger pending sales processor once on app load (best-effort)
+    fetch("/api/process-pending", { method: "POST" }).catch(() => {});
+
     // Global error listeners to help debug 'Script error.' and uncaught rejections
     const onError = (event: ErrorEvent) => {
-      // Log detailed info to help debugging
-      // Script errors from cross-origin may show as 'Script error.'; adding crossorigin on external scripts helps.
-      // Keep logs in console for now.
       // eslint-disable-next-line no-console
       console.error(
         "Global error captured:",
