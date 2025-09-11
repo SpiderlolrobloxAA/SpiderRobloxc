@@ -252,7 +252,7 @@ function AddProduct({
     if (!f) return;
     setImageUploading(true);
     let timedOut = false;
-    // start a timeout: if upload doesn't finish in 20s, fallback to data URL
+    // start a timeout: if upload doesn't finish in 8s, fallback to data URL
     const timer = window.setTimeout(() => {
       timedOut = true;
       setImageUploading(false);
@@ -342,6 +342,7 @@ function AddProduct({
   // actual creation logic extracted so it can be called after moderation acceptance
   const doCreate = async () => {
     setSaving(true);
+
     try {
       let finalUrl = imageUrl;
       if (!finalUrl && file) {
@@ -379,6 +380,42 @@ function AddProduct({
       const placeholder =
         "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
       if (!finalUrl) finalUrl = placeholder;
+
+      // If finalUrl is a data URL, try to upload it to storage to avoid storing large base64 strings in Firestore.
+      async function dataUrlToBlob(dataUrl: string) {
+        const res = await fetch(dataUrl);
+        return await res.blob();
+      }
+
+      try {
+        if (finalUrl.startsWith("data:")) {
+          const storage = await getStorageClient();
+          let blob: Blob | null = null;
+          try {
+            blob = await dataUrlToBlob(finalUrl);
+          } catch (e) {
+            console.warn("dataUrl->blob failed", e);
+          }
+
+          if (storage && blob) {
+            try {
+              const tmpRef = ref(
+                storage,
+                `products/${userId}/${Date.now()}_pasted_image`,
+              );
+              // upload without compression
+              await uploadBytes(tmpRef, blob);
+              finalUrl = await getDownloadURL(tmpRef);
+            } catch (err) {
+              console.warn("upload of data URL failed", err);
+              // keep finalUrl as-is (data URL) if upload fails
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error("product:image handling failed", err);
+        // proceed without failing — keep finalUrl
+      }
 
       // If flagged (any reasons), always create as pending — do not publish active even after acceptance
       const flagged = moderationReasons.length > 0;
