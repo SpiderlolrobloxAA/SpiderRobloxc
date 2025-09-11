@@ -230,6 +230,7 @@ function AddProduct({
 
   const [imageUploading, setImageUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -247,15 +248,74 @@ function AddProduct({
     await onPick(fake);
   };
 
+  // compress File to Blob using canvas, tries to reduce size under maxBytes
+  async function compressFileToBlob(file: File, maxBytes = 900 * 1024): Promise<Blob | null> {
+    try {
+      const imgBitmap = await createImageBitmap(file);
+      const canvas = document.createElement("canvas");
+      const maxDim = 1600;
+      let { width, height } = imgBitmap;
+      if (width > maxDim || height > maxDim) {
+        const ratio = Math.min(maxDim / width, maxDim / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.drawImage(imgBitmap, 0, 0, width, height);
+
+      // try decreasing quality
+      let quality = 0.92;
+      for (let i = 0; i < 6; i++) {
+        const blob: Blob | null = await new Promise((res) =>
+          canvas.toBlob((b) => res(b), "image/jpeg", quality),
+        );
+        if (!blob) break;
+        if ((blob.size || 0) <= maxBytes) return blob;
+        quality -= 0.15;
+        if (quality <= 0.1) break;
+      }
+
+      // try progressively scale down
+      let w = Math.floor(width * 0.8);
+      let h = Math.floor(height * 0.8);
+      while (w > 200 && h > 200) {
+        canvas.width = w;
+        canvas.height = h;
+        const ctx2 = canvas.getContext("2d");
+        if (!ctx2) break;
+        ctx2.drawImage(imgBitmap, 0, 0, w, h);
+        let q = 0.7;
+        for (let i = 0; i < 6; i++) {
+          const blob: Blob | null = await new Promise((res) =>
+            canvas.toBlob((b) => res(b), "image/jpeg", q),
+          );
+          if (!blob) break;
+          if ((blob.size || 0) <= maxBytes) return blob;
+          q -= 0.12;
+        }
+        w = Math.floor(w * 0.8);
+        h = Math.floor(h * 0.8);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setImageUploading(true);
+    setUploadProgress(0);
     let timedOut = false;
     // start a timeout: if upload doesn't finish in 20s, fallback to data URL
     const timer = window.setTimeout(() => {
       timedOut = true;
       setImageUploading(false);
+      setUploadProgress(null);
       toast({
         title: "Upload lent",
         description: "Upload trop long, utilisation d'un fallback local.",
@@ -272,7 +332,7 @@ function AddProduct({
       } catch (e) {
         console.warn("fallback conversion failed after timeout", e);
       }
-    }, 8000);
+    }, 20000);
 
     try {
       // show immediate preview while uploading
@@ -285,22 +345,35 @@ function AddProduct({
       const storage = await getStorageClient();
       if (storage) {
         try {
-          const tmpRef = ref(
-            storage,
-            `products/${userId}/${Date.now()}_${f.name}`,
+          // attempt to compress first
+          const compressed = await compressFileToBlob(f);
+          const uploadBlob: Blob | File = compressed || f;
+          const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${f.name}`);
+          const uploadTask = uploadBytesResumable(tmpRef, uploadBlob as Blob);
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const prog = Math.round((snapshot.bytesTransferred / (snapshot.totalBytes || 1)) * 100);
+              setUploadProgress(prog);
+            },
+            (error) => {
+              console.warn("resumable upload error", error);
+            },
+            async () => {
+              // complete
+              if (timedOut) {
+                clearTimeout(timer);
+                return;
+              }
+              const dl = await getDownloadURL(tmpRef);
+              clearTimeout(timer);
+              setImageUrl(dl);
+              setFile(null);
+              setPreviewUrl(null);
+              setImageUploading(false);
+              setUploadProgress(null);
+            },
           );
-          await uploadBytes(tmpRef, f);
-          // if timed out already, don't override fallback
-          if (timedOut) {
-            clearTimeout(timer);
-            return;
-          }
-          const dl = await getDownloadURL(tmpRef);
-          clearTimeout(timer);
-          setImageUrl(dl);
-          setFile(null);
-          setPreviewUrl(null);
-          setImageUploading(false);
           return;
         } catch (uploadErr) {
           console.warn("upload immediate failed", uploadErr);
@@ -321,6 +394,7 @@ function AddProduct({
         setFile(null);
         setPreviewUrl(null);
         setImageUploading(false);
+        setUploadProgress(null);
         return;
       } catch (err) {
         console.warn("file to dataURL failed", err);
