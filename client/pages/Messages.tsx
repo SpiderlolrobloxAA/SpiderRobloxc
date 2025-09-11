@@ -24,9 +24,18 @@ import { useToast } from "@/hooks/use-toast";
 function TypingDots() {
   return (
     <div className="flex items-end h-6">
-      <span className="inline-block h-2 w-2 rounded-full bg-foreground/60 mr-1 animate-pulse" style={{ animationDelay: '0s' }} />
-      <span className="inline-block h-2 w-2 rounded-full bg-foreground/60 mr-1 animate-pulse" style={{ animationDelay: '150ms' }} />
-      <span className="inline-block h-2 w-2 rounded-full bg-foreground/60 animate-pulse" style={{ animationDelay: '300ms' }} />
+      <span
+        className="inline-block h-2 w-2 rounded-full bg-foreground/60 mr-1 animate-pulse"
+        style={{ animationDelay: "0s" }}
+      />
+      <span
+        className="inline-block h-2 w-2 rounded-full bg-foreground/60 mr-1 animate-pulse"
+        style={{ animationDelay: "150ms" }}
+      />
+      <span
+        className="inline-block h-2 w-2 rounded-full bg-foreground/60 animate-pulse"
+        style={{ animationDelay: "300ms" }}
+      />
     </div>
   );
 }
@@ -136,7 +145,8 @@ function Thread({ id }: { id: string }) {
       if (last && last.id !== lastMsgIdRef.current) {
         // new message arrived
         if (last.senderId !== user?.uid) {
-          const isVisible = typeof document !== "undefined" ? !document.hidden : true;
+          const isVisible =
+            typeof document !== "undefined" ? !document.hidden : true;
           // show in-site toast
           try {
             // prefer thread title for notification
@@ -146,7 +156,9 @@ function Thread({ id }: { id: string }) {
               if (typeof Notification !== "undefined") {
                 if (Notification.permission === "granted") {
                   try {
-                    new Notification(title, { body: last.text?.slice(0, 120) || "" });
+                    new Notification(title, {
+                      body: last.text?.slice(0, 120) || "",
+                    });
                   } catch {}
                 } else if (Notification.permission !== "denied") {
                   Notification.requestPermission();
@@ -304,7 +316,10 @@ function Thread({ id }: { id: string }) {
             {/* typing indicator */}
             {(() => {
               const typingObj = threadMeta?.typing || {};
-              const entries = Object.entries(typingObj || {}) as [string, any][];
+              const entries = Object.entries(typingObj || {}) as [
+                string,
+                any,
+              ][];
               const recent = entries
                 .map(([uid, ts]) => ({ uid, ts }))
                 .filter((x) => {
@@ -316,7 +331,11 @@ function Thread({ id }: { id: string }) {
                   }
                 });
               if (recent.length === 0) return null;
-              const names = recent.map((r) => (otherUser && threadMeta?.participants?.includes(r.uid) ? (otherUser?.username || otherUser?.email || "Utilisateur") : "Quelqu'un"));
+              const names = recent.map((r) =>
+                otherUser && threadMeta?.participants?.includes(r.uid)
+                  ? otherUser?.username || otherUser?.email || "Utilisateur"
+                  : "Quelqu'un",
+              );
               return <span>{names.join(", ")} est en train d'écrire…</span>;
             })()}
           </div>
@@ -352,26 +371,38 @@ function Thread({ id }: { id: string }) {
 
           const mine = m.senderId === user?.uid;
           const isOther = !mine;
-          const avatarUrl = isOther ? (otherUser?.avatarUrl || DEFAULT_AVATAR_IMG) : (user?.photoURL || DEFAULT_AVATAR_IMG);
-          const name = mine ? "Vous" : otherUser?.username || otherUser?.email || "Utilisateur";
+          const avatarUrl = isOther
+            ? otherUser?.avatarUrl || DEFAULT_AVATAR_IMG
+            : user?.photoURL || DEFAULT_AVATAR_IMG;
+          const name = mine
+            ? "Vous"
+            : otherUser?.username || otherUser?.email || "Utilisateur";
 
           return (
-            <div key={m.id} className={`flex items-end gap-3 ${mine ? 'justify-end' : ''}`}>
+            <div
+              key={m.id}
+              className={`flex items-end gap-3 ${mine ? "justify-end" : ""}`}
+            >
               {/* Avatar for other users */}
               {!mine && (
                 <div className="flex-shrink-0">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={avatarUrl} alt={name} />
-                    <AvatarFallback>{(name || 'U').slice(0,2)}</AvatarFallback>
+                    <AvatarFallback>{(name || "U").slice(0, 2)}</AvatarFallback>
                   </Avatar>
                 </div>
               )}
 
-              <div className={`max-w-[75%] ${mine ? 'ml-auto text-right' : ''}`}>
-                <div className={`mb-1 text-[10px] text-foreground/60 ${mine ? 'text-right' : ''}`}>
+              <div
+                className={`max-w-[75%] ${mine ? "ml-auto text-right" : ""}`}
+              >
+                <div
+                  className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}
+                >
                   {name}
                 </div>
-                <div className={`inline-block rounded-lg px-4 py-2 text-sm whitespace-pre-wrap break-words ${mine ? 'bg-gradient-to-r from-primary to-secondary text-white' : 'bg-muted text-foreground'}`}
+                <div
+                  className={`inline-block rounded-lg px-4 py-2 text-sm whitespace-pre-wrap break-words ${mine ? "bg-gradient-to-r from-primary to-secondary text-white" : "bg-muted text-foreground"}`}
                 >
                   {m.text}
                 </div>
@@ -382,7 +413,7 @@ function Thread({ id }: { id: string }) {
                 <div className="flex-shrink-0">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={avatarUrl} alt={name} />
-                    <AvatarFallback>{(name || 'U').slice(0,2)}</AvatarFallback>
+                    <AvatarFallback>{(name || "U").slice(0, 2)}</AvatarFallback>
                   </Avatar>
                 </div>
               )}
@@ -407,18 +438,23 @@ function Thread({ id }: { id: string }) {
           if (recent.length === 0) return null;
           // show first typer
           const typerId = recent[0].uid;
-          const name = otherUser && threadMeta?.participants?.includes(typerId) ? (otherUser?.username || otherUser?.email || 'Utilisateur') : 'Quelqu\'un';
+          const name =
+            otherUser && threadMeta?.participants?.includes(typerId)
+              ? otherUser?.username || otherUser?.email || "Utilisateur"
+              : "Quelqu'un";
           const avatarUrl = otherUser?.avatarUrl || DEFAULT_AVATAR_IMG;
           return (
             <div className="flex items-end gap-3">
               <div className="flex-shrink-0">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={avatarUrl} alt={name} />
-                  <AvatarFallback>{(name || 'U').slice(0,2)}</AvatarFallback>
+                  <AvatarFallback>{(name || "U").slice(0, 2)}</AvatarFallback>
                 </Avatar>
               </div>
               <div className="max-w-[50%]">
-                <div className="mb-1 text-[10px] text-foreground/60">{name}</div>
+                <div className="mb-1 text-[10px] text-foreground/60">
+                  {name}
+                </div>
                 <div className="inline-block rounded-lg px-4 py-2 bg-muted">
                   <TypingDots />
                 </div>
