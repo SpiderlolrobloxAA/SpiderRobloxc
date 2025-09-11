@@ -726,9 +726,17 @@ function AddProduct({
             />
           </div>
         )}
-        {imageUploading && (
-          <div className="mt-2 text-sm text-foreground/60">
-            Upload image en cours…
+        {(imageUploading || uploadProgress !== null) && (
+          <div className="mt-2">
+            <div className="h-2 w-full rounded-full bg-muted/40 overflow-hidden">
+              <div
+                className="h-full bg-primary transition-[width]"
+                style={{ width: `${uploadProgress ?? 0}%` }}
+              />
+            </div>
+            <div className="text-xs text-foreground/60 mt-1">
+              {uploadProgress !== null ? `Upload: ${uploadProgress}%` : "Upload en cours…"}
+            </div>
           </div>
         )}
       </div>
