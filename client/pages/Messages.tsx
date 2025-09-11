@@ -220,6 +220,34 @@ function Thread({ id }: { id: string }) {
     return "User";
   };
 
+  const setTyping = async () => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, "threads", id), {
+        [`typing.${user.uid}`]: serverTimestamp(),
+      });
+    } catch {}
+  };
+
+  const clearTyping = async () => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, "threads", id), {
+        [`typing.${user.uid}`]: deleteField(),
+      });
+    } catch {}
+  };
+
+  const onTextChange = (v: string) => {
+    setText(v);
+    setTyping();
+    if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = window.setTimeout(() => {
+      clearTyping();
+      typingTimeoutRef.current = null;
+    }, 1800);
+  };
+
   const send = async () => {
     if (!user || !text.trim()) return;
     // do not allow sending into system threads
@@ -248,6 +276,8 @@ function Thread({ id }: { id: string }) {
         { merge: true },
       );
       setText("");
+      // clear typing immediately after sending
+      clearTyping();
     } catch (e) {
       console.error("thread:send failed", e);
     }
