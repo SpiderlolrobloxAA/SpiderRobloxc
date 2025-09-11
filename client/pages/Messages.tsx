@@ -106,6 +106,10 @@ function Thread({ id }: { id: string }) {
   const [msgs, setMsgs] = useState<any[]>([]);
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const lastMsgIdRef = useRef<string | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
   const [threadMeta, setThreadMeta] = useState<any>(null);
   const [otherUser, setOtherUser] = useState<any>(null);
 
