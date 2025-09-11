@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
-import { Button } from "@/components/ui/button";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import {
   Dialog,
   DialogTrigger,
@@ -12,32 +11,10 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 
-function useLocalPref<T>(key: string, initial: T) {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const v = localStorage.getItem(key);
-      return v ? (JSON.parse(v) as T) : initial;
-    } catch {
-      return initial;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch {}
-  }, [key, value]);
-  return [value, setValue] as const;
-}
-
 export default function Notifications() {
   const { user } = useAuth();
   const [notes, setNotes] = useState<any[]>([]);
   const navigate = useNavigate();
-  const [soundOn, setSoundOn] = useLocalPref<boolean>("pref:soundOn", true);
-  const [desktopOn, setDesktopOn] = useLocalPref<boolean>(
-    "pref:desktopOn",
-    false,
-  );
   const lastSeenKey = useMemo(
     () => (user ? `notif:last:${user.uid}` : "notif:last"),
     [user],
@@ -56,7 +33,6 @@ export default function Notifications() {
       // Detect brand-new items to announce
       const lastSeen = Number(localStorage.getItem(lastSeenKey) || 0);
       const newestTs = list[0]?.createdAt?.toMillis?.() ?? 0;
-      // On first load, don't spam; only notify if there's something newer than saved lastSeen
       if (newestTs > 0 && newestTs > lastSeen && prevCount.current > 0) {
         const fresh = list.filter(
           (n: any) => (n.createdAt?.toMillis?.() ?? 0) > lastSeen,
@@ -65,9 +41,12 @@ export default function Notifications() {
           const title = n.title || (n.type === "thread" ? "Nouveau chat" : "Notification");
           const description = n.text || undefined;
           toast({ title, description });
-          if (soundOn) beep();
-          if (desktopOn && "Notification" in window) {
+          beep();
+          if ("Notification" in window) {
             try {
+              if (Notification.permission === "default") {
+                Notification.requestPermission().catch(() => {});
+              }
               if (Notification.permission === "granted") {
                 new Notification(title, { body: description });
               }
@@ -81,7 +60,7 @@ export default function Notifications() {
       prevCount.current = list.length;
     });
     return () => unsub();
-  }, [user, lastSeenKey, soundOn, desktopOn]);
+  }, [user, lastSeenKey]);
 
   const unread = notes.filter((n) => !n.read).length;
 
@@ -111,42 +90,8 @@ export default function Notifications() {
           )}
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-h-[80vh]" aria-label="Notifications alt+T">
+      <DialogContent className="sm:max-h-[80vh] bg-background/60 backdrop-blur-md border-border/60" aria-label="Notifications alt+T">
         <DialogTitle>Notifications</DialogTitle>
-
-        <div className="mt-2 flex items-center gap-2">
-          <Button
-            variant={soundOn ? "default" : "outline"}
-            size="sm"
-            onClick={async () => {
-              const next = !soundOn;
-              setSoundOn(next);
-              if (user) await setDoc(doc(db, "users", user.uid), { settings: { sound: next } } as any, { merge: true });
-            }}
-          >
-            {soundOn ? "🔊 Son ON" : "🔇 Son OFF"}
-          </Button>
-          <Button
-            variant={desktopOn ? "default" : "outline"}
-            size="sm"
-            onClick={async () => {
-              if ("Notification" in window) {
-                try {
-                  if (Notification.permission !== "granted") {
-                    const p = await Notification.requestPermission();
-                    if (p !== "granted") return;
-                  }
-                } catch {}
-              }
-              const next = !desktopOn;
-              setDesktopOn(next);
-              if (user) await setDoc(doc(db, "users", user.uid), { settings: { desktop: next } } as any, { merge: true });
-            }}
-          >
-            {desktopOn ? "🔔 Desktop ON" : "🔕 Desktop OFF"}
-          </Button>
-        </div>
-
         <div className="mt-3 space-y-2 max-h-[60vh] overflow-y-auto pr-1" role="region" aria-label="Notifications (F8)">
           {notes.length === 0 && (
             <div className="text-sm text-foreground/60">Aucune notification</div>
@@ -154,7 +99,7 @@ export default function Notifications() {
           {notes.map((n, i) => (
             <div
               key={i}
-              className="rounded-md border border-border/60 p-3 bg-card flex items-start justify-between gap-2"
+              className="rounded-md border border-border/60 p-3 bg-card/70 backdrop-blur flex items-start justify-between gap-2"
             >
               <div>
                 <div className="text-sm font-medium">
