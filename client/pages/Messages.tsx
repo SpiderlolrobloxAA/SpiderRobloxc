@@ -118,11 +118,37 @@ function Thread({ id }: { id: string }) {
       collection(db, "threads", id, "messages"),
       orderBy("createdAt", "asc"),
     );
-    const unsub = onSnapshot(q, (snap) =>
-      setMsgs(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-    );
+    const unsub = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const last = docs[docs.length - 1];
+      if (last && last.id !== lastMsgIdRef.current) {
+        // new message arrived
+        if (last.senderId !== user?.uid) {
+          const isVisible = typeof document !== "undefined" ? !document.hidden : true;
+          // show in-site toast
+          try {
+            // prefer thread title for notification
+            const title = threadMeta?.title || "Nouveau message";
+            // only show toast when not viewing (or when tab hidden)
+            if (!isVisible) {
+              if (typeof Notification !== "undefined") {
+                if (Notification.permission === "granted") {
+                  try {
+                    new Notification(title, { body: last.text?.slice(0, 120) || "" });
+                  } catch {}
+                } else if (Notification.permission !== "denied") {
+                  Notification.requestPermission();
+                }
+              }
+            }
+          } catch (e) {}
+        }
+        lastMsgIdRef.current = last.id;
+      }
+      setMsgs(docs);
+    });
     return () => unsub();
-  }, [id]);
+  }, [id, user, threadMeta]);
 
   // subscribe to thread meta to know if it's a system thread
   useEffect(() => {
