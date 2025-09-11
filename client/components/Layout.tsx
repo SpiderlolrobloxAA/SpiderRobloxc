@@ -39,6 +39,7 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import TosModal from "@/components/TosModal";
 import Notifications from "@/components/Notifications";
+import CreditNotifier from "@/components/CreditNotifier";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
