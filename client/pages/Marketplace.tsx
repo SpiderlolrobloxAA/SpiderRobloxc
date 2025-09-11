@@ -465,23 +465,13 @@ function AddProduct({
       // reset moderation state after creation
       setModerationReasons([]);
       setModerationAccepted(false);
-    } catch (e: any) {
+    } catch (e) {
       console.error("product:create failed", e);
-      const msg = String(e?.message || e);
-      if (msg.includes("timeout")) {
-        toast({
-          title: "Temps d'attente dépassé",
-          description:
-            "L'opération a pris trop de temps. Vérifiez votre connexion ou réessayez plus tard.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Erreur",
-          description: "Impossible de publier le produit.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Erreur",
+        description: "Impossible de publier le produit.",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
