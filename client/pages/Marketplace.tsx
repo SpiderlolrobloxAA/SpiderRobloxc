@@ -256,7 +256,10 @@ function AddProduct({
       try {
         const storage = await getStorageClient();
         if (!storage) return null;
-        const tmpRef = ref(storage, `products/${userId}/${Date.now()}_${fileToUpload.name}`);
+        const tmpRef = ref(
+          storage,
+          `products/${userId}/${Date.now()}_${fileToUpload.name}`,
+        );
         await uploadBytes(tmpRef, fileToUpload);
         const dl = await getDownloadURL(tmpRef);
         uploadedUrlRef.current = dl;
@@ -328,7 +331,8 @@ function AddProduct({
 
       // If still no image URL, use default placeholder image hosted on CDN
       if (!finalUrl) {
-        finalUrl = "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
+        finalUrl =
+          "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
       }
 
       const flagged = moderationReasons.length > 0;
