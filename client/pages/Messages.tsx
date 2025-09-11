@@ -16,8 +16,20 @@ import {
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+
+function TypingDots() {
+  return (
+    <div className="flex items-end h-6">
+      <span className="inline-block h-2 w-2 rounded-full bg-foreground/60 mr-1 animate-pulse" style={{ animationDelay: '0s' }} />
+      <span className="inline-block h-2 w-2 rounded-full bg-foreground/60 mr-1 animate-pulse" style={{ animationDelay: '150ms' }} />
+      <span className="inline-block h-2 w-2 rounded-full bg-foreground/60 animate-pulse" style={{ animationDelay: '300ms' }} />
+    </div>
+  );
+}
 
 export default function Messages() {
   const { user } = useAuth();
