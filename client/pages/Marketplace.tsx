@@ -252,15 +252,43 @@ function AddProduct({
 
   // create a small preview quickly and start background upload of original file
   const startBackgroundUpload = async (fileToUpload: File) => {
+    // compress image in-browser before uploading to reduce upload time and bandwidth
+    const compress = async (file: File, maxDim = 1024, quality = 0.75) => {
+      try {
+        const img = await createImageBitmap(file);
+        const ratio = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const width = Math.round(img.width * ratio);
+        const height = Math.round(img.height * ratio);
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return file;
+        ctx.drawImage(img, 0, 0, width, height);
+        const blob: Blob | null = await new Promise((res) =>
+          canvas.toBlob(res, "image/jpeg", quality),
+        );
+        if (!blob) return file;
+        // return a File so firebase upload keeps original filename context
+        const newName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+        return new File([blob], newName, { type: "image/jpeg" });
+      } catch (err) {
+        console.warn("compression failed, uploading original", err);
+        return file;
+      }
+    };
+
     const promise = (async () => {
       try {
         const storage = await getStorageClient();
         if (!storage) return null;
+        // compress before upload (this usually reduces size dramatically and speeds up uploads)
+        const toUpload = await compress(fileToUpload, 1024, 0.75);
         const tmpRef = ref(
           storage,
-          `products/${userId}/${Date.now()}_${fileToUpload.name}`,
+          `products/${userId}/${Date.now()}_${toUpload.name}`,
         );
-        await uploadBytes(tmpRef, fileToUpload);
+        await uploadBytes(tmpRef, toUpload);
         const dl = await getDownloadURL(tmpRef);
         uploadedUrlRef.current = dl;
         return dl;
