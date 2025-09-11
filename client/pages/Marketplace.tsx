@@ -380,6 +380,51 @@ function AddProduct({
         "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
       if (!finalUrl) finalUrl = placeholder;
 
+      // If finalUrl is a data URL, try to upload it to storage to avoid storing large base64 strings in Firestore
+      try {
+        if (finalUrl.startsWith("data:")) {
+          const storage = await getStorageClient();
+          if (storage) {
+            // convert data URL to blob
+            try {
+              const res = await fetch(finalUrl);
+              const blob = await res.blob();
+              // simple size guard
+              const size = blob.size || finalUrl.length;
+              if (size > 2 * 1024 * 1024) {
+                // larger than 2MB, reject to avoid huge uploads
+                throw new Error("image_too_large");
+              }
+              const tmpRef = ref(storage, `products/${userId}/${Date.now()}_pasted_image.png`);
+              await uploadBytes(tmpRef, blob);
+              finalUrl = await getDownloadURL(tmpRef);
+            } catch (err) {
+              console.warn("failed to upload data URL to storage", err);
+              // If upload failed and the data URL is huge, abort
+              if ((finalUrl || "").length > 1048000) {
+                throw new Error("image_too_large");
+              }
+              // otherwise keep finalUrl as-is (small data URL)
+            }
+          } else {
+            // no storage client available — reject very large data URLs to prevent Firestore errors
+            if (finalUrl.length > 1048000) {
+              throw new Error("image_too_large_no_storage");
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error("product:image handling failed", err);
+        toast({
+          title: "Image trop volumineuse",
+          description:
+            "L'image fournie est trop grande. Utilisez une URL externe ou téléversez un fichier plus petit.",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
       // If flagged (any reasons), always create as pending — do not publish active even after acceptance
       const flagged = moderationReasons.length > 0;
       const status = flagged ? "pending" : "active";
