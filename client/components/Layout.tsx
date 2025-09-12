@@ -35,6 +35,7 @@ import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import TosModal from "@/components/TosModal";
 import Notifications from "@/components/Notifications";
 import CreditNotifier from "@/components/CreditNotifier";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
@@ -584,8 +585,10 @@ export default function Layout() {
     };
     window.addEventListener("keydown", onKey);
 
-    // Trigger pending sales processor once on app load (best-effort)
-    fetch("/api/process-pending", { method: "POST" }).catch(() => {});
+    // Trigger pending sales processor only in production
+    if (import.meta.env.PROD) {
+      fetch("/api/process-pending", { method: "POST" }).catch(() => {});
+    }
 
     // Global error listeners to help debug 'Script error.' and uncaught rejections
     const onError = (event: ErrorEvent) => {
@@ -623,7 +626,9 @@ export default function Layout() {
       <CreditNotifier />
       <main className="relative z-10">
         <TosModal />
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       <Footer />
     </div>
