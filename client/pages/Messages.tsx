@@ -136,6 +136,11 @@ function Thread({ id }: { id: string }) {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const callRoleRef = useRef<"caller" | "callee" | null>(null);
+  const [callStatus, setCallStatus] = useState<string>("");
+  const [callSeconds, setCallSeconds] = useState<number>(0);
+  const lastOfferSdpRef = useRef<string | null>(null);
+  const restartingRef = useRef<boolean>(false);
 
   useEffect(() => {
     const q = query(
@@ -195,6 +200,16 @@ function Thread({ id }: { id: string }) {
     });
     return () => unsub();
   }, [id, user?.uid]);
+
+  // Call duration timer
+  useEffect(() => {
+    if (!inCall) {
+      setCallSeconds(0);
+      return;
+    }
+    const int = window.setInterval(() => setCallSeconds((s) => s + 1), 1000);
+    return () => window.clearInterval(int);
+  }, [inCall]);
 
   const { toast } = useToast();
   const roleLabel = (role?: string) => {
@@ -271,6 +286,19 @@ function Thread({ id }: { id: string }) {
       const target = role === "caller" ? "offerCandidates" : "answerCandidates";
       await addDoc(collection(callDocRef, target), event.candidate.toJSON());
     };
+    pc.onconnectionstatechange = () => {
+      const st = pc.connectionState;
+      setCallStatus(st);
+      if ((st === "disconnected" || st === "failed") && !restartingRef.current) {
+        restartingRef.current = true;
+        tryIceRestart(callDocRef, role).finally(() => {
+          setTimeout(() => {
+            restartingRef.current = false;
+          }, 1500);
+        });
+      }
+      if (st === "closed") setInCall(false);
+    };
     pcRef.current = pc;
     return pc;
   }
@@ -291,33 +319,15 @@ function Thread({ id }: { id: string }) {
         createdAt: serverTimestamp(),
       });
       setCurrentCallId(callDocRef.id);
+      callRoleRef.current = "caller";
       const pc = createPeerConnection(callDocRef, "caller");
       const stream = await getLocalStream(video);
       stream.getTracks().forEach((t) => pc.addTrack(t, stream));
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      lastOfferSdpRef.current = offer.sdp || null;
       await setDoc(callDocRef, { offer }, { merge: true });
-      const unsubAnswer = onSnapshot(callDocRef, async (d) => {
-        const data = d.data() as any;
-        if (data?.answer && pc.signalingState !== "stable") {
-          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-          setInCall(true);
-        }
-      });
-      const unsubAnsCands = onSnapshot(collection(callDocRef, "answerCandidates"), (snap) => {
-        snap.docChanges().forEach((c) => {
-          if (c.type === "added") {
-            const cand = new RTCIceCandidate(c.doc.data() as any);
-            try {
-              pc.addIceCandidate(cand);
-            } catch {}
-          }
-        });
-      });
-      (pc as any)._cleanupSubs = () => {
-        unsubAnswer();
-        unsubAnsCands();
-      };
+      attachCallSubscriptions(callDocRef, "caller", pc);
     } catch (e) {
       console.error("startCall failed", e);
     }
@@ -328,24 +338,16 @@ function Thread({ id }: { id: string }) {
     try {
       const callDocRef = doc(db, "threads", id, "calls", call.id);
       setCurrentCallId(call.id);
+      callRoleRef.current = "callee";
       const pc = createPeerConnection(callDocRef, "callee");
       const stream = await getLocalStream(video);
       stream.getTracks().forEach((t) => pc.addTrack(t, stream));
       await pc.setRemoteDescription(new RTCSessionDescription(call.offer));
+      lastOfferSdpRef.current = call.offer?.sdp || null;
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       await setDoc(callDocRef, { answer, status: "ongoing" }, { merge: true });
-      const unsubOfferCands = onSnapshot(collection(callDocRef, "offerCandidates"), (snap) => {
-        snap.docChanges().forEach((c) => {
-          if (c.type === "added") {
-            const cand = new RTCIceCandidate(c.doc.data() as any);
-            try {
-              pc.addIceCandidate(cand);
-            } catch {}
-          }
-        });
-      });
-      (pc as any)._cleanupSubs = () => unsubOfferCands();
+      attachCallSubscriptions(callDocRef, "callee", pc);
       setIncoming(null);
       setInCall(true);
     } catch (e) {
@@ -364,6 +366,7 @@ function Thread({ id }: { id: string }) {
       pcRef.current?.close();
       pcRef.current = null;
       setInCall(false);
+      setCallStatus("");
       if (currentCallId) {
         try {
           await setDoc(doc(db, "threads", id, "calls", currentCallId), { status: "ended", endedAt: serverTimestamp() }, { merge: true });
@@ -397,6 +400,63 @@ function Thread({ id }: { id: string }) {
       };
     } catch (e) {
       console.error("screen share failed", e);
+    }
+  }
+
+  function attachCallSubscriptions(callDocRef: any, role: "caller" | "callee", pc: RTCPeerConnection) {
+    // monitor call doc for renegotiation and end
+    const unsubDoc = onSnapshot(callDocRef, async (d) => {
+      const data = d.data() as any;
+      if (!data) return;
+      if (data.status === "ended") {
+        await hangUp();
+        return;
+      }
+      if (role === "caller") {
+        if (data.answer && pc.signalingState !== "stable") {
+          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+          setInCall(true);
+        }
+      } else {
+        // callee reacts to new offers for ICE restarts
+        if (data.offer && data.offer.sdp && data.offer.sdp !== lastOfferSdpRef.current) {
+          lastOfferSdpRef.current = data.offer.sdp;
+          await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          await setDoc(callDocRef, { answer, status: "ongoing" }, { merge: true });
+        }
+      }
+    });
+
+    // ICE candidates subscription
+    const path = role === "caller" ? "answerCandidates" : "offerCandidates";
+    const unsubCands = onSnapshot(collection(callDocRef, path), (snap) => {
+      snap.docChanges().forEach((c) => {
+        if (c.type === "added") {
+          try {
+            pc.addIceCandidate(new RTCIceCandidate(c.doc.data() as any));
+          } catch {}
+        }
+      });
+    });
+
+    (pc as any)._cleanupSubs = () => {
+      try { unsubDoc(); } catch {}
+      try { unsubCands(); } catch {}
+    };
+  }
+
+  async function tryIceRestart(callDocRef: any, role: "caller" | "callee") {
+    const pc = pcRef.current;
+    if (!pc) return;
+    try {
+      const offer = await pc.createOffer({ iceRestart: true });
+      await pc.setLocalDescription(offer);
+      lastOfferSdpRef.current = offer.sdp || null;
+      await setDoc(callDocRef, { offer }, { merge: true });
+    } catch (e) {
+      console.error("ice restart failed", e);
     }
   }
 
@@ -470,6 +530,7 @@ function Thread({ id }: { id: string }) {
           <video ref={localVideoRef} className="w-full rounded-md bg-black/60" autoPlay playsInline muted />
           <video ref={remoteVideoRef} className="w-full rounded-md bg-black/60" autoPlay playsInline />
           <div className="col-span-2 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-foreground/70">{callStatus || "connecté"} • {Math.trunc(callSeconds/60).toString().padStart(2,"0")}:{(callSeconds%60).toString().padStart(2,"0")}</span>
             <Button size="sm" variant="outline" onClick={toggleMic}>{micOn ? "Mute" : "Unmute"}</Button>
             <Button size="sm" variant="outline" onClick={toggleCam}>{camOn ? "Cam off" : "Cam on"}</Button>
             <Button size="sm" variant="outline" onClick={startScreenShare}>Partager écran</Button>
