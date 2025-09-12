@@ -1,7 +1,5 @@
 import "./global.css";
 
-import "./global.css";
-
 import { Toaster } from "@/components/ui/toaster";
 import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -26,6 +24,7 @@ import AdminRoles from "./pages/AdminRoles";
 import PrivateRoute from "@/components/PrivateRoute";
 import { AuthProvider } from "@/context/AuthProvider";
 import { ProfileProvider } from "@/context/ProfileProvider";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -81,4 +80,8 @@ const _win: any = window as any;
 if (!_win.__app_root) {
   _win.__app_root = createRoot(_container);
 }
-_win.__app_root.render(<App />);
+_win.__app_root.render(
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>
+);
