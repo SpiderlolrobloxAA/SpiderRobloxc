@@ -83,5 +83,5 @@ if (!_win.__app_root) {
 _win.__app_root.render(
   <ErrorBoundary>
     <App />
-  </ErrorBoundary>
+  </ErrorBoundary>,
 );

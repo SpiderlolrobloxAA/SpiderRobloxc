@@ -23,10 +23,15 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="container py-20 text-center">
-          <div className="inline-flex items-center rounded-full border border-border/60 bg-card px-3 py-1 text-xs text-foreground/70">Erreur d'affichage</div>
-          <h1 className="mt-3 text-2xl font-display font-extrabold">Un problème est survenu</h1>
+          <div className="inline-flex items-center rounded-full border border-border/60 bg-card px-3 py-1 text-xs text-foreground/70">
+            Erreur d'affichage
+          </div>
+          <h1 className="mt-3 text-2xl font-display font-extrabold">
+            Un problème est survenu
+          </h1>
           <p className="mt-2 text-foreground/70">
-            Essayez d'actualiser la page. Si le problème persiste, contactez le support.
+            Essayez d'actualiser la page. Si le problème persiste, contactez le
+            support.
           </p>
           <button
             className="mt-4 rounded-md border border-border/60 bg-muted px-3 py-2 text-sm"
