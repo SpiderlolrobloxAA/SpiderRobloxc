@@ -20,6 +20,7 @@ export default function Notifications() {
     [user],
   );
   const prevCount = useRef<number>(0);
+  const initialized = useRef<boolean>(false);
 
   useEffect(() => {
     if (!user) return;
@@ -29,6 +30,17 @@ export default function Notifications() {
       const arr = Array.isArray(data?.notifications) ? data!.notifications : [];
       const list = arr.slice().reverse();
       setNotes(list);
+
+      // On first snapshot, initialize lastSeen to newest notification to avoid replaying old items
+      if (!initialized.current) {
+        const newest = list[0]?.createdAt?.toMillis?.() ?? 0;
+        try {
+          localStorage.setItem(lastSeenKey, String(newest || Date.now()));
+        } catch {}
+        initialized.current = true;
+        prevCount.current = list.length;
+        return;
+      }
 
       // Detect brand-new items to announce
       const lastSeen = Number(localStorage.getItem(lastSeenKey) || 0);
