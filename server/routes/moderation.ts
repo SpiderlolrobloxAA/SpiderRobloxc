@@ -1,23 +1,23 @@
 import { Request, Response } from "express";
 
 export async function moderateHandler(req: Request, res: Response) {
+  // Fallback simple heuristic available in all paths
+  const heuristic = (t: string) => {
+    const re =
+      /\b(?:idiot|stupid|shit|fuck|bitch|asshole|con(nard)?|salope|salaud|merde|encul|pute)\b/i;
+    const m = re.exec(t || "");
+    if (m) {
+      return { flagged: true, reasons: ["insult"], evidence: m[0] };
+    }
+    return { flagged: false, reasons: [], evidence: "" };
+  };
+
   try {
     const { text } = req.body || {};
     if (!text || typeof text !== "string")
       return res.status(400).json({ error: "Missing text" });
 
     const key = process.env.OPENROUTER_API_KEY;
-
-    // Fallback simple heuristic
-    const heuristic = (t: string) => {
-      const re =
-        /\b(?:idiot|stupid|shit|fuck|bitch|asshole|con(nard)?|salope|salaud|merde|encul|pute)\b/i;
-      const m = re.exec(t);
-      if (m) {
-        return { flagged: true, reasons: ["insult"], evidence: m[0] };
-      }
-      return { flagged: false, reasons: [], evidence: "" };
-    };
 
     if (!key) {
       // No API key configured, use heuristic
@@ -81,6 +81,11 @@ export async function moderateHandler(req: Request, res: Response) {
     return res.json(heuristic(text));
   } catch (err) {
     console.error("moderation:error", err);
-    return res.status(500).json({ error: "internal" });
+    try {
+      const t = (req as any)?.body?.text || "";
+      return res.json(heuristic(t));
+    } catch {
+      return res.json({ flagged: false, reasons: [], evidence: "" });
+    }
   }
 }

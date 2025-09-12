@@ -504,14 +504,9 @@ function AddProduct({
 
     setSaving(true);
     try {
-      // call moderation endpoint
-      const mod = await (
-        await fetch("/api/moderate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: title }),
-        })
-      ).json();
+      // call moderation endpoint (graceful fallback inside helper)
+      const { moderateText } = await import("@/lib/moderation");
+      const mod = await moderateText(title);
       if (mod?.flagged) {
         setModerationReasons(Array.isArray(mod.reasons) ? mod.reasons : []);
         setModerationOpen(true);
