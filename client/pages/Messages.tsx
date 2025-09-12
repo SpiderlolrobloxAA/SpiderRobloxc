@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthProvider";
-import { db } from "@/lib/firebase";
+import { db, getStorageClient } from "@/lib/firebase";
 import {
   addDoc,
   collection,
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSearchParams } from "react-router-dom";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import { RoleBadge } from "@/components/RoleBadge";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
@@ -120,6 +121,7 @@ function Thread({ id }: { id: string }) {
   const { user } = useAuth();
   const [msgs, setMsgs] = useState<any[]>([]);
   const [text, setText] = useState("");
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [threadMeta, setThreadMeta] = useState<any>(null);
   const [otherUser, setOtherUser] = useState<any>(null);
@@ -159,6 +161,11 @@ function Thread({ id }: { id: string }) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs.length]);
+
+  const otherId = useMemo(
+    () => threadMeta?.participants?.find((p: string) => p !== user?.uid),
+    [threadMeta?.participants, user?.uid],
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -227,6 +234,37 @@ function Thread({ id }: { id: string }) {
 
   const timeHM = (ms?: number) =>
     ms ? new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+
+  const sendImage = async (file: File) => {
+    if (!user || !file || threadMeta?.system) return;
+    try {
+      setUploading(true);
+      const storage = await getStorageClient();
+      if (!storage) throw new Error("Storage indisponible");
+      const tmpRef = ref(storage, `threads/${id}/${Date.now()}_${file.name}`);
+      await uploadBytes(tmpRef, file);
+      const url = await getDownloadURL(tmpRef);
+
+      await addDoc(collection(db, "threads", id, "messages"), {
+        senderId: user.uid,
+        imageUrl: url,
+        createdAt: serverTimestamp(),
+      });
+      await setDoc(
+        doc(db, "threads", id),
+        {
+          lastMessage: { text: "📷 Image", senderId: user.uid },
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+    } catch (e) {
+      console.error("thread:image failed", e);
+      toast({ title: "Upload image indisponible", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -329,7 +367,13 @@ function Thread({ id }: { id: string }) {
                         : "bg-muted border-border/60",
                     )}
                   >
-                    {m.text}
+                    {m.imageUrl ? (
+                      <a href={m.imageUrl} target="_blank" rel="noreferrer">
+                        <img src={m.imageUrl} alt="image" className="max-h-60 rounded-md" />
+                      </a>
+                    ) : (
+                      m.text
+                    )}
                   </div>
                   <div className={cn("mt-1 text-[10px] text-foreground/50", mine ? "text-right" : "")}>{timeHM(ts)}</div>
                 </div>
@@ -352,17 +396,51 @@ function Thread({ id }: { id: string }) {
           Message système — les réponses sont désactivées.
         </div>
       ) : (
-        <div className="mt-2 flex items-center gap-2">
-          <Input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Votre message…"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") send();
-            }}
-          />
-          <Button onClick={send}>Envoyer</Button>
-        </div>
+        <>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setText((t) => (t ? t + " Merci !" : "Merci !"))}>Merci</Button>
+            <Button variant="outline" size="sm" onClick={() => setText((t) => (t ? t + " Produit envoyé." : "Produit envoyé."))}>Produit envoyé</Button>
+            <Button variant="outline" size="sm" onClick={() => setText((t) => (t ? t + " Ok reçu." : "Ok reçu."))}>Ok reçu</Button>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <Input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Votre message…"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") send();
+              }}
+            />
+            <label className={cn("text-xs", uploading && "opacity-60")}>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void sendImage(f);
+                  e.currentTarget.value = "";
+                }}
+                disabled={uploading}
+              />
+              <Button variant="outline" disabled={uploading}>Image</Button>
+            </label>
+            <Button onClick={send} disabled={!text.trim()}>Envoyer</Button>
+          </div>
+          {(() => {
+            const myLast = [...msgs].reverse().find((m) => m.senderId === user?.uid);
+            const otherSeen = threadMeta?.lastReadAt?.[otherId || ""]?.toMillis?.() ?? 0;
+            const myLastTs = myLast?.createdAt?.toMillis?.() ?? 0;
+            if (myLast && otherSeen && otherSeen >= myLastTs) {
+              return (
+                <div className="mt-1 text-[11px] text-foreground/60 text-right">
+                  Vu à {timeHM(otherSeen)}
+                </div>
+              );
+            }
+            return null;
+          })()}
+        </>
       )}
     </div>
   );
