@@ -17,6 +17,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { RoleBadge } from "@/components/RoleBadge";
+import { DEFAULT_AVATAR_IMG } from "@/lib/images";
+import { cn } from "@/lib/utils";
 
 export default function Messages() {
   const { user } = useAuth();
@@ -67,18 +70,32 @@ export default function Messages() {
       <div className="rounded-xl border border-border/60 bg-card p-3">
         <div className="text-sm font-semibold">Messagerie</div>
         <div className="mt-2 divide-y divide-border/60 max-h-[60vh] overflow-auto">
-          {threads.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setSearchParams({ thread: t.id })}
-              className={`w-full text-left px-2 py-2 hover:bg-muted ${active === t.id ? "bg-muted" : ""}`}
-            >
-              <div className="text-sm">{t.title || "Conversation"}</div>
-              <div className="text-xs text-foreground/60 truncate">
-                {t.lastMessage?.text || "���"}
-              </div>
-            </button>
-          ))}
+          {threads.map((t) => {
+            const lastFrom = t.lastMessage?.senderId;
+            const updatedAt = t.updatedAt?.toMillis?.() ?? 0;
+            const lastReadAt = t.lastReadAt?.[user?.uid || ""]?.toMillis?.() ?? 0;
+            const unread = !!(lastFrom && lastFrom !== user?.uid && updatedAt > lastReadAt);
+            return (
+              <button
+                key={t.id}
+                onClick={() => setSearchParams({ thread: t.id })}
+                className={cn(
+                  "w-full text-left px-2 py-2 hover:bg-muted",
+                  active === t.id && "bg-muted",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className={cn("text-sm truncate", unread && "font-semibold")}>{t.title || "Conversation"}</div>
+                  {unread && (
+                    <span className="inline-flex h-2 w-2 rounded-full bg-primary" />
+                  )}
+                </div>
+                <div className="text-xs text-foreground/60 truncate">
+                  {t.lastMessage?.text || ""}
+                </div>
+              </button>
+            );
+          })}
           {threads.length === 0 && (
             <div className="px-2 py-4 text-sm text-foreground/60">
               Aucun message
@@ -163,7 +180,6 @@ function Thread({ id }: { id: string }) {
 
   const send = async () => {
     if (!user || !text.trim()) return;
-    // do not allow sending into system threads
     if (threadMeta?.system) {
       toast({
         title: "Impossible de répondre",
@@ -194,11 +210,40 @@ function Thread({ id }: { id: string }) {
     }
   };
 
+  const dayLabel = (ms: number) => {
+    if (!ms) return "";
+    const d = new Date(ms);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const isSameDay = (a: Date, b: Date) =>
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate();
+    if (isSameDay(d, today)) return "Aujourd’hui";
+    if (isSameDay(d, yesterday)) return "Hier";
+    return d.toLocaleDateString();
+  };
+
+  const timeHM = (ms?: number) =>
+    ms ? new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+
   return (
     <div className="flex h-full flex-col">
       <div className="mx-2 mb-2 flex items-center justify-between">
-        <div className="text-sm font-semibold truncate">
-          {threadMeta?.title || "Conversation"}
+        <div className="flex items-center gap-2 min-w-0">
+          <img
+            src={otherUser?.avatarUrl || DEFAULT_AVATAR_IMG}
+            alt="avatar"
+            className="h-7 w-7 rounded-full object-cover"
+          />
+          <div className="min-w-0">
+            <div className="text-sm font-semibold truncate">{threadMeta?.title || "Conversation"}</div>
+            <div className="flex items-center gap-2 text-[11px] text-foreground/60">
+              <span className="truncate max-w-[200px]">{otherUser?.username || otherUser?.email || "Utilisateur"}</span>
+              <RoleBadge role={otherUser?.role} compact className="h-3.5 w-3.5" />
+            </div>
+          </div>
         </div>
         {otherUser && <UserStatus otherUser={otherUser} />}
       </div>
@@ -217,38 +262,89 @@ function Thread({ id }: { id: string }) {
           </div>
         </div>
       ) : null}
-      <div className="flex-1 space-y-2 overflow-auto p-2">
-        {msgs.map((m) => {
-          if (m.senderId === "system")
-            return (
+      <div className="flex-1 space-y-3 overflow-auto p-2">
+        {(() => {
+          const out: JSX.Element[] = [];
+          let lastDay = "";
+          msgs.forEach((m) => {
+            const ts = m.createdAt?.toMillis?.() ?? 0;
+            const curDay = dayLabel(ts);
+            if (curDay && curDay !== lastDay) {
+              out.push(
+                <div key={`sep-${ts}`} className="flex items-center justify-center gap-2 text-[11px] text-foreground/60">
+                  <div className="h-px flex-1 bg-border/60" />
+                  <span>{curDay}</span>
+                  <div className="h-px flex-1 bg-border/60" />
+                </div>,
+              );
+              lastDay = curDay;
+            }
+
+            if (m.senderId === "system") {
+              out.push(
+                <div
+                  key={m.id}
+                  className="mx-auto max-w-[80%] rounded-md border border-border/50 bg-muted/60 px-3 py-1.5 text-center text-xs text-foreground/70"
+                >
+                  {m.text}
+                </div>,
+              );
+              return;
+            }
+
+            const mine = m.senderId === user?.uid;
+            const name = mine
+              ? "Vous"
+              : otherUser?.username || otherUser?.email || "Utilisateur";
+            const role = mine ? "" : roleLabel(otherUser?.role);
+            const avatarUrl = mine
+              ? user?.photoURL || DEFAULT_AVATAR_IMG
+              : otherUser?.avatarUrl || DEFAULT_AVATAR_IMG;
+
+            out.push(
               <div
                 key={m.id}
-                className="text-center text-xs text-foreground/60"
+                className={cn(
+                  "flex items-end gap-2 animate-in fade-in slide-in-from-bottom-1",
+                  mine ? "justify-end" : "justify-start",
+                )}
               >
-                {m.text}
-              </div>
+                {!mine && (
+                  <img
+                    src={avatarUrl}
+                    alt={name}
+                    className="h-6 w-6 rounded-full object-cover"
+                  />
+                )}
+                <div className={cn("max-w-[75%]", mine && "items-end")}>
+                  <div className={cn("mb-1 flex items-center gap-2 text-[10px] text-foreground/60", mine ? "justify-end" : "")}>
+                    <span className="truncate max-w-[200px]">{name}</span>
+                    {role && <RoleBadge role={otherUser?.role} compact className="h-3.5 w-3.5" />}
+                  </div>
+                  <div
+                    className={cn(
+                      "rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words border",
+                      mine
+                        ? "bg-secondary/20 border-secondary/30"
+                        : "bg-muted border-border/60",
+                    )}
+                  >
+                    {m.text}
+                  </div>
+                  <div className={cn("mt-1 text-[10px] text-foreground/50", mine ? "text-right" : "")}>{timeHM(ts)}</div>
+                </div>
+                {mine && (
+                  <img
+                    src={avatarUrl}
+                    alt={name}
+                    className="h-6 w-6 rounded-full object-cover"
+                  />
+                )}
+              </div>,
             );
-          const mine = m.senderId === user?.uid;
-          const name = mine
-            ? "Vous"
-            : otherUser?.username || otherUser?.email || "Utilisateur";
-          const role = mine ? "" : roleLabel(otherUser?.role);
-          return (
-            <div key={m.id} className={`max-w-[75%] ${mine ? "ml-auto" : ""}`}>
-              <div
-                className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}
-              >
-                {name}
-                {role ? ` (${role})` : ""}
-              </div>
-              <div
-                className={`rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine ? "bg-secondary/20" : "bg-muted"}`}
-              >
-                {m.text}
-              </div>
-            </div>
-          );
-        })}
+          });
+          return out;
+        })()}
         <div ref={bottomRef} />
       </div>
       {threadMeta?.system ? (
