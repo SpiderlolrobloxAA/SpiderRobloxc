@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogTrigger,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
@@ -104,6 +105,7 @@ export default function Marketplace() {
                 </DialogTrigger>
                 <DialogContent className="max-w-md p-4">
                   <DialogTitle className="text-sm">Nouveau produit</DialogTitle>
+                  <DialogDescription className="sr-only">Créer un nouveau produit</DialogDescription>
                   <AddProduct
                     onCreated={async () => {}}
                     userId={user.uid}
