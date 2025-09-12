@@ -3,7 +3,7 @@ import { RoleBadge, type Role } from "./RoleBadge";
 import { emailToUsername } from "@/lib/usernameAuth";
 import { motion } from "framer-motion";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
-import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "./ui/dialog";
 import { ProductDetailContent } from "./ProductDetail";
 import { useAuth } from "@/context/AuthProvider";
 import { db } from "@/lib/firebase";
@@ -151,6 +151,7 @@ export function ProductCard({ product }: { product: Product }) {
 
       <DialogContent className="max-w-2xl">
         <DialogTitle className="sr-only">Détails du produit</DialogTitle>
+        <DialogDescription className="sr-only">Fenêtre de détails du produit</DialogDescription>
         <ProductDetailContent product={product as any} onClose={() => {}} />
       </DialogContent>
     </Dialog>
