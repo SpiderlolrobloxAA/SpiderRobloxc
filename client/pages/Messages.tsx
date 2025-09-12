@@ -126,6 +126,17 @@ function Thread({ id }: { id: string }) {
   const [threadMeta, setThreadMeta] = useState<any>(null);
   const [otherUser, setOtherUser] = useState<any>(null);
 
+  // WebRTC call state
+  const [inCall, setInCall] = useState(false);
+  const [incoming, setIncoming] = useState<any>(null);
+  const [currentCallId, setCurrentCallId] = useState<string | null>(null);
+  const [camOn, setCamOn] = useState(true);
+  const [micOn, setMicOn] = useState(true);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+
   useEffect(() => {
     const q = query(
       collection(db, "threads", id, "messages"),
@@ -174,6 +185,16 @@ function Thread({ id }: { id: string }) {
       [`lastReadAt.${user.uid}`]: serverTimestamp(),
     }).catch(() => {});
   }, [id, user]);
+
+  // Listen for incoming calls offers
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "threads", id, "calls"), (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      const offer = rows.find((r) => r.status === "offer" && r.createdBy !== user?.uid && !r.endedAt);
+      setIncoming(offer || null);
+    });
+    return () => unsub();
+  }, [id, user?.uid]);
 
   const { toast } = useToast();
   const roleLabel = (role?: string) => {
@@ -234,6 +255,150 @@ function Thread({ id }: { id: string }) {
 
   const timeHM = (ms?: number) =>
     ms ? new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+
+  function createPeerConnection(callDocRef: any, role: "caller" | "callee") {
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: ["stun:stun.l.google.com:19302", "stun:global.stun.twilio.com:3478"] },
+      ],
+    });
+    pc.ontrack = (event) => {
+      const [stream] = event.streams;
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = stream;
+    };
+    pc.onicecandidate = async (event) => {
+      if (!event.candidate) return;
+      const target = role === "caller" ? "offerCandidates" : "answerCandidates";
+      await addDoc(collection(callDocRef, target), event.candidate.toJSON());
+    };
+    pcRef.current = pc;
+    return pc;
+  }
+
+  async function getLocalStream(video: boolean) {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video });
+    localStreamRef.current = stream;
+    if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+    return stream;
+  }
+
+  async function startCall(video: boolean) {
+    if (!user) return;
+    try {
+      const callDocRef = await addDoc(collection(db, "threads", id, "calls"), {
+        createdBy: user.uid,
+        status: "offer",
+        createdAt: serverTimestamp(),
+      });
+      setCurrentCallId(callDocRef.id);
+      const pc = createPeerConnection(callDocRef, "caller");
+      const stream = await getLocalStream(video);
+      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await setDoc(callDocRef, { offer }, { merge: true });
+      const unsubAnswer = onSnapshot(callDocRef, async (d) => {
+        const data = d.data() as any;
+        if (data?.answer && pc.signalingState !== "stable") {
+          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+          setInCall(true);
+        }
+      });
+      const unsubAnsCands = onSnapshot(collection(callDocRef, "answerCandidates"), (snap) => {
+        snap.docChanges().forEach((c) => {
+          if (c.type === "added") {
+            const cand = new RTCIceCandidate(c.doc.data() as any);
+            try {
+              pc.addIceCandidate(cand);
+            } catch {}
+          }
+        });
+      });
+      (pc as any)._cleanupSubs = () => {
+        unsubAnswer();
+        unsubAnsCands();
+      };
+    } catch (e) {
+      console.error("startCall failed", e);
+    }
+  }
+
+  async function acceptCall(call: any, video: boolean) {
+    if (!user) return;
+    try {
+      const callDocRef = doc(db, "threads", id, "calls", call.id);
+      setCurrentCallId(call.id);
+      const pc = createPeerConnection(callDocRef, "callee");
+      const stream = await getLocalStream(video);
+      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+      await pc.setRemoteDescription(new RTCSessionDescription(call.offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await setDoc(callDocRef, { answer, status: "ongoing" }, { merge: true });
+      const unsubOfferCands = onSnapshot(collection(callDocRef, "offerCandidates"), (snap) => {
+        snap.docChanges().forEach((c) => {
+          if (c.type === "added") {
+            const cand = new RTCIceCandidate(c.doc.data() as any);
+            try {
+              pc.addIceCandidate(cand);
+            } catch {}
+          }
+        });
+      });
+      (pc as any)._cleanupSubs = () => unsubOfferCands();
+      setIncoming(null);
+      setInCall(true);
+    } catch (e) {
+      console.error("acceptCall failed", e);
+    }
+  }
+
+  async function hangUp() {
+    try {
+      pcRef.current?.getSenders().forEach((s) => { try { s.track?.stop(); } catch {} });
+      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      localStreamRef.current = null;
+      if (localVideoRef.current) localVideoRef.current.srcObject = null;
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+      (pcRef.current as any)?._cleanupSubs?.();
+      pcRef.current?.close();
+      pcRef.current = null;
+      setInCall(false);
+      if (currentCallId) {
+        try {
+          await setDoc(doc(db, "threads", id, "calls", currentCallId), { status: "ended", endedAt: serverTimestamp() }, { merge: true });
+        } catch {}
+      }
+      setCurrentCallId(null);
+    } catch (e) {
+      console.error("hangUp failed", e);
+    }
+  }
+
+  function toggleMic() {
+    const on = !micOn;
+    setMicOn(on);
+    localStreamRef.current?.getAudioTracks().forEach((t) => (t.enabled = on));
+  }
+  function toggleCam() {
+    const on = !camOn;
+    setCamOn(on);
+    localStreamRef.current?.getVideoTracks().forEach((t) => (t.enabled = on));
+  }
+  async function startScreenShare() {
+    try {
+      const display = await (navigator.mediaDevices as any).getDisplayMedia({ video: true });
+      const track = display.getVideoTracks()[0];
+      const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === "video");
+      if (sender && track) sender.replaceTrack(track);
+      track.onended = () => {
+        const original = localStreamRef.current?.getVideoTracks()[0];
+        if (sender && original) sender.replaceTrack(original);
+      };
+    } catch (e) {
+      console.error("screen share failed", e);
+    }
+  }
 
   const sendImage = async (file: File) => {
     if (!user || !file || threadMeta?.system) return;
@@ -300,6 +465,27 @@ function Thread({ id }: { id: string }) {
           </div>
         </div>
       ) : null}
+      {inCall && (
+        <div className="mx-2 mb-2 grid grid-cols-2 gap-2 rounded-md border border-border/60 bg-card/60 p-2">
+          <video ref={localVideoRef} className="w-full rounded-md bg-black/60" autoPlay playsInline muted />
+          <video ref={remoteVideoRef} className="w-full rounded-md bg-black/60" autoPlay playsInline />
+          <div className="col-span-2 flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" onClick={toggleMic}>{micOn ? "Mute" : "Unmute"}</Button>
+            <Button size="sm" variant="outline" onClick={toggleCam}>{camOn ? "Cam off" : "Cam on"}</Button>
+            <Button size="sm" variant="outline" onClick={startScreenShare}>Partager écran</Button>
+            <Button size="sm" variant="destructive" onClick={hangUp}>Raccrocher</Button>
+          </div>
+        </div>
+      )}
+      {!!incoming && !inCall && (
+        <div className="mx-2 mb-2 flex items-center justify-between rounded-md border border-border/60 bg-card/60 p-2 text-sm">
+          <div>Appel entrant…</div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => acceptCall(incoming, false)}>Audio</Button>
+            <Button size="sm" onClick={() => acceptCall(incoming, true)}>Vidéo</Button>
+          </div>
+        </div>
+      )}
       <div className="flex-1 space-y-3 overflow-auto p-2">
         {(() => {
           const out: JSX.Element[] = [];
@@ -398,6 +584,8 @@ function Thread({ id }: { id: string }) {
       ) : (
         <>
           <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Button size="sm" onClick={() => startCall(false)}>Appel</Button>
+            <Button size="sm" variant="outline" onClick={() => startCall(true)}>Vidéo</Button>
             <Button variant="outline" size="sm" onClick={() => setText((t) => (t ? t + " Merci !" : "Merci !"))}>Merci</Button>
             <Button variant="outline" size="sm" onClick={() => setText((t) => (t ? t + " Produit envoyé." : "Produit envoyé."))}>Produit envoyé</Button>
             <Button variant="outline" size="sm" onClick={() => setText((t) => (t ? t + " Ok reçu." : "Ok reçu."))}>Ok reçu</Button>
