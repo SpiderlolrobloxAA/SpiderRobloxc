@@ -74,8 +74,13 @@ export default function Messages() {
           {threads.map((t) => {
             const lastFrom = t.lastMessage?.senderId;
             const updatedAt = t.updatedAt?.toMillis?.() ?? 0;
-            const lastReadAt = t.lastReadAt?.[user?.uid || ""]?.toMillis?.() ?? 0;
-            const unread = !!(lastFrom && lastFrom !== user?.uid && updatedAt > lastReadAt);
+            const lastReadAt =
+              t.lastReadAt?.[user?.uid || ""]?.toMillis?.() ?? 0;
+            const unread = !!(
+              lastFrom &&
+              lastFrom !== user?.uid &&
+              updatedAt > lastReadAt
+            );
             return (
               <button
                 key={t.id}
@@ -86,7 +91,14 @@ export default function Messages() {
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <div className={cn("text-sm truncate", unread && "font-semibold")}>{t.title || "Conversation"}</div>
+                  <div
+                    className={cn(
+                      "text-sm truncate",
+                      unread && "font-semibold",
+                    )}
+                  >
+                    {t.title || "Conversation"}
+                  </div>
                   {unread && (
                     <span className="inline-flex h-2 w-2 rounded-full bg-primary" />
                   )}
@@ -195,7 +207,9 @@ function Thread({ id }: { id: string }) {
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "threads", id, "calls"), (snap) => {
       const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
-      const offer = rows.find((r) => r.status === "offer" && r.createdBy !== user?.uid && !r.endedAt);
+      const offer = rows.find(
+        (r) => r.status === "offer" && r.createdBy !== user?.uid && !r.endedAt,
+      );
       setIncoming(offer || null);
     });
     return () => unsub();
@@ -269,12 +283,22 @@ function Thread({ id }: { id: string }) {
   };
 
   const timeHM = (ms?: number) =>
-    ms ? new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+    ms
+      ? new Date(ms).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
 
   function createPeerConnection(callDocRef: any, role: "caller" | "callee") {
     const pc = new RTCPeerConnection({
       iceServers: [
-        { urls: ["stun:stun.l.google.com:19302", "stun:global.stun.twilio.com:3478"] },
+        {
+          urls: [
+            "stun:stun.l.google.com:19302",
+            "stun:global.stun.twilio.com:3478",
+          ],
+        },
       ],
     });
     pc.ontrack = (event) => {
@@ -289,7 +313,10 @@ function Thread({ id }: { id: string }) {
     pc.onconnectionstatechange = () => {
       const st = pc.connectionState;
       setCallStatus(st);
-      if ((st === "disconnected" || st === "failed") && !restartingRef.current) {
+      if (
+        (st === "disconnected" || st === "failed") &&
+        !restartingRef.current
+      ) {
         restartingRef.current = true;
         tryIceRestart(callDocRef, role).finally(() => {
           setTimeout(() => {
@@ -304,7 +331,10 @@ function Thread({ id }: { id: string }) {
   }
 
   async function getLocalStream(video: boolean) {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video,
+    });
     localStreamRef.current = stream;
     if (localVideoRef.current) localVideoRef.current.srcObject = stream;
     return stream;
@@ -357,7 +387,11 @@ function Thread({ id }: { id: string }) {
 
   async function hangUp() {
     try {
-      pcRef.current?.getSenders().forEach((s) => { try { s.track?.stop(); } catch {} });
+      pcRef.current?.getSenders().forEach((s) => {
+        try {
+          s.track?.stop();
+        } catch {}
+      });
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
       localStreamRef.current = null;
       if (localVideoRef.current) localVideoRef.current.srcObject = null;
@@ -369,7 +403,11 @@ function Thread({ id }: { id: string }) {
       setCallStatus("");
       if (currentCallId) {
         try {
-          await setDoc(doc(db, "threads", id, "calls", currentCallId), { status: "ended", endedAt: serverTimestamp() }, { merge: true });
+          await setDoc(
+            doc(db, "threads", id, "calls", currentCallId),
+            { status: "ended", endedAt: serverTimestamp() },
+            { merge: true },
+          );
         } catch {}
       }
       setCurrentCallId(null);
@@ -390,9 +428,13 @@ function Thread({ id }: { id: string }) {
   }
   async function startScreenShare() {
     try {
-      const display = await (navigator.mediaDevices as any).getDisplayMedia({ video: true });
+      const display = await (navigator.mediaDevices as any).getDisplayMedia({
+        video: true,
+      });
       const track = display.getVideoTracks()[0];
-      const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === "video");
+      const sender = pcRef.current
+        ?.getSenders()
+        .find((s) => s.track?.kind === "video");
       if (sender && track) sender.replaceTrack(track);
       track.onended = () => {
         const original = localStreamRef.current?.getVideoTracks()[0];
@@ -403,7 +445,11 @@ function Thread({ id }: { id: string }) {
     }
   }
 
-  function attachCallSubscriptions(callDocRef: any, role: "caller" | "callee", pc: RTCPeerConnection) {
+  function attachCallSubscriptions(
+    callDocRef: any,
+    role: "caller" | "callee",
+    pc: RTCPeerConnection,
+  ) {
     // monitor call doc for renegotiation and end
     const unsubDoc = onSnapshot(callDocRef, async (d) => {
       const data = d.data() as any;
@@ -419,12 +465,20 @@ function Thread({ id }: { id: string }) {
         }
       } else {
         // callee reacts to new offers for ICE restarts
-        if (data.offer && data.offer.sdp && data.offer.sdp !== lastOfferSdpRef.current) {
+        if (
+          data.offer &&
+          data.offer.sdp &&
+          data.offer.sdp !== lastOfferSdpRef.current
+        ) {
           lastOfferSdpRef.current = data.offer.sdp;
           await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
-          await setDoc(callDocRef, { answer, status: "ongoing" }, { merge: true });
+          await setDoc(
+            callDocRef,
+            { answer, status: "ongoing" },
+            { merge: true },
+          );
         }
       }
     });
@@ -442,8 +496,12 @@ function Thread({ id }: { id: string }) {
     });
 
     (pc as any)._cleanupSubs = () => {
-      try { unsubDoc(); } catch {}
-      try { unsubCands(); } catch {}
+      try {
+        unsubDoc();
+      } catch {}
+      try {
+        unsubCands();
+      } catch {}
     };
   }
 
@@ -501,10 +559,18 @@ function Thread({ id }: { id: string }) {
             className="h-7 w-7 rounded-full object-cover"
           />
           <div className="min-w-0">
-            <div className="text-sm font-semibold truncate">{threadMeta?.title || "Conversation"}</div>
+            <div className="text-sm font-semibold truncate">
+              {threadMeta?.title || "Conversation"}
+            </div>
             <div className="flex items-center gap-2 text-[11px] text-foreground/60">
-              <span className="truncate max-w-[200px]">{otherUser?.username || otherUser?.email || "Utilisateur"}</span>
-              <RoleBadge role={otherUser?.role} compact className="h-3.5 w-3.5" />
+              <span className="truncate max-w-[200px]">
+                {otherUser?.username || otherUser?.email || "Utilisateur"}
+              </span>
+              <RoleBadge
+                role={otherUser?.role}
+                compact
+                className="h-3.5 w-3.5"
+              />
             </div>
           </div>
         </div>
@@ -527,14 +593,39 @@ function Thread({ id }: { id: string }) {
       ) : null}
       {inCall && (
         <div className="mx-2 mb-2 grid grid-cols-2 gap-2 rounded-md border border-border/60 bg-card/60 p-2">
-          <video ref={localVideoRef} className="w-full rounded-md bg-black/60" autoPlay playsInline muted />
-          <video ref={remoteVideoRef} className="w-full rounded-md bg-black/60" autoPlay playsInline />
+          <video
+            ref={localVideoRef}
+            className="w-full rounded-md bg-black/60"
+            autoPlay
+            playsInline
+            muted
+          />
+          <video
+            ref={remoteVideoRef}
+            className="w-full rounded-md bg-black/60"
+            autoPlay
+            playsInline
+          />
           <div className="col-span-2 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-foreground/70">{callStatus || "connecté"} • {Math.trunc(callSeconds/60).toString().padStart(2,"0")}:{(callSeconds%60).toString().padStart(2,"0")}</span>
-            <Button size="sm" variant="outline" onClick={toggleMic}>{micOn ? "Mute" : "Unmute"}</Button>
-            <Button size="sm" variant="outline" onClick={toggleCam}>{camOn ? "Cam off" : "Cam on"}</Button>
-            <Button size="sm" variant="outline" onClick={startScreenShare}>Partager écran</Button>
-            <Button size="sm" variant="destructive" onClick={hangUp}>Raccrocher</Button>
+            <span className="text-xs text-foreground/70">
+              {callStatus || "connecté"} •{" "}
+              {Math.trunc(callSeconds / 60)
+                .toString()
+                .padStart(2, "0")}
+              :{(callSeconds % 60).toString().padStart(2, "0")}
+            </span>
+            <Button size="sm" variant="outline" onClick={toggleMic}>
+              {micOn ? "Mute" : "Unmute"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={toggleCam}>
+              {camOn ? "Cam off" : "Cam on"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={startScreenShare}>
+              Partager écran
+            </Button>
+            <Button size="sm" variant="destructive" onClick={hangUp}>
+              Raccrocher
+            </Button>
           </div>
         </div>
       )}
@@ -542,8 +633,12 @@ function Thread({ id }: { id: string }) {
         <div className="mx-2 mb-2 flex items-center justify-between rounded-md border border-border/60 bg-card/60 p-2 text-sm">
           <div>Appel entrant…</div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => acceptCall(incoming, false)}>Audio</Button>
-            <Button size="sm" onClick={() => acceptCall(incoming, true)}>Vidéo</Button>
+            <Button size="sm" onClick={() => acceptCall(incoming, false)}>
+              Audio
+            </Button>
+            <Button size="sm" onClick={() => acceptCall(incoming, true)}>
+              Vidéo
+            </Button>
           </div>
         </div>
       )}
@@ -556,7 +651,10 @@ function Thread({ id }: { id: string }) {
             const curDay = dayLabel(ts);
             if (curDay && curDay !== lastDay) {
               out.push(
-                <div key={`sep-${ts}`} className="flex items-center justify-center gap-2 text-[11px] text-foreground/60">
+                <div
+                  key={`sep-${ts}`}
+                  className="flex items-center justify-center gap-2 text-[11px] text-foreground/60"
+                >
                   <div className="h-px flex-1 bg-border/60" />
                   <span>{curDay}</span>
                   <div className="h-px flex-1 bg-border/60" />
@@ -602,9 +700,20 @@ function Thread({ id }: { id: string }) {
                   />
                 )}
                 <div className={cn("max-w-[75%]", mine && "items-end")}>
-                  <div className={cn("mb-1 flex items-center gap-2 text-[10px] text-foreground/60", mine ? "justify-end" : "")}>
+                  <div
+                    className={cn(
+                      "mb-1 flex items-center gap-2 text-[10px] text-foreground/60",
+                      mine ? "justify-end" : "",
+                    )}
+                  >
                     <span className="truncate max-w-[200px]">{name}</span>
-                    {role && <RoleBadge role={otherUser?.role} compact className="h-3.5 w-3.5" />}
+                    {role && (
+                      <RoleBadge
+                        role={otherUser?.role}
+                        compact
+                        className="h-3.5 w-3.5"
+                      />
+                    )}
                   </div>
                   <div
                     className={cn(
@@ -616,13 +725,24 @@ function Thread({ id }: { id: string }) {
                   >
                     {m.imageUrl ? (
                       <a href={m.imageUrl} target="_blank" rel="noreferrer">
-                        <img src={m.imageUrl} alt="image" className="max-h-60 rounded-md" />
+                        <img
+                          src={m.imageUrl}
+                          alt="image"
+                          className="max-h-60 rounded-md"
+                        />
                       </a>
                     ) : (
                       m.text
                     )}
                   </div>
-                  <div className={cn("mt-1 text-[10px] text-foreground/50", mine ? "text-right" : "")}>{timeHM(ts)}</div>
+                  <div
+                    className={cn(
+                      "mt-1 text-[10px] text-foreground/50",
+                      mine ? "text-right" : "",
+                    )}
+                  >
+                    {timeHM(ts)}
+                  </div>
                 </div>
                 {mine && (
                   <img
@@ -645,11 +765,35 @@ function Thread({ id }: { id: string }) {
       ) : (
         <>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Button size="sm" onClick={() => startCall(false)}>Appel</Button>
-            <Button size="sm" variant="outline" onClick={() => startCall(true)}>Vidéo</Button>
-            <Button variant="outline" size="sm" onClick={() => setText((t) => (t ? t + " Merci !" : "Merci !"))}>Merci</Button>
-            <Button variant="outline" size="sm" onClick={() => setText((t) => (t ? t + " Produit envoyé." : "Produit envoyé."))}>Produit envoyé</Button>
-            <Button variant="outline" size="sm" onClick={() => setText((t) => (t ? t + " Ok reçu." : "Ok reçu."))}>Ok reçu</Button>
+            <Button size="sm" onClick={() => startCall(false)}>
+              Appel
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => startCall(true)}>
+              Vidéo
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setText((t) => (t ? t + " Merci !" : "Merci !"))}
+            >
+              Merci
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setText((t) => (t ? t + " Produit envoyé." : "Produit envoyé."))
+              }
+            >
+              Produit envoyé
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setText((t) => (t ? t + " Ok reçu." : "Ok reçu."))}
+            >
+              Ok reçu
+            </Button>
           </div>
           <div className="mt-2 flex items-center gap-2">
             <Input
@@ -672,13 +816,20 @@ function Thread({ id }: { id: string }) {
                 }}
                 disabled={uploading}
               />
-              <Button variant="outline" disabled={uploading}>Image</Button>
+              <Button variant="outline" disabled={uploading}>
+                Image
+              </Button>
             </label>
-            <Button onClick={send} disabled={!text.trim()}>Envoyer</Button>
+            <Button onClick={send} disabled={!text.trim()}>
+              Envoyer
+            </Button>
           </div>
           {(() => {
-            const myLast = [...msgs].reverse().find((m) => m.senderId === user?.uid);
-            const otherSeen = threadMeta?.lastReadAt?.[otherId || ""]?.toMillis?.() ?? 0;
+            const myLast = [...msgs]
+              .reverse()
+              .find((m) => m.senderId === user?.uid);
+            const otherSeen =
+              threadMeta?.lastReadAt?.[otherId || ""]?.toMillis?.() ?? 0;
             const myLastTs = myLast?.createdAt?.toMillis?.() ?? 0;
             if (myLast && otherSeen && otherSeen >= myLastTs) {
               return (
