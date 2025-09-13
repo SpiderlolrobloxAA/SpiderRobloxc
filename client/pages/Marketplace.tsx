@@ -582,6 +582,25 @@ function AddProduct({
         value={imageUrl}
         onChange={(e) => setImageUrl(e.target.value)}
       />
+      <div className="grid gap-2">
+        <label className="text-xs text-foreground/70">Description</label>
+        <textarea
+          className="min-h-[80px] rounded-md border border-border/60 bg-background p-2 text-sm"
+          placeholder="Décrivez votre produit (facultatif)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <Input
+        placeholder="Tags (séparés par des virgules)"
+        value={tags}
+        onChange={(e) => setTags(e.target.value)}
+      />
+      <Input
+        placeholder="Lien de démo (facultatif)"
+        value={demoUrl}
+        onChange={(e) => setDemoUrl(e.target.value)}
+      />
       <label className="inline-flex items-center gap-2 text-sm">
         <input
           type="checkbox"
