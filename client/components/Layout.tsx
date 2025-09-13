@@ -767,6 +767,29 @@ export default function Layout() {
         event.error,
       );
     };
+
+    // Gracefully fall back Firebase Auth network failures (preview env)
+    try {
+      const g: any = window as any;
+      if (!g.__fetchPatched && typeof fetch === "function") {
+        const origFetch = fetch.bind(window);
+        (window as any).fetch = async (...args: any[]) => {
+          try {
+            return await origFetch(...(args as any));
+          } catch (e: any) {
+            const url = String(args?.[0] || "");
+            if (/identitytoolkit|securetoken/.test(url)) {
+              return new Response(
+                JSON.stringify({ error: { message: "NETWORK_ERROR" } }),
+                { status: 503, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            throw e;
+          }
+        };
+        g.__fetchPatched = true;
+      }
+    } catch {}
     const onRejection = (event: PromiseRejectionEvent) => {
       const reason = event.reason;
       const msg = String((reason && (reason.message || reason)) || "");
