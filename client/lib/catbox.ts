@@ -23,9 +23,14 @@ export async function uploadFileToCatbox(
   const form = new FormData();
   form.append("reqtype", "fileupload");
   form.append("fileToUpload", file, file.name || "upload");
-  const res2 = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: form, signal });
+  const res2 = await fetch("https://catbox.moe/user/api.php", {
+    method: "POST",
+    body: form,
+    signal,
+  });
   const text = (await res2.text()).trim();
-  if (!res2.ok || !/^https?:\/\//i.test(text)) throw new Error(text || "Catbox upload failed");
+  if (!res2.ok || !/^https?:\/\//i.test(text))
+    throw new Error(text || "Catbox upload failed");
   return text;
 }
 
@@ -49,7 +54,9 @@ export async function uploadDataUrlToCatbox(
   } catch {}
   // Fallback: browser converts to Blob and reuse file upload
   const blob = await (await fetch(dataUrl)).blob();
-  const file = new File([blob], filename, { type: blob.type || "application/octet-stream" });
+  const file = new File([blob], filename, {
+    type: blob.type || "application/octet-stream",
+  });
   return uploadFileToCatbox(file, signal);
 }
 
@@ -72,9 +79,14 @@ export async function uploadRemoteUrlToCatbox(
   const form = new FormData();
   form.append("reqtype", "urlupload");
   form.append("url", url);
-  const res2 = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: form, signal });
+  const res2 = await fetch("https://catbox.moe/user/api.php", {
+    method: "POST",
+    body: form,
+    signal,
+  });
   const text = (await res2.text()).trim();
-  if (!res2.ok || !/^https?:\/\//i.test(text)) throw new Error(text || "Catbox urlupload failed");
+  if (!res2.ok || !/^https?:\/\//i.test(text))
+    throw new Error(text || "Catbox urlupload failed");
   return text;
 }
 
