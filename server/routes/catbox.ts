@@ -1,4 +1,5 @@
 import type { RequestHandler } from "express";
+import { FormData, Blob } from "undici";
 
 const CATBOX_API = "https://catbox.moe/user/api.php";
 
