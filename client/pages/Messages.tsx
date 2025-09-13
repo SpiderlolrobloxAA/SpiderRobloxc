@@ -525,12 +525,8 @@ function Thread({ id }: { id: string }) {
       let url: string | null = null;
       // Try proxy upload first (avoids Firebase CORS in prod)
       try {
-        const data = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ""));
-          reader.onerror = (err) => reject(err);
-          reader.readAsDataURL(file);
-        });
+        const { fileToDataUrl } = await import("@/lib/images");
+        const data = await fileToDataUrl(file, { maxWidth: 1280, quality: 0.85 });
         const up = await fetch("/api/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
