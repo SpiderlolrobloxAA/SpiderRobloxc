@@ -104,15 +104,4 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
-
-  /* Utility: hide scrollbars but keep scrolling */
-  .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
-  .no-scrollbar::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-    display: none;
-  }
 }
