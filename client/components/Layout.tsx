@@ -35,7 +35,6 @@ import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import TosModal from "@/components/TosModal";
 import Notifications from "@/components/Notifications";
 import CreditNotifier from "@/components/CreditNotifier";
-import ErrorBoundary from "@/components/ErrorBoundary";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
@@ -365,7 +364,41 @@ function MaintenanceOverlay() {
   // If maintenance is not for this page, render nothing
   if (state.scope !== "global" && state.scope !== pageKey) return null;
 
-  // Non-blocking banner for both global and scoped maintenance
+  // Global maintenance: full black screen
+  if (state.scope === "global") {
+    return (
+      <div
+        className="fixed inset-0 z-[200] flex items-center justify-center"
+        style={{ background: "#000" }}
+      >
+        <div className="text-center">
+          <div
+            className="mx-auto mb-5 h-3 w-64 rounded"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, #FFD54F, #FFD54F 12px, #000 12px, #000 24px)",
+            }}
+          />
+          <h3 className="text-2xl font-extrabold text-white tracking-wide">
+            Maintenance en cours
+          </h3>
+          <p className="mt-2 text-sm text-white/80">
+            {state.message ||
+              "Nous revenons très vite. Merci de votre patience."}
+          </p>
+          <div
+            className="mx-auto mt-5 h-3 w-64 rounded"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, #FFD54F, #FFD54F 12px, #000 12px, #000 24px)",
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Scoped maintenance: show a non-blocking banner on the affected page only
   return (
     <div className="fixed top-16 left-0 right-0 z-[120] px-4">
       <div className="mx-auto max-w-6xl rounded-lg border border-yellow-500/40 bg-yellow-400/90 text-black px-4 py-3 shadow">
@@ -585,10 +618,8 @@ export default function Layout() {
     };
     window.addEventListener("keydown", onKey);
 
-    // Trigger pending sales processor only in production
-    if (import.meta.env.PROD) {
-      fetch("/api/process-pending", { method: "POST" }).catch(() => {});
-    }
+    // Trigger pending sales processor once on app load (best-effort)
+    fetch("/api/process-pending", { method: "POST" }).catch(() => {});
 
     // Global error listeners to help debug 'Script error.' and uncaught rejections
     const onError = (event: ErrorEvent) => {
@@ -626,9 +657,7 @@ export default function Layout() {
       <CreditNotifier />
       <main className="relative z-10">
         <TosModal />
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
+        <Outlet />
       </main>
       <Footer />
     </div>
