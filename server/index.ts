@@ -51,5 +51,12 @@ export async function createServer() {
     console.warn("Could not load pending processor:", e?.message || e);
   }
 
+  try {
+    const { handleUpload } = await import("./routes/upload");
+    app.post("/api/upload", handleUpload);
+  } catch (e) {
+    console.warn("Could not load upload proxy:", e?.message || e);
+  }
+
   return app;
 }
