@@ -444,6 +444,10 @@ function AddProduct({
       if (!flagged) await onCharge(-cost);
       onCreated();
       setTitle("");
+      setDescription("");
+      setCategory("icon");
+      setTags("");
+      setDemoUrl("");
       setImageUrl("");
       setFile(null);
       setPrice(3);
