@@ -285,34 +285,7 @@ function AddProduct({
         setPreviewUrl(p);
       } catch {}
 
-      // Try to upload immediately to storage and set imageUrl to the returned link
-      const storage = await getStorageClient();
-      if (storage) {
-        try {
-          const tmpRef = ref(
-            storage,
-            `products/${userId}/${Date.now()}_${f.name}`,
-          );
-          await uploadBytes(tmpRef, f);
-          // if timed out already, don't override fallback
-          if (timedOut) {
-            clearTimeout(timer);
-            return;
-          }
-          const dl = await getDownloadURL(tmpRef);
-          clearTimeout(timer);
-          setImageUrl(dl);
-          setFile(null);
-          setPreviewUrl(null);
-          setImageUploading(false);
-          return;
-        } catch (uploadErr) {
-          console.warn("upload immediate failed", uploadErr);
-          // continue to fallback to data URL
-        }
-      }
-
-      // Fallback: convert to data URL and try server proxy upload (Catbox). If that fails, keep data URL.
+      // Convert to data URL and upload via server proxy (Catbox only)
       try {
         const data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -321,7 +294,7 @@ function AddProduct({
           reader.readAsDataURL(f);
         });
         clearTimeout(timer);
-        // Try server proxy (avoids CORS on Firebase Storage)
+        // Upload via server proxy (Catbox). No Firebase Storage fallback.
         try {
           const up = await fetch("/api/upload", {
             method: "POST",
@@ -341,10 +314,16 @@ function AddProduct({
         } catch (e) {
           console.warn("proxy upload failed", e);
         }
-        // Keep data URL as last resort
-        setImageUrl(data);
+        // If proxy failed, keep preview only and ask for a public URL
+        toast({
+          title: "Upload image indisponible",
+          description: "Le téléversement a échoué. Collez une URL d'image publique.",
+          variant: "destructive",
+        });
+        setImageUrl("");
         setFile(null);
-        setPreviewUrl(null);
+        // keep preview so the user sees the file, but it's not saved as imageUrl
+        setPreviewUrl(p);
         setImageUploading(false);
         return;
       } catch (err) {
@@ -371,7 +350,7 @@ function AddProduct({
     try {
       let finalUrl = imageUrl;
       if (!finalUrl && file) {
-        // Prefer server proxy to avoid Firebase CORS issues in production
+        // Catbox proxy only
         try {
           const data = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -391,41 +370,14 @@ function AddProduct({
         } catch (e) {
           console.warn("create: proxy upload failed", e);
         }
-        // If still no finalUrl, try Firebase storage as secondary (local dev)
         if (!finalUrl) {
-          const storage = await getStorageClient();
-          if (storage) {
-            try {
-              const tmpRef = ref(
-                storage,
-                `products/${userId}/${Date.now()}_${file.name}`,
-              );
-              await uploadBytes(tmpRef, file);
-              finalUrl = await getDownloadURL(tmpRef);
-            } catch (e) {
-              console.warn("create: storage upload failed", e);
-            }
-          }
-        }
-        // As last resort keep data URL
-        if (!finalUrl) {
-          try {
-            finalUrl = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(String(reader.result || ""));
-              reader.onerror = (err) => reject(err);
-              reader.readAsDataURL(file);
-            });
-          } catch (err) {
-            toast({
-              title: "Upload image indisponible",
-              description:
-                "Veuillez saisir une URL d'image ou réessayer plus tard.",
-              variant: "destructive",
-            });
-            setSaving(false);
-            return;
-          }
+          toast({
+            title: "Upload image indisponible",
+            description: "Collez une URL d'image publique et réessayez.",
+            variant: "destructive",
+          });
+          setSaving(false);
+          return;
         }
       }
 
