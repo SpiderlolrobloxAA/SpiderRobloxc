@@ -401,7 +401,6 @@ function AddProduct({
         description: description.trim() || null,
         category,
         tags: tagList,
-        demoUrl: demoUrl.trim() || null,
         imageUrl: finalUrl,
         price: validPrice,
         sellerId: userId,
