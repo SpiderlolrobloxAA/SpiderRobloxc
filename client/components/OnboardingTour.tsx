@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthProvider";
 import { Button } from "@/components/ui/button";
 
@@ -34,9 +33,34 @@ function useElementRect(selector: string) {
 
 export default function OnboardingTour() {
   const { user } = useAuth();
-  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [i, setI] = useState(0);
+  const [pathname, setPathname] = useState<string>(() =>
+    typeof window !== "undefined" ? window.location.pathname : "/",
+  );
+  useEffect(() => {
+    const update = () => setPathname(window.location.pathname);
+    const origPush = history.pushState;
+    const origReplace = history.replaceState;
+    (history as any).pushState = function (...args: any[]) {
+      const ret = origPush.apply(this, args as any);
+      window.dispatchEvent(new Event("locationchange"));
+      return ret;
+    } as any;
+    (history as any).replaceState = function (...args: any[]) {
+      const ret = origReplace.apply(this, args as any);
+      window.dispatchEvent(new Event("locationchange"));
+      return ret;
+    } as any;
+    window.addEventListener("popstate", update);
+    window.addEventListener("locationchange", update);
+    return () => {
+      window.removeEventListener("popstate", update);
+      window.removeEventListener("locationchange", update);
+      history.pushState = origPush;
+      history.replaceState = origReplace;
+    };
+  }, []);
 
   // Show only once per device (and per user if connected)
   useEffect(() => {
@@ -99,7 +123,7 @@ export default function OnboardingTour() {
       if (idx === i) break;
     }
     if (idx !== i) setI(idx);
-  }, [open, i, steps, location.pathname]);
+  }, [open, i, steps, pathname]);
 
   const cur = steps[i];
   const rect = useElementRect(cur?.selector || "");
