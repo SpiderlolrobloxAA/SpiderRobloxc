@@ -44,6 +44,17 @@ export async function createServer() {
     console.warn("Could not load moderation route:", e?.message || e);
   }
 
+  // Catbox proxy routes to avoid browser CORS
+  try {
+    const { uploadFileProxy, uploadDataUrlProxy, uploadRemoteUrlProxy } = await import("./routes/catbox");
+    // raw body for file upload
+    app.post("/api/catbox/upload-file", express.raw({ type: "application/octet-stream", limit: "20mb" }), uploadFileProxy);
+    app.post("/api/catbox/upload-data-url", uploadDataUrlProxy);
+    app.post("/api/catbox/upload-url", uploadRemoteUrlProxy);
+  } catch (e) {
+    console.warn("Could not load catbox proxy routes:", e?.message || e);
+  }
+
   try {
     const { processPendingSales } = await import("./routes/pending");
     app.post("/api/process-pending", processPendingSales);

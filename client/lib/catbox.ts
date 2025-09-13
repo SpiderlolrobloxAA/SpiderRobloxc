@@ -4,35 +4,44 @@ export async function uploadFileToCatbox(file: File, signal?: AbortSignal): Prom
   // Anonymous upload (no userhash)
   form.append("fileToUpload", file, file.name || "upload");
 
-  const res = await fetch("https://catbox.moe/user/api.php", {
+  // Send raw file bytes to our backend proxy to avoid CORS issues
+  const ab = await file.arrayBuffer();
+  const res = await fetch(`/api/catbox/upload-file?filename=${encodeURIComponent(file.name || "upload")}` , {
     method: "POST",
-    body: form,
+    headers: { "Content-Type": "application/octet-stream" },
+    body: ab,
     signal,
   });
-  const text = (await res.text()).trim();
-  if (!res.ok || !/^https?:\/\//i.test(text)) {
-    throw new Error(text || "Catbox upload failed");
+  const data = await res.json();
+  if (!res.ok || !data?.url) {
+    throw new Error((data && (data.error || data.url)) || "Catbox upload failed");
   }
-  return text;
+  return data.url;
 }
 
 export async function uploadDataUrlToCatbox(dataUrl: string, filename = "image.png", signal?: AbortSignal): Promise<string> {
   // Convert data URL to Blob
-  const blob = await (await fetch(dataUrl)).blob();
-  const file = new File([blob], filename, { type: blob.type || "application/octet-stream" });
-  return uploadFileToCatbox(file, signal);
+  const res = await fetch("/api/catbox/upload-data-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dataUrl, filename }),
+    signal,
+  });
+  const data = await res.json();
+  if (!res.ok || !data?.url) throw new Error(data?.error || "Catbox dataUrl upload failed");
+  return data.url;
 }
 
 export async function uploadRemoteUrlToCatbox(url: string, signal?: AbortSignal): Promise<string> {
-  const form = new FormData();
-  form.append("reqtype", "urlupload");
-  form.append("url", url);
-  const res = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: form, signal });
-  const text = (await res.text()).trim();
-  if (!res.ok || !/^https?:\/\//i.test(text)) {
-    throw new Error(text || "Catbox urlupload failed");
-  }
-  return text;
+  const res = await fetch("/api/catbox/upload-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+    signal,
+  });
+  const data = await res.json();
+  if (!res.ok || !data?.url) throw new Error(data?.error || "Catbox urlupload failed");
+  return data.url;
 }
 
 export async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
