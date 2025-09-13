@@ -312,7 +312,7 @@ function AddProduct({
         }
       }
 
-      // Fallback: convert to data URL and set it as imageUrl
+      // Fallback: convert to data URL and try server proxy upload (Catbox). If that fails, keep data URL.
       try {
         const data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -321,6 +321,27 @@ function AddProduct({
           reader.readAsDataURL(f);
         });
         clearTimeout(timer);
+        // Try server proxy (avoids CORS on Firebase Storage)
+        try {
+          const up = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dataUrl: data, filename: f.name }),
+          });
+          if (up.ok) {
+            const j = await up.json();
+            if (j?.url) {
+              setImageUrl(j.url);
+              setFile(null);
+              setPreviewUrl(null);
+              setImageUploading(false);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn("proxy upload failed", e);
+        }
+        // Keep data URL as last resort
         setImageUrl(data);
         setFile(null);
         setPreviewUrl(null);
@@ -350,16 +371,44 @@ function AddProduct({
     try {
       let finalUrl = imageUrl;
       if (!finalUrl && file) {
-        const storage = await getStorageClient();
-        if (storage) {
-          const tmpRef = ref(
-            storage,
-            `products/${userId}/${Date.now()}_${file.name}`,
-          );
-          await uploadBytes(tmpRef, file);
-          finalUrl = await getDownloadURL(tmpRef);
-        } else {
-          // Fallback: convert file to data URL and store in Firestore so it can be displayed
+        // Prefer server proxy to avoid Firebase CORS issues in production
+        try {
+          const data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ""));
+            reader.onerror = (err) => reject(err);
+            reader.readAsDataURL(file);
+          });
+          const up = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dataUrl: data, filename: file.name }),
+          });
+          if (up.ok) {
+            const j = await up.json();
+            if (j?.url) finalUrl = j.url;
+          }
+        } catch (e) {
+          console.warn("create: proxy upload failed", e);
+        }
+        // If still no finalUrl, try Firebase storage as secondary (local dev)
+        if (!finalUrl) {
+          const storage = await getStorageClient();
+          if (storage) {
+            try {
+              const tmpRef = ref(
+                storage,
+                `products/${userId}/${Date.now()}_${file.name}`,
+              );
+              await uploadBytes(tmpRef, file);
+              finalUrl = await getDownloadURL(tmpRef);
+            } catch (e) {
+              console.warn("create: storage upload failed", e);
+            }
+          }
+        }
+        // As last resort keep data URL
+        if (!finalUrl) {
           try {
             finalUrl = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
@@ -385,40 +434,25 @@ function AddProduct({
         "https://cdn.prod.website-files.com/643149de01d4474ba64c7cdc/65428da5c4c1a2b9740cc088_20231101-ImageNonDisponible-v1.jpg";
       if (!finalUrl) finalUrl = placeholder;
 
-      // If finalUrl is a data URL, try to upload it to storage to avoid storing large base64 strings in Firestore.
-      async function dataUrlToBlob(dataUrl: string) {
-        const res = await fetch(dataUrl);
-        return await res.blob();
-      }
-
+      // If finalUrl is a data URL, try server proxy first to convert to a CDN URL
       try {
         if (finalUrl.startsWith("data:")) {
-          const storage = await getStorageClient();
-          let blob: Blob | null = null;
           try {
-            blob = await dataUrlToBlob(finalUrl);
-          } catch (e) {
-            console.warn("dataUrl->blob failed", e);
-          }
-
-          if (storage && blob) {
-            try {
-              const tmpRef = ref(
-                storage,
-                `products/${userId}/${Date.now()}_pasted_image`,
-              );
-              // upload without compression
-              await uploadBytes(tmpRef, blob);
-              finalUrl = await getDownloadURL(tmpRef);
-            } catch (err) {
-              console.warn("upload of data URL failed", err);
-              // keep finalUrl as-is (data URL) if upload fails
+            const up = await fetch("/api/upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dataUrl: finalUrl, filename: "pasted_image" }),
+            });
+            if (up.ok) {
+              const j = await up.json();
+              if (j?.url) finalUrl = j.url;
             }
+          } catch (e) {
+            console.warn("dataURL proxy upload failed", e);
           }
         }
       } catch (err: any) {
         console.error("product:image handling failed", err);
-        // proceed without failing — keep finalUrl
       }
 
       // If flagged (any reasons), always create as pending — do not publish active even after acceptance
