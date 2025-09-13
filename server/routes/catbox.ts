@@ -11,7 +11,7 @@ export const uploadFileProxy: RequestHandler = async (req, res) => {
       res.status(400).json({ error: "Empty body" });
       return;
     }
-    const blob = new Blob([buf], {
+    const blob = new Blob([buf as any], {
       type: req.headers["content-type"] || "application/octet-stream",
     });
     const form = new FormData();
@@ -43,7 +43,7 @@ export const uploadDataUrlProxy: RequestHandler = async (req, res) => {
     }
     const mime = m[1] || "application/octet-stream";
     const buf = Buffer.from(m[2], "base64");
-    const blob = new Blob([buf], { type: mime });
+    const blob = new Blob([buf as any], { type: mime });
     const form = new FormData();
     form.append("reqtype", "fileupload");
     form.append("fileToUpload", blob, filename || `image_${Date.now()}.png`);
