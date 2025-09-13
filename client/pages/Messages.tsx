@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthProvider";
-import { db, getStorageClient } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import {
   addDoc,
   collection,
@@ -16,8 +16,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSearchParams } from "react-router-dom";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
+import { uploadFileToCatbox } from "@/lib/catbox";
 import { RoleBadge } from "@/components/RoleBadge";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { cn } from "@/lib/utils";
@@ -522,11 +522,7 @@ function Thread({ id }: { id: string }) {
     if (!user || !file || threadMeta?.system) return;
     try {
       setUploading(true);
-      const storage = await getStorageClient();
-      if (!storage) throw new Error("Storage indisponible");
-      const tmpRef = ref(storage, `threads/${id}/${Date.now()}_${file.name}`);
-      await uploadBytes(tmpRef, file);
-      const url = await getDownloadURL(tmpRef);
+      const url = await uploadFileToCatbox(file);
 
       await addDoc(collection(db, "threads", id, "messages"), {
         senderId: user.uid,
