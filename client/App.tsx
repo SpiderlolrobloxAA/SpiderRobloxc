@@ -78,6 +78,16 @@ const App = () => (
 
 const _container = document.getElementById("root")!;
 const _win: any = window as any;
+
+// Suppress noisy network unhandled rejections (e.g., third-party SDK fetch failures)
+try {
+  window.addEventListener("unhandledrejection", (e: PromiseRejectionEvent) => {
+    const r: any = (e as any).reason;
+    const msg = String((r && (r.message || r)) || "");
+    if (msg.includes("Failed to fetch")) e.preventDefault();
+  });
+} catch {}
+
 if (!_win.__app_root) {
   _win.__app_root = createRoot(_container);
 }
