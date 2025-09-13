@@ -118,6 +118,7 @@ function MobileMenu() {
           variant="outline"
           className="h-9 w-9 p-0 inline-flex items-center justify-center"
           aria-label="Menu"
+          data-tour="nav-menu"
         >
           <Menu className="h-4 w-4" />
         </Button>
@@ -131,6 +132,7 @@ function MobileMenu() {
               key={to}
               to={to}
               className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+              data-tour={to === "/shop" ? "shop-entry" : undefined}
             >
               {label}
             </Link>
@@ -164,12 +166,14 @@ function MobileMenu() {
               <Link
                 to="/profile"
                 className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+                data-tour="profile-entry"
               >
                 Profil
               </Link>
               <Link
                 to="/messages"
                 className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted inline-flex items-center justify-between"
+                data-tour="messages-entry"
               >
                 <span>Messagerie</span>
                 <UnreadBadge />
@@ -222,7 +226,7 @@ function UserInfo() {
   const { credits, role } = useProfile();
   return (
     <div className="hidden md:flex items-center justify-end gap-4">
-      <Notifications />
+      <span data-tour="notifications"><Notifications /></span>
       <div className="flex items-center gap-2 min-w-0 px-2 py-1 rounded-md">
         <img
           src={DEFAULT_AVATAR_IMG}
@@ -685,6 +689,8 @@ function MastercardLogo() {
   );
 }
 
+import OnboardingTour from "@/components/OnboardingTour";
+
 export default function Layout() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -737,6 +743,7 @@ export default function Layout() {
       <Announcements />
       <PushPermissionPrompt />
       <LiveNotificationBridge />
+      <OnboardingTour />
       <MaintenanceOverlay />
       <CreditNotifier />
       <main className="relative z-10">
