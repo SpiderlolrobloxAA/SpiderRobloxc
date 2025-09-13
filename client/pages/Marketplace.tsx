@@ -287,12 +287,8 @@ function AddProduct({
 
       // Convert to data URL and upload via server proxy (Catbox only)
       try {
-        const data = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ""));
-          reader.onerror = (err) => reject(err);
-          reader.readAsDataURL(f);
-        });
+        const { fileToDataUrl } = await import("@/lib/images");
+        const data = await fileToDataUrl(f, { maxWidth: 1280, quality: 0.85 });
         clearTimeout(timer);
         // Upload via server proxy (Catbox). No Firebase Storage fallback.
         try {
@@ -317,7 +313,7 @@ function AddProduct({
         // If proxy failed, keep preview only and ask for a public URL
         toast({
           title: "Upload image indisponible",
-          description: "Le téléversement a échoué. Collez une URL d'image publique.",
+          description: "Le tél��versement a échoué. Collez une URL d'image publique.",
           variant: "destructive",
         });
         setImageUrl("");
