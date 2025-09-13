@@ -67,5 +67,12 @@ export async function createServer() {
     console.warn("Could not load pending processor:", e?.message || e);
   }
 
+  try {
+    const { rtcConfigHandler } = await import("./routes/rtc");
+    app.get("/api/rtc/config", rtcConfigHandler);
+  } catch (e) {
+    console.warn("Could not load rtc routes:", e?.message || e);
+  }
+
   return app;
 }

@@ -141,6 +141,7 @@ function Thread({ id }: { id: string }) {
   // WebRTC call state
   const [inCall, setInCall] = useState(false);
   const [incoming, setIncoming] = useState<any>(null);
+  const iceRef = useRef<RTCIceServer[] | null>(null);
   const [currentCallId, setCurrentCallId] = useState<string | null>(null);
   const [camOn, setCamOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
@@ -290,16 +291,28 @@ function Thread({ id }: { id: string }) {
         })
       : "";
 
+  useEffect(() => {
+    // Load ICE servers (STUN/TURN) from backend
+    fetch("/api/rtc/config")
+      .then((r) => r.json())
+      .then((cfg) => {
+        if (cfg?.iceServers && Array.isArray(cfg.iceServers)) {
+          iceRef.current = cfg.iceServers;
+        }
+      })
+      .catch(() => {
+        iceRef.current = [
+          { urls: ["stun:stun.l.google.com:19302", "stun:global.stun.twilio.com:3478"] },
+        ];
+      });
+  }, []);
+
   function createPeerConnection(callDocRef: any, role: "caller" | "callee") {
     const pc = new RTCPeerConnection({
-      iceServers: [
-        {
-          urls: [
-            "stun:stun.l.google.com:19302",
-            "stun:global.stun.twilio.com:3478",
-          ],
-        },
-      ],
+      iceServers:
+        iceRef.current || [
+          { urls: ["stun:stun.l.google.com:19302", "stun:global.stun.twilio.com:3478"] },
+        ],
     });
     pc.ontrack = (event) => {
       const [stream] = event.streams;
@@ -384,6 +397,16 @@ function Thread({ id }: { id: string }) {
       console.error("acceptCall failed", e);
     }
   }
+
+  useEffect(() => {
+    const onUnload = () => {
+      try {
+        pcRef.current?.close();
+      } catch {}
+    };
+    window.addEventListener("beforeunload", onUnload);
+    return () => window.removeEventListener("beforeunload", onUnload);
+  }, []);
 
   async function hangUp() {
     try {
