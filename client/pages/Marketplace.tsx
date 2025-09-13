@@ -87,6 +87,7 @@ export default function Marketplace() {
               onChange={(e) => setQueryStr(e.target.value)}
               placeholder="Search products, sellers…"
               className="w-full max-w-xl h-11 rounded-xl"
+              data-tour="marketplace-search"
             />
             <Select value={sort} onValueChange={setSort}>
               <SelectTrigger className="w-[160px]">
