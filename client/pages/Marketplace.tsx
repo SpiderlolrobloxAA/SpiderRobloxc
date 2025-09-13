@@ -442,9 +442,8 @@ function AddProduct({
       onCreated();
       setTitle("");
       setDescription("");
-      setCategory("icon");
+      setCategory("Common");
       setTags("");
-      setDemoUrl("");
       setImageUrl("");
       setFile(null);
       setPrice(3);
