@@ -281,31 +281,26 @@ function AddProduct({
         setPreviewUrl(p);
       } catch {}
 
-      // Try to upload immediately to storage and set imageUrl to the returned link
-      const storage = await getStorageClient();
-      if (storage) {
-        try {
-          const tmpRef = ref(
-            storage,
-            `products/${userId}/${Date.now()}_${f.name}`,
-          );
-          await uploadBytes(tmpRef, f);
-          // if timed out already, don't override fallback
-          if (timedOut) {
-            clearTimeout(timer);
-            return;
-          }
-          const dl = await getDownloadURL(tmpRef);
+      // Try Catbox upload for instant public link
+      try {
+        const controller = new AbortController();
+        const t2 = window.setTimeout(() => controller.abort(), 8000);
+        const dl = await uploadFileToCatbox(f, controller.signal);
+        if (timedOut) {
+          clearTimeout(t2);
           clearTimeout(timer);
-          setImageUrl(dl);
-          setFile(null);
-          setPreviewUrl(null);
-          setImageUploading(false);
           return;
-        } catch (uploadErr) {
-          console.warn("upload immediate failed", uploadErr);
-          // continue to fallback to data URL
         }
+        clearTimeout(t2);
+        clearTimeout(timer);
+        setImageUrl(dl);
+        setFile(null);
+        setPreviewUrl(null);
+        setImageUploading(false);
+        return;
+      } catch (uploadErr) {
+        console.warn("catbox upload failed", uploadErr);
+        // continue to fallback to data URL
       }
 
       // Fallback: convert to data URL and set it as imageUrl
