@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Crown,
@@ -422,7 +422,33 @@ function MaintenanceOverlay() {
     message?: string;
     scope?: string;
   } | null>(null);
-  const location = useLocation();
+  const [pathname, setPathname] = useState<string>(() =>
+    typeof window !== "undefined" ? window.location.pathname : "/",
+  );
+  useEffect(() => {
+    const update = () => setPathname(window.location.pathname);
+    const origPush = history.pushState;
+    const origReplace = history.replaceState;
+    (history as any).pushState = function (...args: any[]) {
+      const ret = origPush.apply(this, args as any);
+      window.dispatchEvent(new Event("locationchange"));
+      return ret;
+    } as any;
+    (history as any).replaceState = function (...args: any[]) {
+      const ret = origReplace.apply(this, args as any);
+      window.dispatchEvent(new Event("locationchange"));
+      return ret;
+    } as any;
+    window.addEventListener("popstate", update);
+    window.addEventListener("locationchange", update);
+    update();
+    return () => {
+      window.removeEventListener("popstate", update);
+      window.removeEventListener("locationchange", update);
+      history.pushState = origPush;
+      history.replaceState = origReplace;
+    };
+  }, []);
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "maintenance", "global"), (d) => {
       const data = d.data() as any;
@@ -438,7 +464,7 @@ function MaintenanceOverlay() {
   }, []);
   if (!state?.on) return null;
 
-  const path = location.pathname || "/";
+  const path = pathname || "/";
   const pageKey = path.startsWith("/tickets")
     ? "tickets"
     : path.startsWith("/shop")
@@ -692,10 +718,30 @@ function MastercardLogo() {
 import OnboardingTour from "@/components/OnboardingTour";
 
 export default function Layout() {
-  const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    const handler = () => window.scrollTo(0, 0);
+    handler();
+    const origPush = history.pushState;
+    const origReplace = history.replaceState;
+    (history as any).pushState = function (...args: any[]) {
+      const ret = origPush.apply(this, args as any);
+      window.dispatchEvent(new Event("locationchange"));
+      return ret;
+    } as any;
+    (history as any).replaceState = function (...args: any[]) {
+      const ret = origReplace.apply(this, args as any);
+      window.dispatchEvent(new Event("locationchange"));
+      return ret;
+    } as any;
+    window.addEventListener("popstate", handler);
+    window.addEventListener("locationchange", handler);
+    return () => {
+      window.removeEventListener("popstate", handler);
+      window.removeEventListener("locationchange", handler);
+      history.pushState = origPush;
+      history.replaceState = origReplace;
+    };
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
