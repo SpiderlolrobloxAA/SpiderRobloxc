@@ -186,9 +186,8 @@ function AddProduct({
   const [moderationReasons, setModerationReasons] = useState<string[]>([]);
   const [moderationAccepted, setModerationAccepted] = useState(false);
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("icon");
+  const [category, setCategory] = useState("Common");
   const [tags, setTags] = useState("");
-  const [demoUrl, setDemoUrl] = useState("");
   const { toast } = useToast();
   const cost = sellerRole === "verified" ? 2 : 5;
   const validPrice = normalizePrice(price, free);
