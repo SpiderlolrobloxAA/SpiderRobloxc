@@ -29,6 +29,7 @@ import {
   doc,
 } from "firebase/firestore";
 import { canPublish, normalizePrice } from "@/lib/marketplace";
+import { uploadFileToCatbox, uploadDataUrlToCatbox } from "@/lib/catbox";
 import { useToast } from "@/hooks/use-toast";
 import ModerationWarning from "@/components/ModerationWarning";
 
