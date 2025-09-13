@@ -526,11 +526,11 @@ function AddProduct({
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
-          <option value="icon">Icône</option>
-          <option value="pack">Pack</option>
-          <option value="thumbnail">Miniature</option>
-          <option value="script">Script</option>
-          <option value="other">Autre</option>
+          <option value="Common">Common</option>
+          <option value="Gold">Gold</option>
+          <option value="Galaxy">Galaxy</option>
+          <option value="Rainbow">Rainbow</option>
+          <option value="Diamond">Diamond</option>
         </select>
       </div>
       <div
