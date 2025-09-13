@@ -548,7 +548,10 @@ function Thread({ id }: { id: string }) {
         const storage = await getStorageClient();
         if (storage) {
           try {
-            const tmpRef = ref(storage, `threads/${id}/${Date.now()}_${file.name}`);
+            const tmpRef = ref(
+              storage,
+              `threads/${id}/${Date.now()}_${file.name}`,
+            );
             await uploadBytes(tmpRef, file);
             url = await getDownloadURL(tmpRef);
           } catch (e) {

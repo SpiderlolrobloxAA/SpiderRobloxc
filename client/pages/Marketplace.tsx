@@ -441,7 +441,10 @@ function AddProduct({
             const up = await fetch("/api/upload", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ dataUrl: finalUrl, filename: "pasted_image" }),
+              body: JSON.stringify({
+                dataUrl: finalUrl,
+                filename: "pasted_image",
+              }),
             });
             if (up.ok) {
               const j = await up.json();
