@@ -37,7 +37,14 @@ export const uploadDataUrlProxy: RequestHandler = async (req, res) => {
       res.status(400).json({ error: "dataUrl required" });
       return;
     }
-    const blob = await (await fetch(dataUrl)).blob();
+    const m = /^data:(.*?);base64,(.*)$/.exec(dataUrl);
+    if (!m) {
+      res.status(400).json({ error: "Invalid dataUrl" });
+      return;
+    }
+    const mime = m[1] || "application/octet-stream";
+    const buf = Buffer.from(m[2], "base64");
+    const blob = new Blob([buf], { type: mime });
     const form = new FormData();
     form.append("reqtype", "fileupload");
     form.append("fileToUpload", blob, filename || `image_${Date.now()}.png`);
