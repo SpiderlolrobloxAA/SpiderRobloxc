@@ -313,7 +313,7 @@ function AddProduct({
         // If proxy failed, keep preview only and ask for a public URL
         toast({
           title: "Upload image indisponible",
-          description: "Le tél��versement a échoué. Collez une URL d'image publique.",
+          description: "Le téléversement a échoué. Collez une URL d'image publique.",
           variant: "destructive",
         });
         setImageUrl("");
@@ -348,12 +348,8 @@ function AddProduct({
       if (!finalUrl && file) {
         // Catbox proxy only
         try {
-          const data = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result || ""));
-            reader.onerror = (err) => reject(err);
-            reader.readAsDataURL(file);
-          });
+          const { fileToDataUrl } = await import("@/lib/images");
+          const data = await fileToDataUrl(file, { maxWidth: 1280, quality: 0.85 });
           const up = await fetch("/api/upload", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
