@@ -13,7 +13,7 @@ import {
   LogOut,
   Menu,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -291,7 +291,7 @@ function BanOverlay() {
   if (!active) return null;
   const endTxt = state?.bannedUntil
     ? new Date(state.bannedUntil).toLocaleString()
-    : "���";
+    : "����";
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center">
       <div className="rounded-xl border border-border/60 bg-card p-6 max-w-sm text-center">
@@ -328,6 +328,88 @@ function Announcements() {
       {msg}
     </div>
   );
+}
+
+function PushPermissionPrompt() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const supported = "Notification" in window;
+    if (!supported) return;
+    const dismissed = localStorage.getItem("notify:dismissed") === "1";
+    if (Notification.permission === "default" && !dismissed) setShow(true);
+  }, []);
+  if (!show) return null;
+  return (
+    <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2">
+      <div className="rounded-lg border border-border/60 bg-card/95 px-4 py-3 text-sm shadow-md flex items-center gap-3">
+        <span>
+          Activer les notifications pour recevoir les achats sur vos appareils.
+        </span>
+        <Button
+          size="sm"
+          onClick={async () => {
+            try {
+              const perm = await Notification.requestPermission();
+              if (perm !== "granted")
+                localStorage.setItem("notify:dismissed", "1");
+            } finally {
+              setShow(false);
+            }
+          }}
+        >
+          Autoriser
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            localStorage.setItem("notify:dismissed", "1");
+            setShow(false);
+          }}
+        >
+          Plus tard
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function LiveNotificationBridge() {
+  const { user } = useAuth();
+  const lastRef = useRef<number>(0);
+  useEffect(() => {
+    if (!user) return;
+    const supported = typeof window !== "undefined" && "Notification" in window;
+    const unsub = onSnapshot(doc(db, "users", user.uid), (d) => {
+      if (!supported || Notification.permission !== "granted") return;
+      const data = d.data() as any;
+      const notes: any[] = Array.isArray(data?.notifications)
+        ? data.notifications
+        : [];
+      if (!notes.length) return;
+      const latest = notes[notes.length - 1];
+      const ts = latest?.createdAt?.toMillis?.() ?? Date.now();
+      const key = `notify:last:${user.uid}`;
+      const prev = Number(localStorage.getItem(key) || 0);
+      if (ts <= prev || ts <= lastRef.current) return;
+      lastRef.current = ts;
+      localStorage.setItem(key, String(ts));
+      const title =
+        latest.title ||
+        (latest.type === "thread" ? "Nouvelle commande" : "Notification");
+      const body = latest.text || "Vous avez une nouvelle notification.";
+      try {
+        const n = new Notification(title, { body });
+        n.onclick = () => {
+          window.focus();
+          if (latest.link) window.location.assign(latest.link);
+        };
+      } catch {}
+    });
+    return () => unsub();
+  }, [user]);
+  return null;
 }
 
 function MaintenanceOverlay() {
@@ -653,6 +735,8 @@ export default function Layout() {
       <Header />
       <BanOverlay />
       <Announcements />
+      <PushPermissionPrompt />
+      <LiveNotificationBridge />
       <MaintenanceOverlay />
       <CreditNotifier />
       <main className="relative z-10">
