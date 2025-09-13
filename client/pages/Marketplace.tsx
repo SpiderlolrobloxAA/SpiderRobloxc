@@ -101,7 +101,9 @@ export default function Marketplace() {
             {user && (
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="secondary" data-tour="add-product">+ Ajouter</Button>
+                  <Button variant="secondary" data-tour="add-product">
+                    + Ajouter
+                  </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md p-4">
                   <DialogTitle className="text-sm">Nouveau produit</DialogTitle>

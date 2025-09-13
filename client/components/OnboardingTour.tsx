@@ -177,7 +177,9 @@ export default function OnboardingTour() {
             <Button variant="outline" onClick={close}>
               Skip tout
             </Button>
-            <Button onClick={() => setI((v) => (v + 1) % steps.length)}>Suivant</Button>
+            <Button onClick={() => setI((v) => (v + 1) % steps.length)}>
+              Suivant
+            </Button>
           </div>
         </div>
       )}
@@ -216,7 +218,8 @@ function TooltipCard({
       document.documentElement.scrollWidth - 320 - 12,
     ),
   );
-  const top = belowTop + 160 > window.scrollY + window.innerHeight ? aboveTop : belowTop;
+  const top =
+    belowTop + 160 > window.scrollY + window.innerHeight ? aboveTop : belowTop;
   const pointTop = top === belowTop ? top - 8 : target.top + window.scrollY - 8;
   const pointLeft = window.scrollX + target.left + target.width / 2 - 8;
 
@@ -233,7 +236,10 @@ function TooltipCard({
         <div className="text-sm font-semibold">{title}</div>
         <div className="mt-1 text-xs text-foreground/70">{body}</div>
         <div className="mt-3 flex items-center justify-between">
-          <button className="text-xs text-foreground/60 hover:underline" onClick={onSkip}>
+          <button
+            className="text-xs text-foreground/60 hover:underline"
+            onClick={onSkip}
+          >
             Skip tout
           </button>
           <div className="flex items-center gap-2">

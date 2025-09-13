@@ -302,17 +302,26 @@ function Thread({ id }: { id: string }) {
       })
       .catch(() => {
         iceRef.current = [
-          { urls: ["stun:stun.l.google.com:19302", "stun:global.stun.twilio.com:3478"] },
+          {
+            urls: [
+              "stun:stun.l.google.com:19302",
+              "stun:global.stun.twilio.com:3478",
+            ],
+          },
         ];
       });
   }, []);
 
   function createPeerConnection(callDocRef: any, role: "caller" | "callee") {
     const pc = new RTCPeerConnection({
-      iceServers:
-        iceRef.current || [
-          { urls: ["stun:stun.l.google.com:19302", "stun:global.stun.twilio.com:3478"] },
-        ],
+      iceServers: iceRef.current || [
+        {
+          urls: [
+            "stun:stun.l.google.com:19302",
+            "stun:global.stun.twilio.com:3478",
+          ],
+        },
+      ],
     });
     pc.ontrack = (event) => {
       const [stream] = event.streams;

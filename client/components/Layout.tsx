@@ -226,7 +226,9 @@ function UserInfo() {
   const { credits, role } = useProfile();
   return (
     <div className="hidden md:flex items-center justify-end gap-4">
-      <span data-tour="notifications"><Notifications /></span>
+      <span data-tour="notifications">
+        <Notifications />
+      </span>
       <div className="flex items-center gap-2 min-w-0 px-2 py-1 rounded-md">
         <img
           src={DEFAULT_AVATAR_IMG}
@@ -781,7 +783,10 @@ export default function Layout() {
             if (/identitytoolkit|securetoken/.test(url)) {
               return new Response(
                 JSON.stringify({ error: { message: "NETWORK_ERROR" } }),
-                { status: 503, headers: { "Content-Type": "application/json" } },
+                {
+                  status: 503,
+                  headers: { "Content-Type": "application/json" },
+                },
               );
             }
             throw e;
