@@ -1,4 +1,5 @@
-export const DEFAULT_AVATAR_IMG = "https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Faa0c928652df48449b7aacff3b6b02f4?format=webp&width=800";
+export const DEFAULT_AVATAR_IMG =
+  "https://cdn.builder.io/api/v1/image/assets%2Fec69bd5deeba4d6a81033567db96cbc0%2Faa0c928652df48449b7aacff3b6b02f4?format=webp&width=800";
 
 export async function fileToDataUrl(
   file: File,
@@ -19,7 +20,10 @@ export async function fileToDataUrl(
       i.onerror = (e) => reject(e);
       i.src = data;
     });
-    const scale = Math.min(1, maxWidth / (img.naturalWidth || img.width || maxWidth));
+    const scale = Math.min(
+      1,
+      maxWidth / (img.naturalWidth || img.width || maxWidth),
+    );
     const w = Math.round((img.naturalWidth || img.width) * scale);
     const h = Math.round((img.naturalHeight || img.height) * scale);
     const canvas = document.createElement("canvas");
