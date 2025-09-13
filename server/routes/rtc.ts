@@ -12,6 +12,11 @@ function parseEnvList(val?: string | null): string[] {
     .filter(Boolean);
 }
 
+// Configure via env:
+// - RTC_METERED_HOST (e.g. brainrot.metered.live)
+// - RTC_METERED_API_KEY (provider API key)
+// - RTC_STUN_URLS (optional fallback STUN list)
+// - RTC_TURN_URLS, RTC_TURN_USERNAME, RTC_TURN_CREDENTIAL (optional static TURN)
 export const rtcConfigHandler: RequestHandler = async (_req, res) => {
   try {
     // If Metered TURN is configured, prefer it
