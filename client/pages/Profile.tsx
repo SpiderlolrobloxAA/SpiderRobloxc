@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { DEFAULT_AVATAR_IMG } from "@/lib/images";
 import { useToast } from "@/hooks/use-toast";
+import { uploadFileToCatbox } from "@/lib/catbox";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -13,6 +14,23 @@ export default function Profile() {
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
   const [avatarUrl, setAvatarUrl] = useState<string>(DEFAULT_AVATAR_IMG);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const pickAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      setUploading(true);
+      const url = await uploadFileToCatbox(f);
+      setAvatarUrl(url);
+      toast({ title: "Avatar importé" });
+    } catch (err) {
+      console.error("avatar upload failed", err);
+      toast({ title: "Upload avatar indisponible", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const save = async () => {
     if (!user) return;
@@ -48,7 +66,29 @@ export default function Profile() {
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="Votre pseudo"
         />
-        <label className="text-sm mt-3">Avatar (URL)</label>
+        <label className="text-sm mt-3">Avatar</label>
+        <div className="flex items-center gap-2">
+          <img
+            src={avatarUrl}
+            alt="avatar"
+            className="h-10 w-10 rounded-full object-cover border"
+          />
+          <input
+            id="avatar-file"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={pickAvatar}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => document.getElementById("avatar-file")?.click()}
+            disabled={uploading}
+          >
+            {uploading ? "Import…" : "Choisir un avatar"}
+          </Button>
+        </div>
         <Input
           value={avatarUrl}
           onChange={(e) => setAvatarUrl(e.target.value)}
