@@ -68,9 +68,9 @@ export default function Messages() {
 
   return (
     <div className="container py-10 grid gap-4 md:grid-cols-[260px,1fr]">
-      <div className="rounded-xl border border-border/60 bg-card p-3">
+      <div className="rounded-xl border border-border/60 bg-card p-3 h-[70vh] flex flex-col">
         <div className="text-sm font-semibold">Messagerie</div>
-        <div className="mt-2 divide-y divide-border/60 max-h-[60vh] overflow-auto">
+        <div className="mt-2 divide-y divide-border/60 h-[calc(70vh-2rem)] overflow-auto">
           {threads.map((t) => {
             const lastFrom = t.lastMessage?.senderId;
             const updatedAt = t.updatedAt?.toMillis?.() ?? 0;
@@ -116,7 +116,7 @@ export default function Messages() {
           )}
         </div>
       </div>
-      <div className="rounded-xl border border-border/60 bg-card p-3 min-h-[50vh]">
+      <div className="rounded-xl border border-border/60 bg-card p-3 h-[70vh] flex flex-col">
         {active ? (
           <Thread id={active} />
         ) : (
@@ -638,7 +638,7 @@ function Thread({ id }: { id: string }) {
           </div>
         </div>
       )}
-      <div className="flex-1 space-y-3 overflow-auto p-2">
+      <div className="flex-1 min-h-0 space-y-3 overflow-auto p-2">
         {(() => {
           const out: JSX.Element[] = [];
           let lastDay = "";
