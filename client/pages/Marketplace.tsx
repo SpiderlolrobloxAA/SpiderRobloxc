@@ -475,8 +475,6 @@ function AddProduct({
       reasons.push(`Solde insuffisant (il vous faut ${cost} RC)`);
     if (!free && (Number(price) || 0) < 3)
       reasons.push("Prix minimum 3 RC sauf si Gratuit");
-    if (demoUrl && !/^https?:\/\//i.test(demoUrl.trim()))
-      reasons.push("Lien démo invalide (doit commencer par http)");
 
     if (reasons.length > 0) {
       toast({
