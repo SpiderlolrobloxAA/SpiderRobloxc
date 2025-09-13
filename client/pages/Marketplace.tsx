@@ -391,8 +391,17 @@ function AddProduct({
       const flagged = moderationReasons.length > 0;
       const status = flagged ? "pending" : "active";
 
+      const tagList = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
       const refDoc = await addDoc(collection(db, "products"), {
         title: title.trim(),
+        description: description.trim() || null,
+        category,
+        tags: tagList,
+        demoUrl: demoUrl.trim() || null,
         imageUrl: finalUrl,
         price: validPrice,
         sellerId: userId,
