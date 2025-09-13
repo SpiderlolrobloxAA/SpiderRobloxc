@@ -525,6 +525,20 @@ function AddProduct({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
+      <div className="grid gap-2">
+        <label className="text-xs text-foreground/70">Catégorie</label>
+        <select
+          className="h-10 rounded-md border border-border/60 bg-background px-3 text-sm"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="icon">Icône</option>
+          <option value="pack">Pack</option>
+          <option value="thumbnail">Miniature</option>
+          <option value="script">Script</option>
+          <option value="other">Autre</option>
+        </select>
+      </div>
       <div
         className="rounded-md border border-dashed border-border/60 p-3 text-center text-sm"
         onDragOver={(e) => e.preventDefault()}
