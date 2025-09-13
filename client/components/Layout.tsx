@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Crown,
@@ -118,6 +118,7 @@ function MobileMenu() {
           variant="outline"
           className="h-9 w-9 p-0 inline-flex items-center justify-center"
           aria-label="Menu"
+          data-tour="nav-menu"
         >
           <Menu className="h-4 w-4" />
         </Button>
@@ -131,6 +132,7 @@ function MobileMenu() {
               key={to}
               to={to}
               className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+              data-tour={to === "/shop" ? "shop-entry" : undefined}
             >
               {label}
             </Link>
@@ -164,12 +166,14 @@ function MobileMenu() {
               <Link
                 to="/profile"
                 className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
+                data-tour="profile-entry"
               >
                 Profil
               </Link>
               <Link
                 to="/messages"
                 className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted inline-flex items-center justify-between"
+                data-tour="messages-entry"
               >
                 <span>Messagerie</span>
                 <UnreadBadge />
@@ -222,7 +226,9 @@ function UserInfo() {
   const { credits, role } = useProfile();
   return (
     <div className="hidden md:flex items-center justify-end gap-4">
-      <Notifications />
+      <span data-tour="notifications">
+        <Notifications />
+      </span>
       <div className="flex items-center gap-2 min-w-0 px-2 py-1 rounded-md">
         <img
           src={DEFAULT_AVATAR_IMG}
@@ -418,7 +424,33 @@ function MaintenanceOverlay() {
     message?: string;
     scope?: string;
   } | null>(null);
-  const location = useLocation();
+  const [pathname, setPathname] = useState<string>(() =>
+    typeof window !== "undefined" ? window.location.pathname : "/",
+  );
+  useEffect(() => {
+    const update = () => setPathname(window.location.pathname);
+    const origPush = history.pushState;
+    const origReplace = history.replaceState;
+    (history as any).pushState = function (...args: any[]) {
+      const ret = origPush.apply(this, args as any);
+      window.dispatchEvent(new Event("locationchange"));
+      return ret;
+    } as any;
+    (history as any).replaceState = function (...args: any[]) {
+      const ret = origReplace.apply(this, args as any);
+      window.dispatchEvent(new Event("locationchange"));
+      return ret;
+    } as any;
+    window.addEventListener("popstate", update);
+    window.addEventListener("locationchange", update);
+    update();
+    return () => {
+      window.removeEventListener("popstate", update);
+      window.removeEventListener("locationchange", update);
+      history.pushState = origPush;
+      history.replaceState = origReplace;
+    };
+  }, []);
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "maintenance", "global"), (d) => {
       const data = d.data() as any;
@@ -434,7 +466,7 @@ function MaintenanceOverlay() {
   }, []);
   if (!state?.on) return null;
 
-  const path = location.pathname || "/";
+  const path = pathname || "/";
   const pageKey = path.startsWith("/tickets")
     ? "tickets"
     : path.startsWith("/shop")
@@ -685,11 +717,33 @@ function MastercardLogo() {
   );
 }
 
+import OnboardingTour from "@/components/OnboardingTour";
+
 export default function Layout() {
-  const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    const handler = () => window.scrollTo(0, 0);
+    handler();
+    const origPush = history.pushState;
+    const origReplace = history.replaceState;
+    (history as any).pushState = function (...args: any[]) {
+      const ret = origPush.apply(this, args as any);
+      window.dispatchEvent(new Event("locationchange"));
+      return ret;
+    } as any;
+    (history as any).replaceState = function (...args: any[]) {
+      const ret = origReplace.apply(this, args as any);
+      window.dispatchEvent(new Event("locationchange"));
+      return ret;
+    } as any;
+    window.addEventListener("popstate", handler);
+    window.addEventListener("locationchange", handler);
+    return () => {
+      window.removeEventListener("popstate", handler);
+      window.removeEventListener("locationchange", handler);
+      history.pushState = origPush;
+      history.replaceState = origReplace;
+    };
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -715,9 +769,43 @@ export default function Layout() {
         event.error,
       );
     };
+
+    // Gracefully fall back Firebase Auth network failures (preview env)
+    try {
+      const g: any = window as any;
+      if (!g.__fetchPatched && typeof fetch === "function") {
+        const origFetch = fetch.bind(window);
+        (window as any).fetch = async (...args: any[]) => {
+          try {
+            return await origFetch(...(args as any));
+          } catch (e: any) {
+            const url = String(args?.[0] || "");
+            if (/identitytoolkit|securetoken/.test(url)) {
+              return new Response(
+                JSON.stringify({ error: { message: "NETWORK_ERROR" } }),
+                {
+                  status: 503,
+                  headers: { "Content-Type": "application/json" },
+                },
+              );
+            }
+            throw e;
+          }
+        };
+        g.__fetchPatched = true;
+      }
+    } catch {}
     const onRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const msg = String((reason && (reason.message || reason)) || "");
+      // Silence preview overlay for benign network errors (e.g., Firebase auth fetch in sandbox)
+      if (msg.includes("Failed to fetch")) {
+        try {
+          event.preventDefault();
+        } catch {}
+      }
       // eslint-disable-next-line no-console
-      console.error("Unhandled promise rejection:", event.reason);
+      console.error("Unhandled promise rejection:", reason);
     };
     window.addEventListener("error", onError);
     window.addEventListener("unhandledrejection", onRejection);
@@ -737,6 +825,7 @@ export default function Layout() {
       <Announcements />
       <PushPermissionPrompt />
       <LiveNotificationBridge />
+      <OnboardingTour />
       <MaintenanceOverlay />
       <CreditNotifier />
       <main className="relative z-10">

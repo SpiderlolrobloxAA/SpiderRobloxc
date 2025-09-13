@@ -87,6 +87,7 @@ export default function Marketplace() {
               onChange={(e) => setQueryStr(e.target.value)}
               placeholder="Search products, sellers…"
               className="w-full max-w-xl h-11 rounded-xl"
+              data-tour="marketplace-search"
             />
             <Select value={sort} onValueChange={setSort}>
               <SelectTrigger className="w-[160px]">
@@ -100,7 +101,9 @@ export default function Marketplace() {
             {user && (
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="secondary">+ Ajouter</Button>
+                  <Button variant="secondary" data-tour="add-product">
+                    + Ajouter
+                  </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md p-4">
                   <DialogTitle className="text-sm">Nouveau produit</DialogTitle>
@@ -184,6 +187,9 @@ function AddProduct({
   const [moderationOpen, setModerationOpen] = useState(false);
   const [moderationReasons, setModerationReasons] = useState<string[]>([]);
   const [moderationAccepted, setModerationAccepted] = useState(false);
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Common");
+  const [tags, setTags] = useState("");
   const { toast } = useToast();
   const cost = sellerRole === "verified" ? 2 : 5;
   const validPrice = normalizePrice(price, free);
@@ -386,8 +392,16 @@ function AddProduct({
       const flagged = moderationReasons.length > 0;
       const status = flagged ? "pending" : "active";
 
+      const tagList = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
       const refDoc = await addDoc(collection(db, "products"), {
         title: title.trim(),
+        description: description.trim() || null,
+        category,
+        tags: tagList,
         imageUrl: finalUrl,
         price: validPrice,
         sellerId: userId,
@@ -407,6 +421,9 @@ function AddProduct({
         doc(db, "DataProject", "data1", "users", userId, "products", refDoc.id),
         {
           title: title.trim(),
+          description: description.trim() || null,
+          category,
+          tags: tagList,
           imageUrl: finalUrl,
           price: validPrice,
           sellerId: userId,
@@ -426,6 +443,9 @@ function AddProduct({
       if (!flagged) await onCharge(-cost);
       onCreated();
       setTitle("");
+      setDescription("");
+      setCategory("Common");
+      setTags("");
       setImageUrl("");
       setFile(null);
       setPrice(3);
@@ -501,6 +521,20 @@ function AddProduct({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
+      <div className="grid gap-2">
+        <label className="text-xs text-foreground/70">Catégorie</label>
+        <select
+          className="h-10 rounded-md border border-border/60 bg-background px-3 text-sm"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="Common">Common</option>
+          <option value="Gold">Gold</option>
+          <option value="Galaxy">Galaxy</option>
+          <option value="Rainbow">Rainbow</option>
+          <option value="Diamond">Diamond</option>
+        </select>
+      </div>
       <div
         className="rounded-md border border-dashed border-border/60 p-3 text-center text-sm"
         onDragOver={(e) => e.preventDefault()}
@@ -543,6 +577,20 @@ function AddProduct({
         placeholder="URL de l'image (requis)"
         value={imageUrl}
         onChange={(e) => setImageUrl(e.target.value)}
+      />
+      <div className="grid gap-2">
+        <label className="text-xs text-foreground/70">Description</label>
+        <textarea
+          className="min-h-[80px] rounded-md border border-border/60 bg-background p-2 text-sm"
+          placeholder="Décrivez votre produit (facultatif)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <Input
+        placeholder="Tags (séparés par des virgules)"
+        value={tags}
+        onChange={(e) => setTags(e.target.value)}
       />
       <label className="inline-flex items-center gap-2 text-sm">
         <input
