@@ -341,28 +341,20 @@ function AddProduct({
     try {
       let finalUrl = imageUrl;
       if (!finalUrl && file) {
-        const storage = await getStorageClient();
-        if (storage) {
-          const tmpRef = ref(
-            storage,
-            `products/${userId}/${Date.now()}_${file.name}`,
-          );
-          await uploadBytes(tmpRef, file);
-          finalUrl = await getDownloadURL(tmpRef);
-        } else {
-          // Fallback: convert file to data URL and store in Firestore so it can be displayed
+        try {
+          finalUrl = await uploadFileToCatbox(file);
+        } catch (err) {
           try {
             finalUrl = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => resolve(String(reader.result || ""));
-              reader.onerror = (err) => reject(err);
+              reader.onerror = (e) => reject(e);
               reader.readAsDataURL(file);
             });
-          } catch (err) {
+          } catch {
             toast({
               title: "Upload image indisponible",
-              description:
-                "Veuillez saisir une URL d'image ou réessayer plus tard.",
+              description: "Veuillez saisir une URL d'image ou réessayer plus tard.",
               variant: "destructive",
             });
             setSaving(false);
