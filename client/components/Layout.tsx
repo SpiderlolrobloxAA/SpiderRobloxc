@@ -768,8 +768,16 @@ export default function Layout() {
       );
     };
     const onRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const msg = String((reason && (reason.message || reason)) || "");
+      // Silence preview overlay for benign network errors (e.g., Firebase auth fetch in sandbox)
+      if (msg.includes("Failed to fetch")) {
+        try {
+          event.preventDefault();
+        } catch {}
+      }
       // eslint-disable-next-line no-console
-      console.error("Unhandled promise rejection:", event.reason);
+      console.error("Unhandled promise rejection:", reason);
     };
     window.addEventListener("error", onError);
     window.addEventListener("unhandledrejection", onRejection);
