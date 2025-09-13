@@ -2,11 +2,6 @@ export async function uploadFileToCatbox(
   file: File,
   signal?: AbortSignal,
 ): Promise<string> {
-  const form = new FormData();
-  form.append("reqtype", "fileupload");
-  // Anonymous upload (no userhash)
-  form.append("fileToUpload", file, file.name || "upload");
-
   // Try backend proxy first; if it fails, fallback to direct Catbox API
   try {
     const ab = await file.arrayBuffer();
