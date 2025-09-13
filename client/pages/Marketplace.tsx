@@ -421,6 +421,10 @@ function AddProduct({
         doc(db, "DataProject", "data1", "users", userId, "products", refDoc.id),
         {
           title: title.trim(),
+          description: description.trim() || null,
+          category,
+          tags: tagList,
+          demoUrl: demoUrl.trim() || null,
           imageUrl: finalUrl,
           price: validPrice,
           sellerId: userId,
