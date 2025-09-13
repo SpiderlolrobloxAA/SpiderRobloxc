@@ -522,11 +522,41 @@ function Thread({ id }: { id: string }) {
     if (!user || !file || threadMeta?.system) return;
     try {
       setUploading(true);
-      const storage = await getStorageClient();
-      if (!storage) throw new Error("Storage indisponible");
-      const tmpRef = ref(storage, `threads/${id}/${Date.now()}_${file.name}`);
-      await uploadBytes(tmpRef, file);
-      const url = await getDownloadURL(tmpRef);
+      let url: string | null = null;
+      // Try proxy upload first (avoids Firebase CORS in prod)
+      try {
+        const data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(file);
+        });
+        const up = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataUrl: data, filename: file.name }),
+        });
+        if (up.ok) {
+          const j = await up.json();
+          url = j?.url || null;
+        }
+      } catch (e) {
+        console.warn("messages: proxy upload failed", e);
+      }
+      // Fallback to Firebase storage (works locally)
+      if (!url) {
+        const storage = await getStorageClient();
+        if (storage) {
+          try {
+            const tmpRef = ref(storage, `threads/${id}/${Date.now()}_${file.name}`);
+            await uploadBytes(tmpRef, file);
+            url = await getDownloadURL(tmpRef);
+          } catch (e) {
+            console.warn("messages: storage upload failed", e);
+          }
+        }
+      }
+      if (!url) throw new Error("upload_failed");
 
       await addDoc(collection(db, "threads", id, "messages"), {
         senderId: user.uid,
