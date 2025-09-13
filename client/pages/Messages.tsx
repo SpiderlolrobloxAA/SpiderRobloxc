@@ -543,22 +543,7 @@ function Thread({ id }: { id: string }) {
       } catch (e) {
         console.warn("messages: proxy upload failed", e);
       }
-      // Fallback to Firebase storage (works locally)
-      if (!url) {
-        const storage = await getStorageClient();
-        if (storage) {
-          try {
-            const tmpRef = ref(
-              storage,
-              `threads/${id}/${Date.now()}_${file.name}`,
-            );
-            await uploadBytes(tmpRef, file);
-            url = await getDownloadURL(tmpRef);
-          } catch (e) {
-            console.warn("messages: storage upload failed", e);
-          }
-        }
-      }
+      // No Firebase fallback; require proxy success
       if (!url) throw new Error("upload_failed");
 
       await addDoc(collection(db, "threads", id, "messages"), {
