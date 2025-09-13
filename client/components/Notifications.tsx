@@ -7,6 +7,7 @@ import {
   DialogTrigger,
   DialogContent,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -111,8 +112,11 @@ export default function Notifications() {
         aria-label="Notifications alt+T"
       >
         <DialogTitle>Notifications</DialogTitle>
+        <DialogDescription className="sr-only">
+          Centre de notifications
+        </DialogDescription>
         <div
-          className="mt-3 space-y-2 max-h-[60vh] overflow-y-auto pr-1"
+          className="mt-3 space-y-2 max-h-[60vh] overflow-y-auto no-scrollbar pr-1"
           role="region"
           aria-label="Notifications (F8)"
         >
