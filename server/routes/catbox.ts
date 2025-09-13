@@ -11,7 +11,9 @@ export const uploadFileProxy: RequestHandler = async (req, res) => {
       res.status(400).json({ error: "Empty body" });
       return;
     }
-    const blob = new Blob([buf], { type: req.headers["content-type"] || "application/octet-stream" });
+    const blob = new Blob([buf], {
+      type: req.headers["content-type"] || "application/octet-stream",
+    });
     const form = new FormData();
     form.append("reqtype", "fileupload");
     form.append("fileToUpload", blob, filename);

@@ -46,9 +46,14 @@ export async function createServer() {
 
   // Catbox proxy routes to avoid browser CORS
   try {
-    const { uploadFileProxy, uploadDataUrlProxy, uploadRemoteUrlProxy } = await import("./routes/catbox");
+    const { uploadFileProxy, uploadDataUrlProxy, uploadRemoteUrlProxy } =
+      await import("./routes/catbox");
     // raw body for file upload
-    app.post("/api/catbox/upload-file", express.raw({ type: "application/octet-stream", limit: "20mb" }), uploadFileProxy);
+    app.post(
+      "/api/catbox/upload-file",
+      express.raw({ type: "application/octet-stream", limit: "20mb" }),
+      uploadFileProxy,
+    );
     app.post("/api/catbox/upload-data-url", uploadDataUrlProxy);
     app.post("/api/catbox/upload-url", uploadRemoteUrlProxy);
   } catch (e) {

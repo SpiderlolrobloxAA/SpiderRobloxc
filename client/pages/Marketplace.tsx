@@ -354,7 +354,8 @@ function AddProduct({
           } catch {
             toast({
               title: "Upload image indisponible",
-              description: "Veuillez saisir une URL d'image ou réessayer plus tard.",
+              description:
+                "Veuillez saisir une URL d'image ou réessayer plus tard.",
               variant: "destructive",
             });
             setSaving(false);
@@ -371,7 +372,10 @@ function AddProduct({
       // If finalUrl is a data URL, upload to Catbox to avoid base64 in Firestore.
       try {
         if (finalUrl.startsWith("data:")) {
-          finalUrl = await uploadDataUrlToCatbox(finalUrl, `${Date.now()}_image.png`);
+          finalUrl = await uploadDataUrlToCatbox(
+            finalUrl,
+            `${Date.now()}_image.png`,
+          );
         }
       } catch (err) {
         console.warn("catbox dataUrl upload failed", err);
